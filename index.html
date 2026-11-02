@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Professional real-time weather dashboard powered by Open-Meteo API. Search any city for real-time temperature, humidity, wind speed, pressure, and UV index.">
+  <meta name="theme-color" content="#0f172a">
+  <title>Weather Dashboard | Real-Time Forecast &amp; Metrics</title>
+
+  <!-- Performance Optimization: Resource Hints for DNS Pre-resolution & Pre-connect -->
+  <link rel="preconnect" href="https://geocoding-api.open-meteo.com" crossorigin>
+  <link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
+  <link rel="preconnect" href="https://api.bigdatacloud.net" crossorigin>
+  <link rel="dns-prefetch" href="https://geocoding-api.open-meteo.com">
+  <link rel="dns-prefetch" href="https://api.open-meteo.com">
+  <link rel="dns-prefetch" href="https://api.bigdatacloud.net">
+
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app-container" id="app-container">
+    
+    <!-- 1. Application Header & 2. Weather Dashboard Title -->
+    <header class="app-header" id="app-header">
+      <div class="header-brand">
+        <svg class="header-icon" id="header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="32" height="32">
+          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+        </svg>
+        <div class="header-text">
+          <h1 class="app-title" id="app-title">Weather Dashboard</h1>
+          <p class="app-subtitle" id="app-subtitle">Real-time meteorological insights powered by Open-Meteo</p>
+        </div>
+      </div>
+
+      <!-- Unit Toggle (Celsius / Fahrenheit) -->
+      <div class="header-actions">
+        <div class="unit-toggle-wrapper" id="unit-toggle-wrapper" role="group" aria-label="Temperature unit selection">
+          <button type="button" class="unit-toggle-btn active" id="unit-c-btn" data-unit="C" aria-pressed="true" aria-label="Display temperature in Celsius">&deg;C</button>
+          <button type="button" class="unit-toggle-btn" id="unit-f-btn" data-unit="F" aria-pressed="false" aria-label="Display temperature in Fahrenheit">&deg;F</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+
+      <!-- 3. City Search Input & 4. Search Button -->
+      <section class="search-section" id="search-section" aria-label="City Search">
+        <form class="search-form" id="search-form" role="search" novalidate>
+          <div class="search-input-wrapper">
+            <label for="search-input" class="visually-hidden">Search city name</label>
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input 
+              type="search" 
+              id="search-input" 
+              class="search-input" 
+              name="city" 
+              placeholder="Enter city name (e.g., London, Tokyo, New York)..." 
+              autocomplete="off" 
+              spellcheck="false" 
+              required 
+              aria-label="City name"
+              aria-describedby="search-hint"
+            >
+            <button type="button" id="clear-search-btn" class="clear-search-btn" aria-label="Clear search input" hidden>
+              &times;
+            </button>
+          </div>
+          <button type="submit" id="search-btn" class="search-btn" aria-label="Search weather for entered city">
+            <span class="btn-text">Search</span>
+          </button>
+          <button type="button" id="geo-btn" class="geo-btn" aria-label="Use my current location" title="Use my current location">
+            <svg class="geo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+              <circle cx="12" cy="12" r="10"/>
+              <polygon points="12 2 15 8 12 14 9 8 12 2"/>
+            </svg>
+            <span class="geo-btn-text">My Location</span>
+          </button>
+        </form>
+        <p id="search-hint" class="search-hint visually-hidden">Enter a city name and press Enter or click Search</p>
+        
+        <!-- Search History / Recent Cities Chips -->
+        <div class="recent-searches-container" id="recent-searches-container" aria-label="Recent Searches" hidden>
+          <span class="recent-searches-label">Recent:</span>
+          <div class="recent-chips" id="recent-chips" role="list"></div>
+          <button type="button" class="clear-history-btn" id="clear-history-btn" aria-label="Clear recent search history">Clear</button>
+        </div>
+      </section>
+
+      <!-- 5. Loading Indicator -->
+      <div id="loading-indicator" class="loading-indicator" role="status" aria-live="polite" aria-label="Loading weather data" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="loading-text" id="loading-text">Fetching current weather data...</p>
+      </div>
+
+      <!-- 6. Error Message Container -->
+      <div id="error-container" class="error-container" role="alert" aria-live="assertive" hidden>
+        <div class="error-content">
+          <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p id="error-message" class="error-message">Unable to find requested city. Please verify spelling and try again.</p>
+        </div>
+        <button type="button" id="error-dismiss-btn" class="error-dismiss-btn" aria-label="Dismiss error message">
+          &times;
+        </button>
+      </div>
+
+      <!-- 7. Main Weather Information Section -->
+      <section class="weather-dashboard" id="weather-dashboard" aria-label="Weather Forecast Display" aria-live="polite">
+        
+        <!-- Primary Weather Card -->
+        <article class="weather-card primary-card" id="weather-card">
+          
+          <!-- 8. City and Country Information -->
+          <div class="location-container" id="location-container">
+            <div class="location-header">
+              <svg class="location-pin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <h2 id="location-name" class="location-name">--</h2>
+            </div>
+            <p id="location-details" class="location-details">Search for a city to display current weather</p>
+          </div>
+
+          <!-- Hero Weather Representation -->
+          <div class="weather-hero" id="weather-hero">
+            
+            <!-- 10. Weather Condition & Icon -->
+            <div class="condition-wrapper" id="condition-wrapper">
+              <div id="weather-icon-container" class="weather-icon-container" aria-hidden="true">
+                <span id="weather-icon" class="weather-icon">--</span>
+              </div>
+              <p id="weather-condition" class="weather-condition">Awaiting Search</p>
+            </div>
+
+            <!-- 9. Temperature Display & 11. Feels-like Temperature -->
+            <div class="temperature-wrapper" id="temperature-wrapper">
+              <div class="temp-reading" id="temp-reading">
+                <span id="current-temperature" class="current-temperature">--</span>
+                <span class="temp-unit" aria-label="degrees Celsius">&deg;C</span>
+              </div>
+              <p class="feels-like-text" id="feels-like-container">
+                Feels like <span id="feels-like-temp">--</span><span id="feels-like-unit">&deg;C</span>
+              </p>
+            </div>
+
+          </div>
+
+          <!-- 16. Last Updated Information -->
+          <div class="last-updated-container" id="last-updated-container">
+            <svg class="clock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <p class="last-updated-text">
+              Last updated: <time id="last-updated-time" datetime="">--</time>
+            </p>
+          </div>
+
+        </article>
+
+        <!-- Weather Metrics Grid -->
+        <section class="weather-metrics-section" id="weather-metrics-section" aria-label="Detailed Weather Metrics">
+          <h3 class="visually-hidden">Weather Parameters</h3>
+          <div class="metrics-grid" id="metrics-grid">
+            
+            <!-- 12. Humidity Card -->
+            <article class="metric-card" id="humidity-card">
+              <div class="metric-header">
+                <span class="metric-label">Humidity</span>
+                <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <span id="humidity-value" class="metric-value">--</span>
+                <span class="metric-unit" aria-hidden="true">%</span>
+              </div>
+              <div class="metric-footer">
+                <span class="metric-subtext" id="humidity-status">Relative humidity</span>
+              </div>
+            </article>
+
+            <!-- 13. Wind Speed Card -->
+            <article class="metric-card" id="wind-card">
+              <div class="metric-header">
+                <span class="metric-label">Wind Speed</span>
+                <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                  <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
+                  <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
+                  <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <span id="wind-value" class="metric-value">--</span>
+                <span class="metric-unit" aria-hidden="true">km/h</span>
+              </div>
+              <div class="metric-footer">
+                <span class="metric-subtext" id="wind-status">Wind at 10m altitude</span>
+              </div>
+            </article>
+
+            <!-- 14. Atmospheric Pressure Card -->
+            <article class="metric-card" id="pressure-card">
+              <div class="metric-header">
+                <span class="metric-label">Pressure</span>
+                <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="m14 14-4-4"/>
+                  <path d="M12 6v2"/>
+                  <path d="M6 12h2"/>
+                  <path d="M18 12h-2"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <span id="pressure-value" class="metric-value">--</span>
+                <span class="metric-unit" aria-hidden="true">hPa</span>
+              </div>
+              <div class="metric-footer">
+                <span class="metric-subtext" id="pressure-status">Surface atmospheric pressure</span>
+              </div>
+            </article>
+
+            <!-- 15. UV Index Card -->
+            <article class="metric-card" id="uv-card">
+              <div class="metric-header">
+                <span class="metric-label">UV Index</span>
+                <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                  <circle cx="12" cy="12" r="4"/>
+                  <path d="M12 2v2"/>
+                  <path d="M12 20v2"/>
+                  <path d="m4.93 4.93 1.41 1.41"/>
+                  <path d="m17.66 17.66 1.41 1.41"/>
+                  <path d="M2 12h2"/>
+                  <path d="M20 12h2"/>
+                  <path d="m6.34 17.66-1.41 1.41"/>
+                  <path d="m19.07 4.93-1.41 1.41"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <span id="uv-value" class="metric-value">--</span>
+                <span id="uv-badge" class="uv-badge">--</span>
+              </div>
+              <div class="metric-footer">
+                <span class="metric-subtext" id="uv-status">Solar ultraviolet intensity</span>
+              </div>
+            </article>
+
+          </div>
+        </section>
+
+        <!-- 4. Hourly Forecast Section (Upcoming 24 Hours) -->
+        <section class="forecast-section hourly-section" id="hourly-forecast-section" aria-label="Hourly Weather Forecast" hidden>
+          <div class="section-header">
+            <h3 class="section-title">Hourly Forecast</h3>
+            <span class="section-subtitle">Upcoming 24 hours</span>
+          </div>
+          <div class="hourly-forecast-track" id="hourly-forecast-track" role="region" aria-label="Horizontal hourly temperature forecast">
+            <!-- Dynamically populated hourly cards -->
+          </div>
+        </section>
+
+        <!-- 5. Seven-Day Extended Forecast Section -->
+        <section class="forecast-section daily-section" id="daily-forecast-section" aria-label="7-Day Extended Weather Forecast" hidden>
+          <div class="section-header">
+            <h3 class="section-title">7-Day Forecast</h3>
+            <span class="section-subtitle">Daily overview</span>
+          </div>
+          <div class="daily-forecast-grid" id="daily-forecast-grid" role="list">
+            <!-- Dynamically populated 7-day cards -->
+          </div>
+        </section>
+
+      </section>
+
+    </main>
+
+    <!-- 17. Application Footer -->
+    <footer class="app-footer" id="app-footer">
+      <div class="footer-content">
+        <p class="footer-attribution">
+          Weather data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo API</a>.
+        </p>
+        <p class="footer-note">Designed with semantic HTML5, modern CSS3, and Vanilla JavaScript.</p>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>
