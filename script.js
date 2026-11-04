@@ -24,60 +24,162 @@ const API_CONFIG = {
 };
 
 // --------------------------------------------------------------------------
-// In-Memory Performance Caching Stores
+// In-Memory Performance Caching Stores & Diagnostics
 // --------------------------------------------------------------------------
 const geoCache = new Map();     // key: normalized city name -> { data, timestamp }
-const weatherCache = new Map(); // key: "lat,lon" -> { data, timestamp }
+const weatherCache = new Map(); // key: "lat,lon" (4 decimals) -> { data, timestamp }
+
+const cacheDiagnostics = {
+  geoHits: 0,
+  geoMisses: 0,
+  weatherHits: 0,
+  weatherMisses: 0,
+  evictions: 0,
+  lastOperation: 'INIT'
+};
 
 /**
- * Sets an entry in the specified in-memory cache with FIFO eviction when capacity is reached.
+ * Constructs a normalized coordinate cache key with 4-decimal precision (~11m resolution).
+ * Prevents unrelated microclimates or adjacent neighborhoods from false cache collisions.
+ * @param {number} latitude
+ * @param {number} longitude
+ * @returns {string}
+ */
+function buildCoordinateCacheKey(latitude, longitude) {
+  if (!isValidNumber(latitude) || !isValidNumber(longitude)) {
+    return `${latitude},${longitude}`;
+  }
+  return `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+}
+
+/**
+ * Sets an entry in the specified in-memory cache with true FIFO eviction.
+ * If the key already exists, updating it refreshes its data and timestamp
+ * without falsely evicting an unrelated oldest entry.
+ * 
  * @param {Map} cacheMap
  * @param {string} key
  * @param {*} data
  * @param {number} maxEntries
  */
 function setCacheEntry(cacheMap, key, data, maxEntries = API_CONFIG.MAX_CACHE_ENTRIES) {
-  if (cacheMap.size >= maxEntries) {
-    // Evict oldest entry (first item in Map keys iterator)
+  if (cacheMap.has(key)) {
+    // Refresh existing key: delete first so re-insertion moves it to the newest position
+    cacheMap.delete(key);
+  } else if (cacheMap.size >= maxEntries) {
+    // Evict oldest entry (first item in Map insertion order)
     const oldestKey = cacheMap.keys().next().value;
-    cacheMap.delete(oldestKey);
+    if (oldestKey !== undefined) {
+      cacheMap.delete(oldestKey);
+      cacheDiagnostics.evictions++;
+      cacheDiagnostics.lastOperation = `EVICT: ${oldestKey}`;
+    }
   }
-  cacheMap.set(key, { data, timestamp: Date.now() });
+
+  const now = Date.now();
+  cacheMap.set(key, { data, timestamp: now });
+  cacheDiagnostics.lastOperation = `SET: ${key}`;
 }
 
 /**
  * Retrieves an entry from cache if present and not expired by TTL.
+ * Automatically invalidates expired entries upon access.
+ * 
  * @param {Map} cacheMap
  * @param {string} key
  * @param {number} ttlMs
- * @returns {*|null}
+ * @param {'geo'|'weather'} [cacheType='weather']
+ * @returns {object|null}
  */
-function getCacheEntry(cacheMap, key, ttlMs) {
-  if (!cacheMap.has(key)) return null;
-  const entry = cacheMap.get(key);
-  if (Date.now() - entry.timestamp > ttlMs) {
-    cacheMap.delete(key);
+function getCacheEntry(cacheMap, key, ttlMs, cacheType = 'weather') {
+  if (!cacheMap.has(key)) {
+    if (cacheType === 'geo') cacheDiagnostics.geoMisses++;
+    else cacheDiagnostics.weatherMisses++;
+    cacheDiagnostics.lastOperation = `MISS: ${cacheType}:${key}`;
     return null;
   }
-  return entry.data;
+
+  const entry = cacheMap.get(key);
+  const age = Date.now() - entry.timestamp;
+
+  if (age > ttlMs) {
+    // Expired by TTL -> reliable invalidation on access
+    cacheMap.delete(key);
+    if (cacheType === 'geo') cacheDiagnostics.geoMisses++;
+    else cacheDiagnostics.weatherMisses++;
+    cacheDiagnostics.lastOperation = `EXPIRE: ${cacheType}:${key} (${age}ms > TTL ${ttlMs}ms)`;
+    return null;
+  }
+
+  if (cacheType === 'geo') cacheDiagnostics.geoHits++;
+  else cacheDiagnostics.weatherHits++;
+  cacheDiagnostics.lastOperation = `HIT: ${cacheType}:${key} (age ${Math.round(age / 1000)}s)`;
+
+  return entry;
 }
 
 /**
- * Clears in-memory caches (useful for testing or manual refreshes).
+ * Reliably invalidates a specific cache entry by key or coordinate.
+ * @param {string|{latitude: number, longitude: number}} target
+ * @returns {boolean}
+ */
+function invalidateCache(target) {
+  if (typeof target === 'string') {
+    const norm = target.toLowerCase().trim();
+    if (geoCache.has(norm)) {
+      geoCache.delete(norm);
+      return true;
+    }
+    if (weatherCache.has(target)) {
+      weatherCache.delete(target);
+      return true;
+    }
+  } else if (target && typeof target === 'object' && isValidNumber(target.latitude) && isValidNumber(target.longitude)) {
+    const key = buildCoordinateCacheKey(target.latitude, target.longitude);
+    if (weatherCache.has(key)) {
+      weatherCache.delete(key);
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Clears in-memory caches and resets diagnostics.
  */
 function clearWeatherCache() {
   geoCache.clear();
   weatherCache.clear();
+  cacheDiagnostics.geoHits = 0;
+  cacheDiagnostics.geoMisses = 0;
+  cacheDiagnostics.weatherHits = 0;
+  cacheDiagnostics.weatherMisses = 0;
+  cacheDiagnostics.evictions = 0;
+  cacheDiagnostics.lastOperation = 'CLEAR_ALL';
 }
 
 /**
- * Returns current cache statistics for performance monitoring.
- * @returns {{ geoEntries: number, weatherEntries: number }}
+ * Returns comprehensive cache statistics and diagnostics for performance monitoring.
+ * @returns {object}
  */
 function getCacheStats() {
+  const totalHits = cacheDiagnostics.geoHits + cacheDiagnostics.weatherHits;
+  const totalMisses = cacheDiagnostics.geoMisses + cacheDiagnostics.weatherMisses;
+  const totalRequests = totalHits + totalMisses;
+
   return {
     geoEntries: geoCache.size,
-    weatherEntries: weatherCache.size
+    weatherEntries: weatherCache.size,
+    maxCapacity: API_CONFIG.MAX_CACHE_ENTRIES,
+    hits: totalHits,
+    misses: totalMisses,
+    hitRatio: totalRequests > 0 ? parseFloat((totalHits / totalRequests).toFixed(3)) : 0,
+    geoHits: cacheDiagnostics.geoHits,
+    geoMisses: cacheDiagnostics.geoMisses,
+    weatherHits: cacheDiagnostics.weatherHits,
+    weatherMisses: cacheDiagnostics.weatherMisses,
+    evictions: cacheDiagnostics.evictions,
+    lastOperation: cacheDiagnostics.lastOperation
   };
 }
 
@@ -157,6 +259,8 @@ const DOM = {
   weatherIcon: document.getElementById('weather-icon'),
   weatherCondition: document.getElementById('weather-condition'),
   lastUpdatedTime: document.getElementById('last-updated-time'),
+  cacheBadge: document.getElementById('cache-badge'),
+  refreshBtn: document.getElementById('refresh-btn'),
 
   // Metrics Grid Cards
   humidityValue: document.getElementById('humidity-value'),
@@ -585,6 +689,10 @@ function showLoading(message = 'Fetching current weather data...') {
   if (DOM.searchInput) {
     DOM.searchInput.disabled = true;
   }
+  if (DOM.refreshBtn) {
+    DOM.refreshBtn.disabled = true;
+    DOM.refreshBtn.setAttribute('aria-busy', 'true');
+  }
 }
 
 /**
@@ -603,6 +711,10 @@ function hideLoading() {
   }
   if (DOM.searchInput) {
     DOM.searchInput.disabled = false;
+  }
+  if (DOM.refreshBtn) {
+    DOM.refreshBtn.disabled = false;
+    DOM.refreshBtn.removeAttribute('aria-busy');
   }
 }
 
@@ -732,15 +844,30 @@ function renderDashboard(location, weather) {
     }
   }
 
-  // 7. Last Updated Timestamp
+  // 7. Last Updated Timestamp & Cache Freshness Badge
   if (DOM.lastUpdatedTime) {
-    const now = new Date();
-    DOM.lastUpdatedTime.textContent = now.toLocaleTimeString([], {
+    const updateTimeMs = (weather && (weather.fetchedAt || weather.cachedAt)) || Date.now();
+    const updateDate = new Date(updateTimeMs);
+
+    updateTextIfChanged(DOM.lastUpdatedTime, updateDate.toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
-    });
-    DOM.lastUpdatedTime.setAttribute('datetime', now.toISOString());
+    }));
+    DOM.lastUpdatedTime.setAttribute('datetime', updateDate.toISOString());
+  }
+
+  if (DOM.cacheBadge) {
+    if (weather && weather.isCached) {
+      updateTextIfChanged(DOM.cacheBadge, 'Cached');
+      DOM.cacheBadge.className = 'cache-badge cache-badge-cached';
+      const ageSec = weather.cachedAt ? Math.max(0, Math.round((Date.now() - weather.cachedAt) / 1000)) : 0;
+      DOM.cacheBadge.setAttribute('title', `Served from memory cache (${ageSec}s ago • Observed: ${weather.observedAt || 'live'})`);
+    } else {
+      updateTextIfChanged(DOM.cacheBadge, 'Live');
+      DOM.cacheBadge.className = 'cache-badge cache-badge-live';
+      DOM.cacheBadge.setAttribute('title', `Freshly fetched from Open-Meteo API (Observed: ${weather ? weather.observedAt || 'live' : 'live'})`);
+    }
   }
 
   // 8. Render Advanced Forecasts
@@ -942,9 +1069,9 @@ async function getCityCoordinates(city, signal, bypassCache = false) {
 
   // In-Memory Cache Lookup (0ms response, zero bandwidth!)
   if (!bypassCache) {
-    const cached = getCacheEntry(geoCache, normalizedKey, API_CONFIG.GEO_CACHE_TTL_MS);
-    if (cached) {
-      return { ...cached };
+    const cachedEntry = getCacheEntry(geoCache, normalizedKey, API_CONFIG.GEO_CACHE_TTL_MS, 'geo');
+    if (cachedEntry) {
+      return { ...cachedEntry.data };
     }
   }
 
@@ -1099,13 +1226,16 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
     throw new Error('Valid numerical latitude and longitude are required to fetch weather.');
   }
 
-  const cacheKey = `${latitude.toFixed(2)},${longitude.toFixed(2)}`;
+  const cacheKey = buildCoordinateCacheKey(latitude, longitude);
 
   // In-Memory Cache Lookup (0ms response, zero bandwidth!)
   if (!bypassCache) {
-    const cached = getCacheEntry(weatherCache, cacheKey, API_CONFIG.CACHE_TTL_MS);
-    if (cached) {
-      return JSON.parse(JSON.stringify(cached));
+    const cachedEntry = getCacheEntry(weatherCache, cacheKey, API_CONFIG.CACHE_TTL_MS, 'weather');
+    if (cachedEntry) {
+      const weatherCopy = JSON.parse(JSON.stringify(cachedEntry.data));
+      weatherCopy.isCached = true;
+      weatherCopy.cachedAt = cachedEntry.timestamp;
+      return weatherCopy;
     }
   }
 
@@ -1192,6 +1322,7 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
     }
   }
 
+  const fetchTimestamp = Date.now();
   const weatherResult = {
     temperature: isValidNumber(current.temperature_2m) ? current.temperature_2m : null,
     apparentTemperature: isValidNumber(current.apparent_temperature) ? current.apparent_temperature : null,
@@ -1204,6 +1335,9 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
     currentUvIndex: isValidNumber(current.uv_index) ? current.uv_index : null,
     uvIndexMax: uvIndexMax,
     time: typeof current.time === 'string' ? current.time : null,
+    observedAt: typeof current.time === 'string' ? current.time : null,
+    fetchedAt: fetchTimestamp,
+    isCached: false,
     hourly: hourlyForecast,
     daily: dailyForecast
   };
@@ -1219,11 +1353,12 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
 // --------------------------------------------------------------------------
 
 /**
- * Main Search Workflow with Race Condition & Duplicate Submission Guards
+ * Main Search Workflow with Race Condition, Duplicate Submission, and Cache-Bypass Support
  * @async
  * @param {string} [cityOverride] - Optional direct city name
+ * @param {boolean} [bypassCache=false] - When true, bypasses in-memory cache for fresh API retrieval
  */
-async function searchWeather(cityOverride) {
+async function searchWeather(cityOverride, bypassCache = false) {
   const inputCity = typeof cityOverride === 'string'
     ? cityOverride
     : (DOM.searchInput ? DOM.searchInput.value : '');
@@ -1253,13 +1388,13 @@ async function searchWeather(cityOverride) {
   showLoading(`Fetching weather data for "${city}"...`);
 
   try {
-    const location = await getCityCoordinates(city, signal);
+    const location = await getCityCoordinates(city, signal, bypassCache);
 
     if (thisRequestId !== currentSearchRequestId) {
       return;
     }
 
-    const weather = await getWeatherData(location.latitude, location.longitude, signal);
+    const weather = await getWeatherData(location.latitude, location.longitude, signal, bypassCache);
 
     if (thisRequestId !== currentSearchRequestId) {
       return;
@@ -1300,8 +1435,32 @@ async function searchWeather(cityOverride) {
         DOM.geoBtn.disabled = false;
         DOM.geoBtn.removeAttribute('aria-busy');
       }
+      if (DOM.refreshBtn) {
+        DOM.refreshBtn.disabled = false;
+        DOM.refreshBtn.removeAttribute('aria-busy');
+      }
     }
   }
+}
+
+/**
+ * Manually refreshes the current weather dashboard with an explicit cache bypass.
+ * @async
+ * @param {boolean} [bypassCache=true]
+ * @returns {Promise<{location: object, weather: object} | void>}
+ */
+async function refreshCurrentWeather(bypassCache = true) {
+  if (isSearchInProgress) return;
+  const currentCity = (lastLoadedLocation && lastLoadedLocation.name)
+    ? lastLoadedLocation.name
+    : (DOM.searchInput ? DOM.searchInput.value.trim() : '');
+
+  if (!currentCity) {
+    showError('Please search for a city before refreshing.');
+    return;
+  }
+
+  return searchWeather(currentCity, bypassCache);
 }
 
 /**
@@ -1577,6 +1736,14 @@ function setupEventListeners() {
     DOM.clearHistoryBtn.addEventListener('click', clearRecentCities);
   }
 
+  // Manual Refresh Button (Bypass in-memory cache)
+  if (DOM.refreshBtn) {
+    DOM.refreshBtn.addEventListener('click', () => {
+      if (isSearchInProgress) return;
+      refreshCurrentWeather(true).catch(() => {});
+    });
+  }
+
   // Accessibility: Keyboard Shortcuts (/ or Ctrl+K / Cmd+K to focus search, Esc to clear/blur)
   document.addEventListener('keydown', (event) => {
     const isInputFocused = document.activeElement === DOM.searchInput;
@@ -1624,6 +1791,23 @@ if (typeof window !== 'undefined') {
   window.handleGeolocationSearch = handleGeolocationSearch;
   window.clearWeatherCache = clearWeatherCache;
   window.getCacheStats = getCacheStats;
+  window.getCacheEntry = getCacheEntry;
+  window.setCacheEntry = setCacheEntry;
+  window.invalidateCache = invalidateCache;
+  window.refreshCurrentWeather = refreshCurrentWeather;
+  window.buildCoordinateCacheKey = buildCoordinateCacheKey;
+  Object.defineProperty(window, 'cacheDiagnostics', {
+    get: () => ({ ...cacheDiagnostics }),
+    configurable: true
+  });
+  Object.defineProperty(window, 'geoCache', {
+    get: () => geoCache,
+    configurable: true
+  });
+  Object.defineProperty(window, 'weatherCache', {
+    get: () => weatherCache,
+    configurable: true
+  });
   window.findHourlyStartIndex = findHourlyStartIndex;
   window.extractHourlyForecast = extractHourlyForecast;
   window.formatHourlyTimeLabel = formatHourlyTimeLabel;
