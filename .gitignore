@@ -25,9 +25,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Node / Package Artifacts (if Node tooling is used)
+# Node / Package Artifacts
 node_modules/
-package-lock.json
 
 # Temporary / Scratch Files
 *.tmp

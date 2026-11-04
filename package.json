@@ -1,7 +1,7 @@
 {
   "name": "weather_dashboard",
   "version": "1.0.0",
-  "description": "> A high-performance, modern, real-time weather forecast application built with **Vanilla JavaScript (ES6+)**, **semantic HTML5**, and **CSS3 Glassmorphism**, powered by the open **Open-Meteo REST API**.",
+  "description": "High-performance, real-time weather forecast application built with Vanilla JavaScript (ES6+), semantic HTML5, and CSS3 Glassmorphism, powered by the Open-Meteo REST API.",
   "main": "script.js",
   "scripts": {
     "test": "vitest run && playwright test",
@@ -10,9 +10,16 @@
     "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage"
   },
-  "keywords": [],
+  "keywords": [
+    "weather",
+    "open-meteo",
+    "vanilla-javascript",
+    "glassmorphism",
+    "vitest",
+    "playwright"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "@playwright/test": "^1.64.1",
