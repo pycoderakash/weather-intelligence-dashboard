@@ -16,6 +16,7 @@
   <link rel="dns-prefetch" href="https://api.bigdatacloud.net">
 
   <link rel="stylesheet" href="style.css">
+  <script src="vendor/chart.umd.min.js" defer></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -440,6 +441,61 @@
             </p>
           </div>
 
+        </section>
+
+        <!-- 7. Interactive Weather Analytics Section (Phase 20) -->
+        <section class="analytics-section" id="analytics-section" aria-label="Interactive Weather Analytics" hidden>
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <h3 class="section-title">Weather Analytics</h3>
+              <span class="section-subtitle">Interactive 24-hour and 7-day meteorological trends</span>
+            </div>
+          </div>
+          <div class="analytics-grid" id="analytics-grid">
+            <!-- 1. 24-Hour Temperature Line Chart -->
+            <article class="analytics-card" id="chart-temp-hourly-card">
+              <div class="chart-header">
+                <span class="chart-title">24-Hour Temperature</span>
+                <span class="chart-badge">Hourly</span>
+              </div>
+              <div class="chart-canvas-wrapper">
+                <canvas id="chart-temp-hourly" role="img" aria-label="24-hour temperature line chart"></canvas>
+              </div>
+            </article>
+
+            <!-- 2. 7-Day High & Low Temperature Chart -->
+            <article class="analytics-card" id="chart-temp-daily-card">
+              <div class="chart-header">
+                <span class="chart-title">7-Day High &amp; Low Temperature</span>
+                <span class="chart-badge">Daily</span>
+              </div>
+              <div class="chart-canvas-wrapper">
+                <canvas id="chart-temp-daily" role="img" aria-label="7-day high and low temperature range chart"></canvas>
+              </div>
+            </article>
+
+            <!-- 3. Hourly Relative Humidity Chart -->
+            <article class="analytics-card" id="chart-humidity-hourly-card">
+              <div class="chart-header">
+                <span class="chart-title">24-Hour Relative Humidity</span>
+                <span class="chart-badge">Hourly</span>
+              </div>
+              <div class="chart-canvas-wrapper">
+                <canvas id="chart-humidity-hourly" role="img" aria-label="24-hour relative humidity line chart"></canvas>
+              </div>
+            </article>
+
+            <!-- 4. Hourly Wind Speed Chart -->
+            <article class="analytics-card" id="chart-wind-hourly-card">
+              <div class="chart-header">
+                <span class="chart-title">24-Hour Wind Speed</span>
+                <span class="chart-badge">Hourly</span>
+              </div>
+              <div class="chart-canvas-wrapper">
+                <canvas id="chart-wind-hourly" role="img" aria-label="24-hour wind speed line chart"></canvas>
+              </div>
+            </article>
+          </div>
         </section>
 
       </section>

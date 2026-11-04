@@ -6,7 +6,7 @@
 [![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](script.js)
 [![HTML5 Semantic](https://img.shields.io/badge/HTML5-Semantic-E34F26?style=for-the-badge&logo=html5&logoColor=white)](index.html)
 [![CSS3 Glassmorphism](https://img.shields.io/badge/CSS3-Glassmorphism-1572B6?style=for-the-badge&logo=css3&logoColor=white)](style.css)
-[![Tests Passing](https://img.shields.io/badge/Tests-130%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
+[![Tests Passing](https://img.shields.io/badge/Tests-152%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
 [![WCAG 2.1 AA](https://img.shields.io/badge/Accessibility-WCAG_2.1_AA-blueviolet?style=for-the-badge)](tests/e2e/accessibility-deep-audit.spec.js)
 
 ---
@@ -15,12 +15,13 @@
 
 The **Real-Time Weather Dashboard** provides live meteorological data, 24-hour hourly progressions, 7-day extended forecasts, and comprehensive atmospheric air quality monitoring for any city worldwide or via browser geolocation. The application emphasizes clean software engineering, asynchronous fault tolerance, strict accessibility, and sub-millisecond memory performance:
 
-* **Zero Runtime Dependencies:** Built 100% natively in Vanilla JavaScript (ES6+), HTML5, and CSS3. Requires zero build steps, compilers, bundlers, or runtime Node.js dependencies to execute in modern web browsers.
+* **Zero Runtime Dependencies:** Built natively in Vanilla JavaScript (ES6+), HTML5, and CSS3. Bundles a local zero-latency Chart.js UMD distribution (`vendor/chart.umd.min.js`) requiring zero build steps, compilers, or runtime Node.js servers to execute in any modern browser.
 * **Dual In-Memory Caching Engine:** Fast `Map`-based caching stores city coordinates (30-min TTL), meteorological forecasts (5-min TTL), and air quality readings (5-min TTL) with 4-decimal coordinate keys (~11m resolution) and FIFO memory eviction.
+* **Interactive Weather Analytics Charts:** 4 hardware-accelerated interactive canvas charts (24-hr temperature, 7-day high/low, 24-hr humidity, and 24-hr wind speed) featuring smooth Bézier transitions, gradient fills, and dynamic °C/°F unit toggling without canvas recreation.
 * **Air Quality Monitoring Module:** Integrates Open-Meteo Air Quality API to deliver dual European AQI and US AQI comparisons, PM2.5, PM10, Nitrogen Dioxide, and Ozone concentrations without ever blocking the primary weather dashboard.
 * **Network Resilience & Offline Experience:** Resilient request pipeline with `AbortController` timeout enforcement, bounded transient retries for HTTP 5xx responses, HTTP 429 rate limit handling, persistent offline banner notifications, and state-aware Retry actions.
 * **Dynamic Adaptive Glassmorphism:** Deep translucent navy palette that morphs dynamically based on real-time WMO weather codes (Sunny, Clear Night, Cloudy, Overcast, Rainy, Snowy, Thunderstorm, Foggy).
-* **Automated Testing Suite:** 130 verified automated tests spanning unit logic, DOM integrations, REST API error handling, WCAG 2.1 AA accessibility, 9 responsive viewport layouts, air quality monitoring, and network resilience.
+* **Automated Testing Suite:** 152 verified automated tests spanning unit logic, DOM integrations, REST API error handling, WCAG 2.1 AA accessibility, 9 responsive viewport layouts, air quality monitoring, network resilience, and interactive canvas analytics.
 * **Zero API Key Requirement:** Immediate local setup with no authentication barriers or secret tokens.
 
 ---
@@ -97,6 +98,29 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
 * **Non-Blocking Fault Isolation:** If the Air Quality API encounters a network failure, rate limit, or server downtime, the weather dashboard displays normally without disruption. Air quality displays unavailable indicators (`--`) without fabricating readings.
 * **Informational Health Disclaimer:** Clear advisory note (`role="note"`) explaining that AQI categories are for informational guidance and do not constitute personal medical diagnoses.
 
+### 📈 Interactive Weather Analytics Charts (Phase 20)
+* **1. 24-Hour Temperature Line Chart:**
+  * Visualizes the upcoming 24-hour temperature progression with cubic Bézier curve smoothing (`tension: 0.35`) and translucent cyan gradient fill (`#38bdf8`).
+  * Dynamically recalculates to Fahrenheit when unit toggle is changed.
+  * Auto-skipping X-axis time labels prevent label crowding on narrow viewports.
+* **2. 7-Day High & Low Temperature Chart:**
+  * Dual-dataset comparison plotting daily maximums in warm coral (`#f97316`) and daily minimums in cool blue (`#60a5fa`).
+  * Accessible interactive legend allows visual series inspection.
+  * Recalculates dynamically with Celsius/Fahrenheit toggle.
+* **3. 24-Hour Relative Humidity Chart:**
+  * Line chart bounded precisely from 0% to 100% on the Y-axis.
+  * Formatted tooltip readouts with `%` units.
+* **4. 24-Hour Wind Speed Chart:**
+  * Visualizes wind velocity at 10m altitude in km/h.
+  * Non-negative lower bound with localized speed formatting.
+* **Architecture & Memory Management:**
+  * **Instance Reuse:** Updates existing Chart instances in place via `chart.update()`, modifying dataset buffers without tearing down canvas rendering contexts or causing UI flash.
+  * **Missing Value Resilience:** Sanitizes non-numerical or missing observations into `null` with `spanGaps: true`, preventing NaN math errors or chart breaks.
+  * **Accessible Canvas Markup:** Every `<canvas>` element features explicit `role="img"` and descriptive `aria-label` attributes.
+  * **Reduced Motion Compliance:** Automatically disables chart animation transitions when `prefers-reduced-motion: reduce` is detected.
+  * **Clean Teardown:** Centralized `destroyAllCharts()` safely disposes of instances on cache clearing or component lifecycle reset.
+  * **Local Offline Bundle:** Shipped with a vendor-bundled Chart.js UMD distribution (`vendor/chart.umd.min.js`), preserving 100% offline functionality.
+
 ### 📍 Browser Geolocation ("Use My Location")
 * Single-click geolocation access using the HTML5 `navigator.geolocation` API.
 * Asynchronous generation tracking guarantees that slow or delayed GPS prompts never overwrite newer city searches.
@@ -133,6 +157,7 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
 | **Weather APIs** | Open-Meteo REST API | Free meteorological forecasting and geocoding services (zero API key required). |
 | **Air Quality API** | Open-Meteo Air Quality API | Dual European/US AQI and pollutant concentrations (zero API key required). |
 | **Reverse Geocoding** | BigDataCloud REST API | Client-side reverse geocoding to resolve GPS coordinates into human-readable city names. |
+| **Weather Analytics** | Chart.js (v4.4.8 UMD) | High-performance HTML5 canvas charting with responsive resizing, Bézier smoothing, and gradient fills. |
 | **Unit & Integration Tests** | Vitest (v5.1.0) | High-speed unit and integration test runner with JSDOM environment and V8 coverage. |
 | **End-to-End Tests** | Playwright (v1.64.1) | Headless Chromium browser automation covering user flows, a11y, viewports, air quality, and resilience. |
 
@@ -300,6 +325,8 @@ weather_dashboard/
 ├── README.md                           # Comprehensive technical documentation
 ├── script.js                           # Vanilla ES6+ application logic & resilience engine
 ├── style.css                           # Glassmorphic stylesheet, responsive layouts & themes
+├── vendor/
+│   └── chart.umd.min.js                # Local Chart.js v4.4.8 UMD distribution (100% offline-ready)
 ├── vitest.config.mjs                   # Vitest unit & integration test configuration
 └── tests/
     ├── server.js                       # Lightweight local static server for E2E automation
@@ -307,6 +334,7 @@ weather_dashboard/
     │   └── weatherData.js              # Deterministic Open-Meteo & BigDataCloud mock fixtures
     ├── unit/
     │   ├── air-quality.test.js         # 19 air quality unit tests (EAQI, US AQI, timestamps, cache)
+    │   ├── analytics.test.js           # 17 interactive chart unit tests (configs, units, missing data, lifecycle)
     │   └── weather.test.js             # 35 weather unit tests (conversions, WMO decoding, cache, UV)
     ├── integration/
     │   ├── air-quality-api.test.js     # 7 air quality API integration & fault-isolation tests
@@ -315,6 +343,7 @@ weather_dashboard/
     └── e2e/
         ├── accessibility-deep-audit.spec.js  # 6 deep WCAG 2.1 AA accessibility tests
         ├── air-quality.spec.js               # 6 air quality E2E tests (metrics, badges, disclaimer, fault tolerance)
+        ├── analytics.spec.js                 # 5 interactive chart E2E tests (cards, dimensions, toggle, overflow)
         ├── dashboard.spec.js                 # 22 complete user experience & system flow tests
         ├── network-resilience.spec.js        # 8 network resilience & offline experience tests
         └── responsive-audit.spec.js          # 9 responsive viewport layout tests
@@ -370,16 +399,18 @@ npx playwright install chromium
 Test Suites:
   ✓ tests/unit/weather.test.js (35 tests) ............................ PASSED
   ✓ tests/unit/air-quality.test.js (19 tests) ........................ PASSED
+  ✓ tests/unit/analytics.test.js (17 tests) .......................... PASSED
   ✓ tests/integration/api.test.js (15 tests) ......................... PASSED
   ✓ tests/integration/air-quality-api.test.js (7 tests) .............. PASSED
   ✓ tests/integration/dom.test.js (9 tests) .......................... PASSED
   ✓ tests/e2e/accessibility-deep-audit.spec.js (6 tests) ............. PASSED
   ✓ tests/e2e/air-quality.spec.js (6 tests) .......................... PASSED
+  ✓ tests/e2e/analytics.spec.js (5 tests) ............................ PASSED
   ✓ tests/e2e/dashboard.spec.js (22 tests) ........................... PASSED
   ✓ tests/e2e/responsive-audit.spec.js (9 viewports) ................. PASSED
   ✓ tests/e2e/network-resilience.spec.js (8 tests) ................... PASSED
 --------------------------------------------------------------------------------
-Total: 130 passed, 0 failed, 0 skipped (100% passing across 10 test suites)
+Total: 152 passed, 0 failed, 0 skipped (100% passing across 12 test suites)
 ```
 
 ---
@@ -419,6 +450,13 @@ Total: 130 passed, 0 failed, 0 skipped (100% passing across 10 test suites)
 |    +-------------------------------------------------------------------------+        |
 |    | ℹ️ Notice: AQI metrics are informational and not medical diagnoses.      |        |
 +---------------------------------------------------------------------------------------+
+|  [ WEATHER ANALYTICS CHARTS ]                                                         |
+|    +------------------------------------+------------------------------------+        |
+|    | 24-Hour Temperature Line Chart     | 7-Day High & Low Temperature Chart |        |
+|    +------------------------------------+------------------------------------+        |
+|    | 24-Hour Relative Humidity Chart    | 24-Hour Wind Speed Chart           |        |
+|    +------------------------------------+------------------------------------+        |
++---------------------------------------------------------------------------------------+
 |  [ ERROR BANNER ] ⚠️ Network connection error.                 [ Retry ] [ Dismiss ]   |
 +---------------------------------------------------------------------------------------+
 |  Footer: Meteorological & Air Quality data provided by Open-Meteo REST API (CC BY 4.0) |
@@ -431,6 +469,7 @@ Total: 130 passed, 0 failed, 0 skipped (100% passing across 10 test suites)
 
 * [ ] **Progressive Web App (PWA):** Register a Service Worker and `manifest.json` for full offline asset precaching and native mobile installability.
 * [x] **Air Quality Index (AQI):** Integrated Open-Meteo Air Quality API with European AQI, US AQI, PM2.5, PM10, NO2, and Ozone.
+* [x] **Interactive Weather Analytics Charts:** Integrated hardware-accelerated 24h temperature, 7-day high/low, hourly humidity, and hourly wind speed line charts with Chart.js.
 * [ ] **Interactive Precipitation Radar:** Embed a Leaflet.js interactive map powered by RainViewer precipitation radar tile overlays.
 * [ ] **Multi-Language Support (i18n):** Provide seamless runtime language toggles for Spanish, French, German, Japanese, and Hindi.
 * [ ] **Severe Weather Warnings:** Connect to national meteorological CAP (Common Alerting Protocol) feeds to surface severe weather bulletins.

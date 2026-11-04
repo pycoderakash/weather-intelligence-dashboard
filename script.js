@@ -154,6 +154,7 @@ function clearWeatherCache() {
   geoCache.clear();
   weatherCache.clear();
   airQualityCache.clear();
+  destroyAllCharts();
   cacheDiagnostics.geoHits = 0;
   cacheDiagnostics.geoMisses = 0;
   cacheDiagnostics.weatherHits = 0;
@@ -297,7 +298,22 @@ const DOM = {
   pm25Value: document.getElementById('pm25-value'),
   pm10Value: document.getElementById('pm10-value'),
   no2Value: document.getElementById('no2-value'),
-  ozoneValue: document.getElementById('ozone-value')
+  ozoneValue: document.getElementById('ozone-value'),
+
+  // Interactive Weather Analytics (Phase 20)
+  analyticsSection: document.getElementById('analytics-section'),
+  tempHourlyCanvas: document.getElementById('chart-temp-hourly'),
+  tempDailyCanvas: document.getElementById('chart-temp-daily'),
+  humidityHourlyCanvas: document.getElementById('chart-humidity-hourly'),
+  windHourlyCanvas: document.getElementById('chart-wind-hourly')
+};
+
+// Interactive Weather Analytics Chart Instances (Phase 20)
+const chartInstances = {
+  tempHourly: null,
+  tempDaily: null,
+  humidityHourly: null,
+  windHourly: null
 };
 
 // State Management & Network Resilience (Phase 17 & Phase 19)
@@ -951,6 +967,9 @@ function renderDashboard(location, weather) {
   if (Array.isArray(weather.daily) && weather.daily.length > 0) {
     renderDailyForecast(weather.daily);
   }
+
+  // 9. Interactive Weather Analytics Charts (Phase 20)
+  renderAnalyticsCharts(weather, currentUnit);
 }
 
 /**
@@ -1314,6 +1333,499 @@ function renderAirQualityUnavailable(reason = 'Air quality data currently unavai
 }
 
 // --------------------------------------------------------------------------
+// 6.5. Interactive Weather Analytics Charts (Phase 20)
+// --------------------------------------------------------------------------
+
+/**
+ * Formats an ISO date string (YYYY-MM-DD) into a clean, localized weekday label.
+ * @param {string} timeStr - ISO date string
+ * @param {number} [index=0] - Index in daily forecast array (0 is "Today")
+ * @returns {string} Formatted label (e.g., "Today", "Thu", "Fri")
+ */
+function formatDailyChartLabel(timeStr, index = 0) {
+  if (index === 0) return 'Today';
+  if (typeof timeStr !== 'string' || !timeStr.trim()) return `Day ${index + 1}`;
+  try {
+    const d = new Date(timeStr.trim() + 'T12:00:00');
+    if (isNaN(d.getTime())) return timeStr.slice(5) || `Day ${index + 1}`;
+    return d.toLocaleDateString([], { weekday: 'short' });
+  } catch (_) {
+    return timeStr.slice(5) || `Day ${index + 1}`;
+  }
+}
+
+/**
+ * Safely creates a linear gradient for Chart.js dataset backgrounds.
+ * Falls back cleanly to a flat translucent color if canvas context is unavailable.
+ * @param {CanvasRenderingContext2D|null} ctx
+ * @param {string} colorStart
+ * @param {string} colorEnd
+ * @param {number} [height=240]
+ * @returns {CanvasGradient|string}
+ */
+function createChartGradient(ctx, colorStart, colorEnd, height = 240) {
+  if (!ctx || typeof ctx.createLinearGradient !== 'function') {
+    return colorStart;
+  }
+  try {
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, colorStart);
+    gradient.addColorStop(1, colorEnd);
+    return gradient;
+  } catch (_) {
+    return colorStart;
+  }
+}
+
+/**
+ * Generates shared baseline Chart.js options honoring accessibility and responsive scaling.
+ * Disables animations if user prefers reduced motion (WCAG 2.3.3).
+ * @param {object} [options={}]
+ * @returns {object}
+ */
+function getCommonChartOptions(options = {}) {
+  const prefersReducedMotion = typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: prefersReducedMotion ? false : { duration: 400, easing: 'easeOutQuart' },
+    interaction: {
+      mode: 'index',
+      intersect: false
+    },
+    plugins: {
+      legend: options.legend || { display: false },
+      tooltip: {
+        enabled: true,
+        backgroundColor: 'rgba(15, 28, 63, 0.95)',
+        titleColor: '#f8fafc',
+        bodyColor: '#cbd5e1',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderWidth: 1,
+        padding: 10,
+        boxPadding: 4,
+        cornerRadius: 8,
+        titleFont: {
+          family: "'Plus Jakarta Sans', system-ui, sans-serif",
+          weight: '700',
+          size: 12
+        },
+        bodyFont: {
+          family: "'Plus Jakarta Sans', system-ui, sans-serif",
+          weight: '500',
+          size: 12
+        },
+        callbacks: options.tooltipCallbacks || {}
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          color: 'rgba(255, 255, 255, 0.05)',
+          tickColor: 'transparent'
+        },
+        ticks: {
+          color: '#94a3b8',
+          font: {
+            family: "'Plus Jakarta Sans', system-ui, sans-serif",
+            size: 11
+          },
+          maxRotation: 0,
+          autoSkip: true,
+          maxTicksLimit: options.xTicksLimit || 8
+        },
+        border: {
+          color: 'rgba(255, 255, 255, 0.1)'
+        }
+      },
+      y: {
+        grid: {
+          color: 'rgba(255, 255, 255, 0.06)'
+        },
+        ticks: {
+          color: '#94a3b8',
+          font: {
+            family: "'Plus Jakarta Sans', system-ui, sans-serif",
+            size: 11
+          },
+          callback: options.yTickCallback || ((val) => val)
+        },
+        border: {
+          color: 'rgba(255, 255, 255, 0.1)'
+        },
+        title: {
+          display: Boolean(options.yAxisTitle),
+          text: options.yAxisTitle || '',
+          color: '#94a3b8',
+          font: {
+            family: "'Plus Jakarta Sans', system-ui, sans-serif",
+            size: 11,
+            weight: '600'
+          }
+        },
+        min: options.yMin !== undefined ? options.yMin : undefined,
+        max: options.yMax !== undefined ? options.yMax : undefined
+      }
+    }
+  };
+}
+
+/**
+ * Builds Chart.js configuration for 24-hour temperature line chart.
+ * Respects Celsius/Fahrenheit unit and safely handles null/missing values with spanGaps.
+ * @param {Array<object>} hourlyList
+ * @param {'C'|'F'} [unit='C']
+ * @param {CanvasRenderingContext2D|null} [ctx=null]
+ * @returns {object}
+ */
+function buildHourlyTempChartConfig(hourlyList, unit = 'C', ctx = null) {
+  const safeList = Array.isArray(hourlyList) ? hourlyList.slice(0, 24) : [];
+  const labels = safeList.map((item, idx) => formatHourlyTimeLabel(item.time, idx));
+  const data = safeList.map(item => {
+    if (!isValidNumber(item.temperature)) return null;
+    const temp = unit === 'F' ? celsiusToFahrenheit(item.temperature) : item.temperature;
+    return isValidNumber(temp) ? Math.round(temp * 10) / 10 : null;
+  });
+
+  const bgGradient = ctx
+    ? createChartGradient(ctx, 'rgba(56, 189, 248, 0.28)', 'rgba(56, 189, 248, 0.0)')
+    : 'rgba(56, 189, 248, 0.15)';
+
+  return {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: `Temperature (°${unit})`,
+          data,
+          borderColor: '#38bdf8',
+          backgroundColor: bgGradient,
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.35,
+          spanGaps: true,
+          pointRadius: 2.5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#38bdf8',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5
+        }
+      ]
+    },
+    options: getCommonChartOptions({
+      yAxisTitle: `Temperature (°${unit})`,
+      yTickCallback: (val) => `${Math.round(val)}°${unit}`,
+      tooltipCallbacks: {
+        label: (ctx) => ` Temperature: ${ctx.parsed.y !== null ? `${ctx.parsed.y} °${unit}` : 'N/A'}`
+      }
+    })
+  };
+}
+
+/**
+ * Builds Chart.js configuration for 7-day high/low temperature comparison chart.
+ * Dual-dataset with warm coral for High and cool blue for Low.
+ * @param {Array<object>} dailyList
+ * @param {'C'|'F'} [unit='C']
+ * @param {CanvasRenderingContext2D|null} [ctx=null]
+ * @returns {object}
+ */
+function buildDailyTempChartConfig(dailyList, unit = 'C', ctx = null) {
+  const safeList = Array.isArray(dailyList) ? dailyList.slice(0, 7) : [];
+  const labels = safeList.map((item, idx) => formatDailyChartLabel(item.time, idx));
+  const maxTemps = safeList.map(item => {
+    if (!isValidNumber(item.tempMax)) return null;
+    const temp = unit === 'F' ? celsiusToFahrenheit(item.tempMax) : item.tempMax;
+    return isValidNumber(temp) ? Math.round(temp * 10) / 10 : null;
+  });
+  const minTemps = safeList.map(item => {
+    if (!isValidNumber(item.tempMin)) return null;
+    const temp = unit === 'F' ? celsiusToFahrenheit(item.tempMin) : item.tempMin;
+    return isValidNumber(temp) ? Math.round(temp * 10) / 10 : null;
+  });
+
+  const maxGradient = ctx
+    ? createChartGradient(ctx, 'rgba(249, 115, 22, 0.22)', 'rgba(249, 115, 22, 0.0)')
+    : 'rgba(249, 115, 22, 0.1)';
+  const minGradient = ctx
+    ? createChartGradient(ctx, 'rgba(96, 165, 250, 0.18)', 'rgba(96, 165, 250, 0.0)')
+    : 'rgba(96, 165, 250, 0.1)';
+
+  return {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: `High (°${unit})`,
+          data: maxTemps,
+          borderColor: '#f97316',
+          backgroundColor: maxGradient,
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.35,
+          spanGaps: true,
+          pointRadius: 3.5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#f97316',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5
+        },
+        {
+          label: `Low (°${unit})`,
+          data: minTemps,
+          borderColor: '#60a5fa',
+          backgroundColor: minGradient,
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.35,
+          spanGaps: true,
+          pointRadius: 3.5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#60a5fa',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5
+        }
+      ]
+    },
+    options: getCommonChartOptions({
+      yAxisTitle: `Temperature (°${unit})`,
+      yTickCallback: (val) => `${Math.round(val)}°${unit}`,
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: {
+          color: '#cbd5e1',
+          font: { family: "'Plus Jakarta Sans', system-ui, sans-serif", size: 11, weight: '600' },
+          boxWidth: 10,
+          boxHeight: 10,
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+      tooltipCallbacks: {
+        label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? `${ctx.parsed.y} °${unit}` : 'N/A'}`
+      }
+    })
+  };
+}
+
+/**
+ * Builds Chart.js configuration for 24-hour relative humidity line chart.
+ * Y-axis bounded 0% to 100%.
+ * @param {Array<object>} hourlyList
+ * @param {CanvasRenderingContext2D|null} [ctx=null]
+ * @returns {object}
+ */
+function buildHourlyHumidityChartConfig(hourlyList, ctx = null) {
+  const safeList = Array.isArray(hourlyList) ? hourlyList.slice(0, 24) : [];
+  const labels = safeList.map((item, idx) => formatHourlyTimeLabel(item.time, idx));
+  const data = safeList.map(item => {
+    return isValidNumber(item.humidity) ? Math.round(item.humidity) : null;
+  });
+
+  const bgGradient = ctx
+    ? createChartGradient(ctx, 'rgba(6, 182, 212, 0.25)', 'rgba(6, 182, 212, 0.0)')
+    : 'rgba(6, 182, 212, 0.15)';
+
+  return {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Humidity (%)',
+          data,
+          borderColor: '#06b6d4',
+          backgroundColor: bgGradient,
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.35,
+          spanGaps: true,
+          pointRadius: 2.5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#06b6d4',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5
+        }
+      ]
+    },
+    options: getCommonChartOptions({
+      yAxisTitle: 'Humidity (%)',
+      yMin: 0,
+      yMax: 100,
+      yTickCallback: (val) => `${val}%`,
+      tooltipCallbacks: {
+        label: (ctx) => ` Humidity: ${ctx.parsed.y !== null ? `${ctx.parsed.y}%` : 'N/A'}`
+      }
+    })
+  };
+}
+
+/**
+ * Builds Chart.js configuration for 24-hour wind speed line chart.
+ * @param {Array<object>} hourlyList
+ * @param {CanvasRenderingContext2D|null} [ctx=null]
+ * @returns {object}
+ */
+function buildHourlyWindChartConfig(hourlyList, ctx = null) {
+  const safeList = Array.isArray(hourlyList) ? hourlyList.slice(0, 24) : [];
+  const labels = safeList.map((item, idx) => formatHourlyTimeLabel(item.time, idx));
+  const data = safeList.map(item => {
+    return isValidNumber(item.windSpeed) ? Math.round(item.windSpeed * 10) / 10 : null;
+  });
+
+  const bgGradient = ctx
+    ? createChartGradient(ctx, 'rgba(168, 85, 247, 0.25)', 'rgba(168, 85, 247, 0.0)')
+    : 'rgba(168, 85, 247, 0.15)';
+
+  return {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Wind Speed (km/h)',
+          data,
+          borderColor: '#a855f7',
+          backgroundColor: bgGradient,
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.35,
+          spanGaps: true,
+          pointRadius: 2.5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#a855f7',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5
+        }
+      ]
+    },
+    options: getCommonChartOptions({
+      yAxisTitle: 'Wind Speed (km/h)',
+      yMin: 0,
+      yTickCallback: (val) => `${val} km/h`,
+      tooltipCallbacks: {
+        label: (ctx) => ` Wind Speed: ${ctx.parsed.y !== null ? `${ctx.parsed.y} km/h` : 'N/A'}`
+      }
+    })
+  };
+}
+
+/**
+ * Updates an existing Chart instance without destroying and recreating canvas context.
+ * Instantiates a new Chart if one does not already exist.
+ * @param {'tempHourly'|'tempDaily'|'humidityHourly'|'windHourly'} chartKey
+ * @param {HTMLCanvasElement} canvasEl
+ * @param {Function} buildConfigFn - (ctx) => ChartConfig
+ * @returns {object|null} Chart instance
+ */
+function updateOrInitChart(chartKey, canvasEl, buildConfigFn) {
+  if (!canvasEl) return null;
+  const ctx = typeof canvasEl.getContext === 'function' ? canvasEl.getContext('2d') : null;
+  const config = buildConfigFn(ctx);
+
+  if (chartInstances[chartKey]) {
+    const chart = chartInstances[chartKey];
+    chart.data.labels = config.data.labels;
+    config.data.datasets.forEach((newDs, i) => {
+      if (chart.data.datasets[i]) {
+        chart.data.datasets[i].data = newDs.data;
+        chart.data.datasets[i].label = newDs.label;
+        if (newDs.borderColor) chart.data.datasets[i].borderColor = newDs.borderColor;
+        if (newDs.backgroundColor) chart.data.datasets[i].backgroundColor = newDs.backgroundColor;
+      } else {
+        chart.data.datasets.push(newDs);
+      }
+    });
+    if (chart.data.datasets.length > config.data.datasets.length) {
+      chart.data.datasets.length = config.data.datasets.length;
+    }
+    if (config.options?.scales?.y?.title?.text && chart.options?.scales?.y?.title) {
+      chart.options.scales.y.title.text = config.options.scales.y.title.text;
+    }
+    if (config.options?.scales?.y?.ticks?.callback && chart.options?.scales?.y?.ticks) {
+      chart.options.scales.y.ticks.callback = config.options.scales.y.ticks.callback;
+    }
+    chart.update();
+    return chart;
+  }
+
+  try {
+    chartInstances[chartKey] = new Chart(canvasEl, config);
+    return chartInstances[chartKey];
+  } catch (err) {
+    console.warn(`[WeatherAnalytics] Failed to initialize chart "${chartKey}":`, err);
+    return null;
+  }
+}
+
+/**
+ * Safely destroys all Chart.js instances and clears memory references.
+ */
+function destroyAllCharts() {
+  for (const key of Object.keys(chartInstances)) {
+    if (chartInstances[key]) {
+      try {
+        chartInstances[key].destroy();
+      } catch (_) {}
+      chartInstances[key] = null;
+    }
+  }
+}
+
+/**
+ * Master rendering coordinator for Interactive Weather Analytics.
+ * Renders or smoothly updates all 4 charts without unneeded recreations.
+ * Non-blocking: returns gracefully if Chart.js is not loaded or data is empty.
+ * @param {object} weather
+ * @param {'C'|'F'} [unit=currentUnit]
+ */
+function renderAnalyticsCharts(weather, unit = currentUnit) {
+  if (typeof Chart === 'undefined') {
+    return;
+  }
+  if (!DOM.analyticsSection) {
+    return;
+  }
+  if (!weather || (!Array.isArray(weather.hourly) && !Array.isArray(weather.daily))) {
+    DOM.analyticsSection.setAttribute('hidden', '');
+    return;
+  }
+
+  DOM.analyticsSection.removeAttribute('hidden');
+
+  if (DOM.tempHourlyCanvas && Array.isArray(weather.hourly)) {
+    updateOrInitChart('tempHourly', DOM.tempHourlyCanvas, (ctx) =>
+      buildHourlyTempChartConfig(weather.hourly, unit, ctx)
+    );
+  }
+
+  if (DOM.tempDailyCanvas && Array.isArray(weather.daily)) {
+    updateOrInitChart('tempDaily', DOM.tempDailyCanvas, (ctx) =>
+      buildDailyTempChartConfig(weather.daily, unit, ctx)
+    );
+  }
+
+  if (DOM.humidityHourlyCanvas && Array.isArray(weather.hourly)) {
+    updateOrInitChart('humidityHourly', DOM.humidityHourlyCanvas, (ctx) =>
+      buildHourlyHumidityChartConfig(weather.hourly, ctx)
+    );
+  }
+
+  if (DOM.windHourlyCanvas && Array.isArray(weather.hourly)) {
+    updateOrInitChart('windHourly', DOM.windHourlyCanvas, (ctx) =>
+      buildHourlyWindChartConfig(weather.hourly, ctx)
+    );
+  }
+}
+
+// --------------------------------------------------------------------------
 // 7. Asynchronous API Integration Services
 // --------------------------------------------------------------------------
 
@@ -1563,6 +2075,8 @@ function extractHourlyForecast(hourlyData, startIndex, maxCount = 24) {
     result.push({
       time: timeStr.trim(),
       temperature: isValidNumber(hourlyData.temperature_2m?.[i]) ? hourlyData.temperature_2m[i] : null,
+      humidity: isValidNumber(hourlyData.relative_humidity_2m?.[i]) ? hourlyData.relative_humidity_2m[i] : null,
+      windSpeed: isValidNumber(hourlyData.wind_speed_10m?.[i]) ? hourlyData.wind_speed_10m[i] : null,
       weatherCode: isValidNumber(hourlyData.weather_code?.[i]) ? hourlyData.weather_code[i] : null,
       isDay: hourlyData.is_day?.[i] === 0 ? 0 : 1
     });
@@ -1613,7 +2127,7 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
       'wind_speed_10m',
       'uv_index'
     ].join(','),
-    hourly: 'temperature_2m,weather_code,is_day',
+    hourly: 'temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,uv_index_max',
     timezone: 'auto',
     wind_speed_unit: 'kmh',
@@ -2417,6 +2931,19 @@ if (typeof window !== 'undefined') {
   window.renderAirQualityUnavailable = renderAirQualityUnavailable;
   window.getAirQualityData = getAirQualityData;
   window.fetchAndRenderAirQuality = fetchAndRenderAirQuality;
+  window.formatDailyChartLabel = formatDailyChartLabel;
+  window.createChartGradient = createChartGradient;
+  window.buildHourlyTempChartConfig = buildHourlyTempChartConfig;
+  window.buildDailyTempChartConfig = buildDailyTempChartConfig;
+  window.buildHourlyHumidityChartConfig = buildHourlyHumidityChartConfig;
+  window.buildHourlyWindChartConfig = buildHourlyWindChartConfig;
+  window.updateOrInitChart = updateOrInitChart;
+  window.destroyAllCharts = destroyAllCharts;
+  window.renderAnalyticsCharts = renderAnalyticsCharts;
+  Object.defineProperty(window, 'chartInstances', {
+    get: () => chartInstances,
+    configurable: true
+  });
   Object.defineProperty(window, 'isGeolocationPending', {
     get: () => isGeolocationPending,
     configurable: true
@@ -2506,6 +3033,16 @@ if (typeof module !== 'undefined' && module.exports) {
     renderAirQuality,
     renderAirQualityUnavailable,
     getAirQualityData,
-    fetchAndRenderAirQuality
+    fetchAndRenderAirQuality,
+    formatDailyChartLabel,
+    createChartGradient,
+    buildHourlyTempChartConfig,
+    buildDailyTempChartConfig,
+    buildHourlyHumidityChartConfig,
+    buildHourlyWindChartConfig,
+    updateOrInitChart,
+    destroyAllCharts,
+    renderAnalyticsCharts,
+    chartInstances
   };
 }
