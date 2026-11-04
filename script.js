@@ -164,6 +164,8 @@ const DOM = {
   pressureValue: document.getElementById('pressure-value'),
   uvValue: document.getElementById('uv-value'),
   uvBadge: document.getElementById('uv-badge'),
+  uvLabel: document.getElementById('uv-label'),
+  uvStatus: document.getElementById('uv-status'),
 
   // Advanced Forecast Sections
   hourlySection: document.getElementById('hourly-forecast-section'),
@@ -706,7 +708,10 @@ function renderDashboard(location, weather) {
     updateTextIfChanged(DOM.pressureValue, formatNumber(weather.pressure, 0, '--'));
   }
 
-  // 6. UV Index & Severity Badge
+  // 6. UV Index & Severity Badge (Today's Maximum UV Index)
+  if (DOM.uvLabel) {
+    updateTextIfChanged(DOM.uvLabel, "Today's Maximum UV Index");
+  }
   if (DOM.uvValue) {
     updateTextIfChanged(DOM.uvValue, formatNumber(weather.uvIndexMax, 1, '--'));
   }
@@ -716,6 +721,13 @@ function renderDashboard(location, weather) {
     const badgeClass = `uv-badge ${uvInfo.className}`.trim();
     if (DOM.uvBadge.className !== badgeClass) {
       DOM.uvBadge.className = badgeClass;
+    }
+  }
+  if (DOM.uvStatus) {
+    if (isValidNumber(weather.currentUvIndex)) {
+      updateTextIfChanged(DOM.uvStatus, `Peak today • Live: ${formatNumber(weather.currentUvIndex, 1, '0.0')}`);
+    } else {
+      updateTextIfChanged(DOM.uvStatus, 'Peak solar ultraviolet intensity');
     }
   }
 
@@ -1106,7 +1118,8 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
       'is_day',
       'weather_code',
       'pressure_msl',
-      'wind_speed_10m'
+      'wind_speed_10m',
+      'uv_index'
     ].join(','),
     hourly: 'temperature_2m,weather_code,is_day',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,uv_index_max',
@@ -1186,6 +1199,8 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
     windSpeed: isValidNumber(current.wind_speed_10m) ? current.wind_speed_10m : null,
     pressure: isValidNumber(current.pressure_msl) ? current.pressure_msl : null,
     isDay: current.is_day === 0 ? 0 : 1,
+    uvIndex: isValidNumber(current.uv_index) ? current.uv_index : null,
+    currentUvIndex: isValidNumber(current.uv_index) ? current.uv_index : null,
     uvIndexMax: uvIndexMax,
     time: typeof current.time === 'string' ? current.time : null,
     hourly: hourlyForecast,

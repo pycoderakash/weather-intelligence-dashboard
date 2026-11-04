@@ -935,16 +935,18 @@ body.theme-foggy {
 
 .metric-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   width: 100%;
+  gap: 8px;
 }
 
 .metric-label {
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
   color: var(--text-muted);
 }
 
