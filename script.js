@@ -741,6 +741,32 @@ function renderDashboard(location, weather) {
 }
 
 /**
+ * Formats an ISO hourly timestamp into a clean 12-hour label (e.g., "2 PM", "12 AM").
+ * Timezone-aware: directly parses the location's local hour without browser offset drift.
+ * @param {string} timeStr - ISO timestamp string (e.g., "2026-11-04T14:00")
+ * @param {number} [index=0] - Card index in the hourly track (0 is "Now")
+ * @returns {string} Formatted label (e.g., "Now", "2 PM", "12 AM")
+ */
+function formatHourlyTimeLabel(timeStr, index = 0) {
+  if (index === 0) return 'Now';
+  if (typeof timeStr !== 'string' || timeStr.length < 13) return '--';
+
+  const rawHour = parseInt(timeStr.slice(11, 13), 10);
+  if (!isNaN(rawHour) && rawHour >= 0 && rawHour <= 23) {
+    const period = rawHour >= 12 ? 'PM' : 'AM';
+    const displayHour = rawHour % 12 === 0 ? 12 : rawHour % 12;
+    return `${displayHour} ${period}`;
+  }
+
+  try {
+    const d = new Date(timeStr);
+    return d.toLocaleTimeString([], { hour: 'numeric', hour12: true });
+  } catch (_) {
+    return timeStr.slice(11, 16) || '--';
+  }
+}
+
+/**
  * 4. Hourly Forecast Rendering (Next 24 Hours)
  * Performance Optimization: Batches all 24 cards in a DocumentFragment
  * preventing 24 sequential layout reflows.
@@ -758,17 +784,8 @@ function renderHourlyForecast(hourlyList) {
     const card = document.createElement('article');
     card.className = 'hourly-card';
 
-    // Format Hour: index 0 is "Now", subsequent hours formatted e.g. "2 PM"
-    let timeLabel = 'Now';
-    if (index > 0 && hourData.time) {
-      try {
-        const d = new Date(hourData.time);
-        timeLabel = d.toLocaleTimeString([], { hour: 'numeric', hour12: true });
-      } catch (_) {
-        timeLabel = hourData.time.slice(11, 16);
-      }
-    }
-
+    // Format Hour: index 0 is "Now", subsequent hours formatted with target timezone hour
+    const timeLabel = formatHourlyTimeLabel(hourData.time, index);
     const condition = interpretWeatherCode(hourData.weatherCode, hourData.isDay);
     const tempStr = `${formatTemperature(hourData.temperature, currentUnit)}°`;
 
@@ -966,6 +983,94 @@ async function getCityCoordinates(city, signal, bypassCache = false) {
 }
 
 /**
+ * Resolves the starting index in the hourly forecast array corresponding to
+ * the current hour or the next available upcoming hour in the location's local timezone.
+ *
+ * @param {Array<string>} hourlyTimes - Array of ISO timestamps from API hourly.time
+ * @param {string} [referenceTime] - API-provided local time (current.time)
+ * @param {number} [utcOffsetSeconds] - Location UTC offset in seconds (fallback)
+ * @param {string} [timezone] - Location timezone name (fallback)
+ * @returns {number} Resolved start index in hourlyTimes, or -1 if no valid match
+ */
+function findHourlyStartIndex(hourlyTimes, referenceTime, utcOffsetSeconds, timezone) {
+  if (!Array.isArray(hourlyTimes) || hourlyTimes.length === 0) {
+    return -1;
+  }
+
+  // 1. Determine local reference hour prefix (YYYY-MM-DDTHH)
+  let refHourPrefix = null;
+
+  if (typeof referenceTime === 'string' && referenceTime.trim().length >= 13) {
+    refHourPrefix = referenceTime.trim().slice(0, 13);
+  } else if (isValidNumber(utcOffsetSeconds)) {
+    const localMillis = Date.now() + (utcOffsetSeconds * 1000);
+    refHourPrefix = new Date(localMillis).toISOString().slice(0, 13);
+  } else if (typeof timezone === 'string' && timezone.trim()) {
+    try {
+      const localStr = new Date().toLocaleString('sv-SE', { timeZone: timezone.trim() }).replace(' ', 'T');
+      refHourPrefix = localStr.slice(0, 13);
+    } catch (_) {}
+  }
+
+  // If no reference time can be resolved, do not blindly assume index 0
+  if (!refHourPrefix) {
+    return -1;
+  }
+
+  // 2. First search: find the hourly entry corresponding to the exact current hour
+  const exactIndex = hourlyTimes.findIndex(
+    t => typeof t === 'string' && t.trim().slice(0, 13) === refHourPrefix
+  );
+  if (exactIndex !== -1) {
+    return exactIndex;
+  }
+
+  // 3. Second search: find the first valid entry for the next available upcoming hour
+  const nextIndex = hourlyTimes.findIndex(
+    t => typeof t === 'string' && t.trim().slice(0, 13) > refHourPrefix
+  );
+  if (nextIndex !== -1) {
+    return nextIndex;
+  }
+
+  // 4. If all available hourly entries are in the past or invalid, return -1 (no blind fallback to 0)
+  return -1;
+}
+
+/**
+ * Extracts up to 24 upcoming hourly forecast entries starting from the resolved start index.
+ * Handles missing/null timestamps and preserves valid entries.
+ *
+ * @param {Object} hourlyData - data.hourly object from Open-Meteo
+ * @param {number} startIndex - Starting index resolved by findHourlyStartIndex
+ * @param {number} [maxCount=24] - Maximum number of hourly intervals to extract
+ * @returns {Array<Object>} Normalized hourly forecast list
+ */
+function extractHourlyForecast(hourlyData, startIndex, maxCount = 24) {
+  const result = [];
+  if (!hourlyData || !Array.isArray(hourlyData.time) || startIndex < 0 || startIndex >= hourlyData.time.length) {
+    return result;
+  }
+
+  for (let i = startIndex; i < hourlyData.time.length && result.length < maxCount; i++) {
+    const timeStr = hourlyData.time[i];
+    // Handle missing/corrupted timestamps safely
+    if (typeof timeStr !== 'string' || !timeStr.trim()) {
+      continue;
+    }
+
+    result.push({
+      time: timeStr.trim(),
+      temperature: isValidNumber(hourlyData.temperature_2m?.[i]) ? hourlyData.temperature_2m[i] : null,
+      weatherCode: isValidNumber(hourlyData.weather_code?.[i]) ? hourlyData.weather_code[i] : null,
+      isDay: hourlyData.is_day?.[i] === 0 ? 0 : 1
+    });
+  }
+
+  return result;
+}
+
+/**
  * 2. Weather Fetching Function
  * Retrieves current metrics, 24-hour hourly temperatures, and 7-day daily forecast.
  * Performance Optimization: Integrated in-memory caching with 5-minute TTL.
@@ -1050,22 +1155,14 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
     }
   }
 
-  // Extract upcoming 24 hours
-  const hourlyForecast = [];
-  if (Array.isArray(hourly.time)) {
-    const nowIsoHour = new Date().toISOString().slice(0, 13);
-    let startIndex = hourly.time.findIndex(t => t.startsWith(nowIsoHour));
-    if (startIndex === -1) startIndex = 0;
-
-    for (let i = startIndex; i < Math.min(startIndex + 24, hourly.time.length); i++) {
-      hourlyForecast.push({
-        time: hourly.time[i],
-        temperature: isValidNumber(hourly.temperature_2m?.[i]) ? hourly.temperature_2m[i] : null,
-        weatherCode: isValidNumber(hourly.weather_code?.[i]) ? hourly.weather_code[i] : null,
-        isDay: hourly.is_day?.[i] === 0 ? 0 : 1
-      });
-    }
-  }
+  // Extract upcoming 24 hours aligned with target location's local timezone
+  const hourlyStartIndex = findHourlyStartIndex(
+    hourly.time,
+    current.time,
+    data.utc_offset_seconds,
+    data.timezone
+  );
+  const hourlyForecast = extractHourlyForecast(hourly, hourlyStartIndex, 24);
 
   // Extract 7-day daily forecast
   const dailyForecast = [];
@@ -1391,6 +1488,9 @@ if (typeof window !== 'undefined') {
   window.handleGeolocationSearch = handleGeolocationSearch;
   window.clearWeatherCache = clearWeatherCache;
   window.getCacheStats = getCacheStats;
+  window.findHourlyStartIndex = findHourlyStartIndex;
+  window.extractHourlyForecast = extractHourlyForecast;
+  window.formatHourlyTimeLabel = formatHourlyTimeLabel;
   Object.defineProperty(window, 'lastLoadedWeather', {
     get: () => lastLoadedWeather,
     set: (v) => { lastLoadedWeather = v; },
