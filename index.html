@@ -94,6 +94,22 @@
         </div>
       </section>
 
+      <!-- Offline Status Banner (Network Resilience - Phase 17) -->
+      <div id="offline-banner" class="offline-banner" role="status" aria-live="polite" hidden>
+        <div class="offline-content">
+          <svg class="offline-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+            <line x1="1" y1="1" x2="23" y2="23"/>
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+            <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+          <span id="offline-message" class="offline-message">You are currently offline. Showing cached data where available.</span>
+        </div>
+      </div>
+
       <!-- 5. Loading Indicator -->
       <div id="loading-indicator" class="loading-indicator" role="status" aria-live="polite" aria-label="Loading weather data" hidden>
         <div class="spinner" aria-hidden="true"></div>
@@ -110,9 +126,14 @@
           </svg>
           <p id="error-message" class="error-message">Unable to find requested city. Please verify spelling and try again.</p>
         </div>
-        <button type="button" id="error-dismiss-btn" class="error-dismiss-btn" aria-label="Dismiss error message">
-          &times;
-        </button>
+        <div class="error-actions" id="error-actions">
+          <button type="button" id="retry-btn" class="retry-btn" aria-label="Retry last weather request" hidden>
+            Retry
+          </button>
+          <button type="button" id="error-dismiss-btn" class="error-dismiss-btn" aria-label="Dismiss error message">
+            &times;
+          </button>
+        </div>
       </div>
 
       <!-- 7. Main Weather Information Section -->

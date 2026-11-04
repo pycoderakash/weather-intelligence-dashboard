@@ -688,6 +688,41 @@ body.theme-foggy {
 }
 
 /* --------------------------------------------------------------------------
+   6b. Offline Status Banner (Network Resilience - Phase 17)
+   -------------------------------------------------------------------------- */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: var(--radius-md);
+  color: #fbbf24;
+  backdrop-filter: var(--glass-backdrop-blur);
+  -webkit-backdrop-filter: var(--glass-backdrop-blur);
+  box-shadow: var(--shadow-sm);
+  max-width: 680px;
+  margin: 0 auto;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.offline-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.offline-icon {
+  color: #fbbf24;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
    7. Error Alert Component
    -------------------------------------------------------------------------- */
 .error-container {
@@ -705,6 +740,39 @@ body.theme-foggy {
   max-width: 680px;
   margin: 0 auto;
   animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.error-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.retry-btn {
+  background: rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.825rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.retry-btn:hover {
+  background: rgba(239, 68, 68, 0.45);
+  border-color: #f87171;
+  transform: translateY(-1px);
+}
+
+.retry-btn:focus-visible {
+  outline: 2px solid #f87171;
+  outline-offset: 2px;
 }
 
 .error-content {

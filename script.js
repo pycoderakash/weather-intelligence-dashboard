@@ -240,12 +240,15 @@ const DOM = {
   recentChips: document.getElementById('recent-chips'),
   clearHistoryBtn: document.getElementById('clear-history-btn'),
 
-  // Status Indicators
+  // Status & Resilience Indicators (Phase 17)
   loadingIndicator: document.getElementById('loading-indicator'),
   loadingText: document.getElementById('loading-text'),
   errorContainer: document.getElementById('error-container'),
   errorMessage: document.getElementById('error-message'),
   errorDismissBtn: document.getElementById('error-dismiss-btn'),
+  retryBtn: document.getElementById('retry-btn'),
+  offlineBanner: document.getElementById('offline-banner'),
+  offlineMessage: document.getElementById('offline-message'),
 
   // Primary Weather Display
   weatherDashboard: document.getElementById('weather-dashboard'),
@@ -278,7 +281,7 @@ const DOM = {
   dailyGrid: document.getElementById('daily-forecast-grid')
 };
 
-// State Management
+// State Management & Network Resilience (Phase 17)
 let currentUnit = 'C'; // 'C' | 'F'
 let currentSearchRequestId = 0;
 let isSearchInProgress = false;
@@ -286,6 +289,8 @@ let isGeolocationPending = false;
 let activeAbortController = null;
 let lastLoadedLocation = null;
 let lastLoadedWeather = null;
+let lastFailedAction = null; // { type: 'city'|'geo'|'refresh', value?: string }
+let isOnline = typeof navigator !== 'undefined' ? (navigator.onLine !== false) : true;
 
 // --------------------------------------------------------------------------
 // 3. Defensive Number, Temperature & Coordinate Utilities
@@ -721,10 +726,14 @@ function hideLoading() {
 /**
  * Displays user-friendly error message in the alert container.
  * @param {string} message - Error description to display
+ * @param {boolean} [canRetry=false] - Whether to show the Retry button
  */
-function showError(message) {
+function showError(message, canRetry = false) {
   if (DOM.errorMessage) {
     DOM.errorMessage.textContent = message;
+  }
+  if (DOM.retryBtn) {
+    DOM.retryBtn.hidden = !canRetry;
   }
   if (DOM.errorContainer) {
     DOM.errorContainer.hidden = false;
@@ -738,6 +747,50 @@ function hideError() {
   if (DOM.errorContainer) {
     DOM.errorContainer.hidden = true;
   }
+  if (DOM.retryBtn) {
+    DOM.retryBtn.hidden = true;
+  }
+}
+
+/**
+ * Displays the persistent offline notification banner.
+ * @param {string} [message]
+ */
+function showOfflineBanner(message = 'You are currently offline. Showing cached data where available.') {
+  if (DOM.offlineMessage) {
+    DOM.offlineMessage.textContent = message;
+  }
+  if (DOM.offlineBanner) {
+    DOM.offlineBanner.hidden = false;
+  }
+}
+
+/**
+ * Hides the offline notification banner.
+ */
+function hideOfflineBanner() {
+  if (DOM.offlineBanner) {
+    DOM.offlineBanner.hidden = true;
+  }
+}
+
+/**
+ * Handles browser returning online: clears offline banner and restores readiness.
+ */
+function handleOnlineState() {
+  isOnline = true;
+  hideOfflineBanner();
+  if (DOM.errorMessage && DOM.errorMessage.textContent.includes('offline')) {
+    hideError();
+  }
+}
+
+/**
+ * Handles browser dropping offline: activates offline notice.
+ */
+function handleOfflineState() {
+  isOnline = false;
+  showOfflineBanner('You are currently offline. Weather updates will resume when connectivity is restored.');
 }
 
 /**
@@ -1051,6 +1104,93 @@ function renderDailyForecast(dailyList) {
 // --------------------------------------------------------------------------
 
 /**
+ * Executes a fetch request with timeout enforcement and bounded retry for transient failures.
+ * Never retries indefinitely or on client (4xx) errors or offline states.
+ *
+ * @async
+ * @param {string} url
+ * @param {object} [options={}]
+ * @param {number} [timeoutMs=API_CONFIG.TIMEOUT_MS]
+ * @param {number} [maxRetries=1]
+ * @returns {Promise<Response>}
+ */
+async function fetchWithNetworkResilience(url, options = {}, timeoutMs = API_CONFIG.TIMEOUT_MS, maxRetries = 1) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    throw new Error('You appear to be offline. Please check your internet connection.');
+  }
+
+  let attempt = 0;
+
+  while (attempt <= maxRetries) {
+    attempt++;
+    const controller = new AbortController();
+    let isTimeout = false;
+
+    const timer = setTimeout(() => {
+      isTimeout = true;
+      try {
+        controller.abort('TIMEOUT');
+      } catch (_) {}
+    }, timeoutMs);
+
+    let externalAbortHandler = null;
+    if (options.signal) {
+      if (options.signal.aborted) {
+        clearTimeout(timer);
+        throw options.signal.reason || new DOMException('Aborted', 'AbortError');
+      }
+      externalAbortHandler = () => {
+        clearTimeout(timer);
+        try {
+          controller.abort(options.signal.reason || 'EXTERNAL_ABORT');
+        } catch (_) {}
+      };
+      options.signal.addEventListener('abort', externalAbortHandler, { once: true });
+    }
+
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      if (options.signal && externalAbortHandler) {
+        options.signal.removeEventListener('abort', externalAbortHandler);
+      }
+
+      // Check for transient 5xx server errors
+      if (response.status >= 500 && response.status < 600 && attempt <= maxRetries) {
+        await new Promise(r => setTimeout(r, 600));
+        continue;
+      }
+
+      return response;
+    } catch (err) {
+      clearTimeout(timer);
+      if (options.signal && externalAbortHandler) {
+        options.signal.removeEventListener('abort', externalAbortHandler);
+      }
+
+      // User intentional abort (e.g. newer search initiated) -> throw immediately
+      if (err.name === 'AbortError' && !isTimeout && controller.signal.reason !== 'TIMEOUT') {
+        throw err;
+      }
+
+      // Request timeout
+      if (isTimeout || controller.signal.reason === 'TIMEOUT') {
+        const sec = Math.round(timeoutMs / 1000);
+        throw new Error(`Request timed out after ${sec} seconds. The weather service took too long to respond.`);
+      }
+
+      // Transient network failure (and not known to be offline)
+      if (attempt <= maxRetries && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
+        await new Promise(r => setTimeout(r, 600));
+        continue;
+      }
+
+      throw err;
+    }
+  }
+}
+
+/**
  * 1. City Geocoding Function
  * Performance Optimization: Integrated in-memory caching with 30-min TTL.
  * Subsequent requests for the same city return instantly in 0ms with zero network load.
@@ -1080,12 +1220,19 @@ async function getCityCoordinates(city, signal, bypassCache = false) {
 
   let response;
   try {
-    response = await fetch(url, { signal });
+    response = await fetchWithNetworkResilience(url, { signal }, API_CONFIG.TIMEOUT_MS, 1);
   } catch (netErr) {
     if (netErr.name === 'AbortError') {
       throw netErr;
     }
+    if (netErr.message && (netErr.message.includes('timed out') || netErr.message.includes('offline'))) {
+      throw netErr;
+    }
     throw new Error('Network connection error. Please check your internet connection and try again.');
+  }
+
+  if (response.status === 429) {
+    throw new Error('Geocoding service unavailable (HTTP 429). Please try again later.');
   }
 
   if (!response.ok) {
@@ -1263,12 +1410,19 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
 
   let response;
   try {
-    response = await fetch(url, { signal });
+    response = await fetchWithNetworkResilience(url, { signal }, API_CONFIG.TIMEOUT_MS, 1);
   } catch (netErr) {
     if (netErr.name === 'AbortError') {
       throw netErr;
     }
+    if (netErr.message && (netErr.message.includes('timed out') || netErr.message.includes('offline'))) {
+      throw netErr;
+    }
     throw new Error('Network connection error. Unable to reach weather forecast service.');
+  }
+
+  if (response.status === 429) {
+    throw new Error('Weather service unavailable (HTTP 429). Please try again later.');
   }
 
   if (!response.ok) {
@@ -1366,11 +1520,28 @@ async function searchWeather(cityOverride, bypassCache = false) {
   const city = inputCity ? inputCity.trim() : '';
 
   if (!city) {
-    showError('Please enter a city name to search.');
+    showError('Please enter a city name to search.', false);
     if (DOM.searchInput) {
       DOM.searchInput.focus();
     }
     return;
+  }
+
+  // Offline cache check: If offline and not bypassing cache, serve immediately from memory
+  if (typeof navigator !== 'undefined' && navigator.onLine === false && !bypassCache) {
+    const normalizedKey = city.toLowerCase().trim();
+    const cachedGeo = getCacheEntry(geoCache, normalizedKey, API_CONFIG.GEO_CACHE_TTL_MS, 'geo');
+    if (cachedGeo) {
+      const coordKey = buildCoordinateCacheKey(cachedGeo.data.latitude, cachedGeo.data.longitude);
+      const cachedWeather = getCacheEntry(weatherCache, coordKey, API_CONFIG.CACHE_TTL_MS, 'weather');
+      if (cachedWeather) {
+        lastLoadedLocation = cachedGeo.data;
+        lastLoadedWeather = { ...cachedWeather.data, isCached: true };
+        renderDashboard(lastLoadedLocation, lastLoadedWeather);
+        showOfflineBanner(`You are offline. Showing cached weather for "${cachedGeo.data.name}".`);
+        return { location: lastLoadedLocation, weather: lastLoadedWeather };
+      }
+    }
   }
 
   // Abort previous pending request to prevent race conditions
@@ -1424,7 +1595,20 @@ async function searchWeather(cityOverride, bypassCache = false) {
     }
 
     console.error(`[WeatherDashboard Error] Lookup failed for "${city}":`, err);
-    showError(err.message || 'An unexpected error occurred while fetching weather data.');
+
+    lastFailedAction = { type: 'city', value: city };
+
+    const isRetryable = Boolean(
+      err.message && (
+        err.message.includes('Network') ||
+        err.message.includes('timed out') ||
+        err.message.includes('HTTP 5') ||
+        err.message.includes('HTTP 429') ||
+        err.message.includes('offline')
+      )
+    );
+
+    showError(err.message || 'An unexpected error occurred while fetching weather data.', isRetryable);
   } finally {
     if (thisRequestId === currentSearchRequestId) {
       hideLoading();
@@ -1456,10 +1640,11 @@ async function refreshCurrentWeather(bypassCache = true) {
     : (DOM.searchInput ? DOM.searchInput.value.trim() : '');
 
   if (!currentCity) {
-    showError('Please search for a city before refreshing.');
+    showError('Please search for a city before refreshing.', false);
     return;
   }
 
+  lastFailedAction = { type: 'refresh' };
   return searchWeather(currentCity, bypassCache);
 }
 
@@ -1618,7 +1803,8 @@ function handleGeolocationSearch() {
           if (thisRequestId !== currentSearchRequestId) return resolve();
 
           console.error('[WeatherDashboard Geolocation Weather Error]:', err);
-          showError(err.message || 'Unable to retrieve weather data for your detected location.');
+          lastFailedAction = { type: 'geo' };
+          showError(err.message || 'Unable to retrieve weather data for your detected location.', true);
           reject(err);
         } finally {
           if (thisRequestId === currentSearchRequestId) {
@@ -1669,7 +1855,8 @@ function handleGeolocationSearch() {
           DOM.geoBtn.removeAttribute('aria-busy');
         }
 
-        showError(errorMsg);
+        lastFailedAction = { type: 'geo' };
+        showError(errorMsg, err ? (err.code !== 1 && err.code !== err.PERMISSION_DENIED) : true);
         reject(new Error(errorMsg));
       },
       {
@@ -1783,6 +1970,33 @@ function setupEventListeners() {
     }
   });
 
+  // Retry Button (Network Resilience - Phase 17)
+  if (DOM.retryBtn) {
+    DOM.retryBtn.addEventListener('click', () => {
+      hideError();
+      if (!lastFailedAction) return;
+
+      if (lastFailedAction.type === 'city') {
+        searchWeather(lastFailedAction.value, true).catch(() => {});
+      } else if (lastFailedAction.type === 'geo') {
+        handleGeolocationSearch().catch(() => {});
+      } else if (lastFailedAction.type === 'refresh') {
+        refreshCurrentWeather(true).catch(() => {});
+      }
+    });
+  }
+
+  // Online & Offline Browser Event Listeners
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', handleOnlineState);
+    window.addEventListener('offline', handleOfflineState);
+  }
+
+  // Check initial offline status
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    handleOfflineState();
+  }
+
   // Initialize features
   initUnitPreference();
   renderRecentCities();
@@ -1790,6 +2004,7 @@ function setupEventListeners() {
 
 // Expose core methods globally for tests, accessibility tools, and programmatic access
 if (typeof window !== 'undefined') {
+  window.API_CONFIG = API_CONFIG;
   window.setTemperatureUnit = setTemperatureUnit;
   window.formatTemperature = formatTemperature;
   window.celsiusToFahrenheit = celsiusToFahrenheit;
@@ -1809,6 +2024,16 @@ if (typeof window !== 'undefined') {
   window.invalidateCache = invalidateCache;
   window.refreshCurrentWeather = refreshCurrentWeather;
   window.buildCoordinateCacheKey = buildCoordinateCacheKey;
+  window.fetchWithNetworkResilience = fetchWithNetworkResilience;
+  window.showOfflineBanner = showOfflineBanner;
+  window.hideOfflineBanner = hideOfflineBanner;
+  window.handleOnlineState = handleOnlineState;
+  window.handleOfflineState = handleOfflineState;
+  Object.defineProperty(window, 'lastFailedAction', {
+    get: () => lastFailedAction,
+    set: (v) => { lastFailedAction = v; },
+    configurable: true
+  });
   Object.defineProperty(window, 'cacheDiagnostics', {
     get: () => ({ ...cacheDiagnostics }),
     configurable: true
@@ -1895,6 +2120,11 @@ if (typeof module !== 'undefined' && module.exports) {
     showLoading,
     hideLoading,
     showError,
-    hideError
+    hideError,
+    fetchWithNetworkResilience,
+    showOfflineBanner,
+    hideOfflineBanner,
+    handleOnlineState,
+    handleOfflineState
   };
 }
