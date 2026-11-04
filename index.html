@@ -19,6 +19,9 @@
   <script src="script.js" defer></script>
 </head>
 <body>
+  <!-- Accessibility: Skip to Main Content Link (WCAG 2.4.1) -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
   <div class="app-container" id="app-container">
     
     <!-- 1. Application Header & 2. Weather Dashboard Title -->
@@ -272,7 +275,7 @@
             <h3 class="section-title">Hourly Forecast</h3>
             <span class="section-subtitle">Upcoming 24 hours</span>
           </div>
-          <div class="hourly-forecast-track" id="hourly-forecast-track" role="region" aria-label="Horizontal hourly temperature forecast">
+          <div class="hourly-forecast-track" id="hourly-forecast-track" role="region" tabindex="0" aria-label="Hourly temperature forecast. Use left and right arrow keys to scroll.">
             <!-- Dynamically populated hourly cards -->
           </div>
         </section>

@@ -37,7 +37,7 @@
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
-  --text-faint: #64748b;
+  --text-faint: #889bb5;
   
   /* Feedback & Status Colors */
   --status-error-bg: rgba(239, 68, 68, 0.12);
@@ -182,6 +182,29 @@ body.theme-foggy {
   border: 0 !important;
 }
 
+/* Accessibility: Skip to Main Content Link (WCAG 2.4.1) */
+.skip-link {
+  position: fixed;
+  top: -120px;
+  left: 20px;
+  background: var(--accent-blue);
+  color: #ffffff;
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: var(--radius-md);
+  z-index: 99999;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.5);
+  transition: top 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.skip-link:focus {
+  top: 16px;
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
 /* Explicit rule ensuring the native HTML5 hidden attribute always hides elements */
 [hidden] {
   display: none !important;
@@ -245,7 +268,11 @@ body.theme-foggy {
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 600;
-  padding: 6px 14px;
+  padding: 8px 16px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all var(--transition-fast);
   user-select: none;
@@ -411,6 +438,17 @@ body.theme-foggy {
   transform: scale(1.08);
 }
 
+/* Accessible touch target padding per WCAG 2.5.5 / 2.5.8 */
+.clear-search-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+}
+
 .clear-search-btn:focus-visible {
   outline: 2px solid var(--accent-cyan);
   outline-offset: 2px;
@@ -552,9 +590,13 @@ body.theme-foggy {
   border-radius: var(--radius-full);
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.825rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  padding: 5px 14px;
+  padding: 7px 16px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   backdrop-filter: var(--glass-backdrop-blur-subtle);
   -webkit-backdrop-filter: var(--glass-backdrop-blur-subtle);
@@ -585,10 +627,14 @@ body.theme-foggy {
   border: none;
   color: var(--text-faint);
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px 12px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-sm);
   margin-left: auto;
   transition: color var(--transition-fast), background-color var(--transition-fast);
@@ -685,10 +731,15 @@ body.theme-foggy {
   color: var(--status-error-text);
   font-size: 1.35rem;
   line-height: 1;
-  padding: 4px 8px;
+  padding: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  opacity: 0.8;
+  opacity: 0.85;
   transition: opacity var(--transition-fast), transform var(--transition-fast), background-color var(--transition-fast);
 }
 
@@ -928,18 +979,31 @@ body.theme-foggy {
 }
 
 .refresh-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   margin-left: auto;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text-muted);
   border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 0.78rem;
+  padding: 6px 12px;
+  min-height: 34px;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+/* 44x44px touch target padding per WCAG 2.5.5 / 2.5.8 */
+.refresh-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .refresh-btn:hover {
@@ -1162,6 +1226,12 @@ body.theme-foggy {
 .hourly-forecast-track::-webkit-scrollbar-thumb {
   background: rgba(56, 189, 248, 0.35);
   border-radius: var(--radius-full);
+}
+
+.hourly-forecast-track:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
 }
 
 .hourly-card {
@@ -1572,6 +1642,15 @@ body.theme-foggy {
   .metric-subtext {
     font-size: 0.725rem;
   }
+
+  .last-updated-container {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .refresh-btn {
+    margin-left: 0;
+  }
 }
 
 /* Small mobile devices (under 375px) */
@@ -1582,6 +1661,31 @@ body.theme-foggy {
 
   .daily-forecast-grid {
     grid-template-columns: 1fr;
+  }
+
+  .daily-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-height: auto;
+    padding: 12px 14px;
+    text-align: left;
+  }
+
+  .daily-day-info {
+    text-align: left;
+  }
+
+  .daily-condition {
+    flex-direction: row;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .daily-temps {
+    width: auto;
+    border-top: none;
+    padding-top: 0;
   }
 
   .metric-card {

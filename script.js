@@ -1744,6 +1744,19 @@ function setupEventListeners() {
     });
   }
 
+  // Accessibility: Keyboard Navigation for Hourly Forecast Track
+  if (DOM.hourlyTrack) {
+    DOM.hourlyTrack.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        DOM.hourlyTrack.scrollBy({ left: 140, behavior: 'smooth' });
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        DOM.hourlyTrack.scrollBy({ left: -140, behavior: 'smooth' });
+      }
+    });
+  }
+
   // Accessibility: Keyboard Shortcuts (/ or Ctrl+K / Cmd+K to focus search, Esc to clear/blur)
   document.addEventListener('keydown', (event) => {
     const isInputFocused = document.activeElement === DOM.searchInput;
