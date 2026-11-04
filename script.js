@@ -178,6 +178,7 @@ const DOM = {
 let currentUnit = 'C'; // 'C' | 'F'
 let currentSearchRequestId = 0;
 let isSearchInProgress = false;
+let isGeolocationPending = false;
 let activeAbortController = null;
 let lastLoadedLocation = null;
 let lastLoadedWeather = null;
@@ -1247,6 +1248,7 @@ async function searchWeather(cityOverride) {
   const signal = activeAbortController.signal;
 
   const thisRequestId = ++currentSearchRequestId;
+  isGeolocationPending = false; // Supersedes any in-flight or pending geolocation callbacks
   isSearchInProgress = true;
   showLoading(`Fetching weather data for "${city}"...`);
 
@@ -1292,114 +1294,232 @@ async function searchWeather(cityOverride) {
     if (thisRequestId === currentSearchRequestId) {
       hideLoading();
       isSearchInProgress = false;
+      isGeolocationPending = false;
       activeAbortController = null;
+      if (DOM.geoBtn) {
+        DOM.geoBtn.disabled = false;
+        DOM.geoBtn.removeAttribute('aria-busy');
+      }
     }
   }
 }
 
 /**
  * 6. Browser Geolocation Feature ("Use My Location")
- * Uses navigator.geolocation.getCurrentPosition
+ * Uses navigator.geolocation.getCurrentPosition with async generation tracking
+ * to guarantee that stale geolocation callbacks never overwrite newer city searches.
+ *
+ * Privacy & Security:
+ * - Invoked strictly upon explicit user interaction (click on #geo-btn or direct method call).
+ * - Exact coordinates are processed in memory for the current dashboard view and are never stored in localStorage.
+ * - Reverse geocoding uses an external privacy-compliant provider (BigDataCloud).
+ *
+ * @returns {Promise<{location: object, weather: object} | void>}
  */
 function handleGeolocationSearch() {
-  if (typeof navigator === 'undefined' || !navigator.geolocation) {
-    showError('Geolocation is not supported by your browser.');
-    return;
+  // Check browser support
+  if (typeof navigator === 'undefined' || !navigator.geolocation || typeof navigator.geolocation.getCurrentPosition !== 'function') {
+    showError('Geolocation is not supported by your browser. Please search by city name.');
+    return Promise.reject(new Error('Geolocation is not supported by your browser.'));
   }
 
-  showLoading('Detecting your location...');
+  // Prevent duplicate concurrent geolocation requests
+  if (isGeolocationPending) {
+    return Promise.resolve();
+  }
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
+  // Abort previous pending network requests
+  if (activeAbortController) {
+    try {
+      activeAbortController.abort();
+    } catch (_) {}
+    activeAbortController = null;
+  }
 
-      if (activeAbortController) {
-        try {
-          activeAbortController.abort();
-        } catch (_) {}
-      }
-      activeAbortController = new AbortController();
-      const signal = activeAbortController.signal;
+  // Immediate request generation assignment: invalidates any previous in-flight requests
+  const thisRequestId = ++currentSearchRequestId;
+  isGeolocationPending = true;
+  isSearchInProgress = true;
 
-      const thisRequestId = ++currentSearchRequestId;
-      isSearchInProgress = true;
+  if (DOM.geoBtn) {
+    DOM.geoBtn.disabled = true;
+    DOM.geoBtn.setAttribute('aria-busy', 'true');
+  }
 
-      try {
-        // Reverse Geocode to obtain human-readable city name
-        let locationName = 'My Location';
-        let country = '';
-        let admin1 = '';
+  showLoading('Detecting your location (reverse geocoding via external provider)...');
 
-        try {
-          const revUrl = `${API_CONFIG.REVERSE_GEO_URL}?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
-          const revRes = await fetch(revUrl, { signal });
-          if (revRes.ok) {
-            const revData = await revRes.json();
-            locationName = revData.city || revData.locality || revData.principalSubdivision || 'My Location';
-            country = revData.countryName || '';
-            admin1 = revData.principalSubdivision || '';
-          }
-        } catch (_) {
-          locationName = 'My Location';
-        }
+  // Allow user to search a city while geolocation is waiting for permission/fix
+  if (DOM.searchInput) {
+    DOM.searchInput.disabled = false;
+  }
+  if (DOM.searchBtn) {
+    DOM.searchBtn.disabled = false;
+    DOM.searchBtn.removeAttribute('aria-busy');
+  }
 
-        const location = {
-          name: locationName,
-          country: country,
-          admin1: admin1,
-          latitude: lat,
-          longitude: lon
-        };
-
-        const weather = await getWeatherData(lat, lon, signal);
-
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        // 1. Generation Check: Was this geolocation superseded while waiting for browser prompt / GPS fix?
         if (thisRequestId !== currentSearchRequestId) {
-          return;
+          if (isGeolocationPending) {
+            isGeolocationPending = false;
+          }
+          if (DOM.geoBtn) {
+            DOM.geoBtn.disabled = false;
+            DOM.geoBtn.removeAttribute('aria-busy');
+          }
+          return resolve();
         }
 
-        lastLoadedLocation = location;
-        lastLoadedWeather = weather;
+        const lat = position && position.coords ? position.coords.latitude : null;
+        const lon = position && position.coords ? position.coords.longitude : null;
 
-        renderDashboard(location, weather);
-        saveRecentCity(location.name);
+        if (!isValidNumber(lat) || !isValidNumber(lon)) {
+          hideLoading();
+          isGeolocationPending = false;
+          isSearchInProgress = false;
+          if (DOM.geoBtn) {
+            DOM.geoBtn.disabled = false;
+            DOM.geoBtn.removeAttribute('aria-busy');
+          }
+          const err = new Error('Invalid coordinates received from device. Please search by city name.');
+          showError(err.message);
+          return reject(err);
+        }
 
-        if (DOM.searchInput) {
-          DOM.searchInput.value = location.name;
-          if (DOM.clearSearchBtn) {
-            DOM.clearSearchBtn.hidden = false;
+        // Create AbortController for reverse-geocode and weather API fetch
+        activeAbortController = new AbortController();
+        const signal = activeAbortController.signal;
+
+        try {
+          // 2. Reverse Geocode via BigDataCloud client-side API
+          let locationName = 'Your Location';
+          let country = '';
+          let admin1 = '';
+
+          try {
+            const revUrl = `${API_CONFIG.REVERSE_GEO_URL}?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&localityLanguage=en`;
+            const revRes = await fetch(revUrl, { signal });
+            if (revRes.ok) {
+              const revData = await revRes.json();
+              locationName = revData.city || revData.locality || revData.principalSubdivision || 'Your Location';
+              country = revData.countryName || '';
+              admin1 = revData.principalSubdivision || '';
+            }
+          } catch (revErr) {
+            if (revErr.name === 'AbortError') return resolve();
+            console.warn('[WeatherDashboard Geolocation] Reverse geocoder unreachable, falling back to coordinates:', revErr);
+            locationName = 'Your Location';
+          }
+
+          // Check again if superseded during reverse geocode fetch
+          if (thisRequestId !== currentSearchRequestId) {
+            return resolve();
+          }
+
+          // Construct location object (privacy: coordinates kept in memory for current dashboard view only)
+          const location = {
+            name: locationName,
+            country: country,
+            admin1: admin1,
+            latitude: lat,
+            longitude: lon
+          };
+
+          // 3. Fetch Weather Forecast from Open-Meteo
+          const weather = await getWeatherData(lat, lon, signal);
+
+          // Check again if superseded during weather fetch
+          if (thisRequestId !== currentSearchRequestId) {
+            return resolve();
+          }
+
+          // 4. Update Application State & Render Dashboard
+          lastLoadedLocation = location;
+          lastLoadedWeather = weather;
+
+          renderDashboard(location, weather);
+
+          // Privacy & Usability: only persist real resolved city names into recent searches
+          if (locationName && locationName !== 'Your Location' && locationName !== 'My Location') {
+            saveRecentCity(locationName);
+          }
+
+          if (DOM.searchInput) {
+            DOM.searchInput.value = location.name;
+            if (DOM.clearSearchBtn) {
+              DOM.clearSearchBtn.hidden = false;
+            }
+          }
+
+          resolve({ location, weather });
+        } catch (err) {
+          if (err.name === 'AbortError') return resolve();
+          if (thisRequestId !== currentSearchRequestId) return resolve();
+
+          console.error('[WeatherDashboard Geolocation Weather Error]:', err);
+          showError(err.message || 'Unable to retrieve weather data for your detected location.');
+          reject(err);
+        } finally {
+          if (thisRequestId === currentSearchRequestId) {
+            hideLoading();
+            isGeolocationPending = false;
+            isSearchInProgress = false;
+            activeAbortController = null;
+            if (DOM.geoBtn) {
+              DOM.geoBtn.disabled = false;
+              DOM.geoBtn.removeAttribute('aria-busy');
+            }
           }
         }
-      } catch (err) {
-        if (err.name === 'AbortError') return;
-        console.error('[WeatherDashboard Geolocation Error]:', err);
-        showError(err.message || 'Unable to retrieve weather for your location.');
-      } finally {
-        if (thisRequestId === currentSearchRequestId) {
-          hideLoading();
-          isSearchInProgress = false;
-          activeAbortController = null;
+      },
+      (err) => {
+        // Geolocation Error Callback (Permission denied, position unavailable, timeout)
+        // 1. Generation Check: Was this request superseded?
+        if (thisRequestId !== currentSearchRequestId) {
+          if (isGeolocationPending) {
+            isGeolocationPending = false;
+          }
+          if (DOM.geoBtn) {
+            DOM.geoBtn.disabled = false;
+            DOM.geoBtn.removeAttribute('aria-busy');
+          }
+          return resolve();
         }
+
+        let errorMsg = 'Unable to retrieve your location.';
+        if (err) {
+          if (err.code === 1 || err.code === err.PERMISSION_DENIED) {
+            errorMsg = 'Location permission was denied. Please allow location access or search by city.';
+          } else if (err.code === 2 || err.code === err.POSITION_UNAVAILABLE) {
+            errorMsg = 'Location information is currently unavailable. Please search by city name.';
+          } else if (err.code === 3 || err.code === err.TIMEOUT) {
+            errorMsg = 'Location request timed out. Please try again or search by city name.';
+          } else if (err.message) {
+            errorMsg = err.message;
+          }
+        }
+
+        hideLoading();
+        isGeolocationPending = false;
+        isSearchInProgress = false;
+        activeAbortController = null;
+        if (DOM.geoBtn) {
+          DOM.geoBtn.disabled = false;
+          DOM.geoBtn.removeAttribute('aria-busy');
+        }
+
+        showError(errorMsg);
+        reject(new Error(errorMsg));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: API_CONFIG.TIMEOUT_MS,
+        maximumAge: 60000
       }
-    },
-    (err) => {
-      hideLoading();
-      let errorMsg = 'Unable to retrieve your location.';
-      if (err.code === err.PERMISSION_DENIED) {
-        errorMsg = 'Location permission was denied. Please allow location access or search by city.';
-      } else if (err.code === err.POSITION_UNAVAILABLE) {
-        errorMsg = 'Location information is currently unavailable. Please search by city name.';
-      } else if (err.code === err.TIMEOUT) {
-        errorMsg = 'Location request timed out. Please try again or search by city name.';
-      }
-      showError(errorMsg);
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: API_CONFIG.TIMEOUT_MS,
-      maximumAge: 60000
-    }
-  );
+    );
+  });
 }
 
 // --------------------------------------------------------------------------
@@ -1411,7 +1531,8 @@ function setupEventListeners() {
   if (DOM.searchForm) {
     DOM.searchForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      if (isSearchInProgress) return;
+      // Allow user to search if geolocation is pending (overriding geolocation), but block if another city search is in-flight
+      if (isSearchInProgress && !isGeolocationPending) return;
       searchWeather();
     });
   }
@@ -1419,8 +1540,8 @@ function setupEventListeners() {
   // Geolocation Button ("Use My Location")
   if (DOM.geoBtn) {
     DOM.geoBtn.addEventListener('click', () => {
-      if (isSearchInProgress) return;
-      handleGeolocationSearch();
+      if (isGeolocationPending) return;
+      handleGeolocationSearch().catch(() => {});
     });
   }
 
@@ -1506,6 +1627,14 @@ if (typeof window !== 'undefined') {
   window.findHourlyStartIndex = findHourlyStartIndex;
   window.extractHourlyForecast = extractHourlyForecast;
   window.formatHourlyTimeLabel = formatHourlyTimeLabel;
+  Object.defineProperty(window, 'isGeolocationPending', {
+    get: () => isGeolocationPending,
+    configurable: true
+  });
+  Object.defineProperty(window, 'currentSearchRequestId', {
+    get: () => currentSearchRequestId,
+    configurable: true
+  });
   Object.defineProperty(window, 'lastLoadedWeather', {
     get: () => lastLoadedWeather,
     set: (v) => { lastLoadedWeather = v; },
