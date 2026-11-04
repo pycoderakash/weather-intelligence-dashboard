@@ -35,3 +35,8 @@ package-lock.json
 .cache/
 dist/
 build/
+
+# Test Coverage & Automation Artifacts
+coverage/
+playwright-report/
+test-results/

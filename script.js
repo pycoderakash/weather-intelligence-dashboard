@@ -1831,8 +1831,57 @@ if (typeof window !== 'undefined') {
   });
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setupEventListeners);
-} else {
-  setupEventListeners();
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupEventListeners);
+  } else {
+    setupEventListeners();
+  }
+}
+
+// CommonJS export for automated Vitest unit/integration testing
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    API_CONFIG,
+    geoCache,
+    weatherCache,
+    cacheDiagnostics,
+    buildCoordinateCacheKey,
+    setCacheEntry,
+    getCacheEntry,
+    invalidateCache,
+    clearWeatherCache,
+    getCacheStats,
+    WMO_WEATHER_CODES,
+    DOM,
+    isValidNumber,
+    formatNumber,
+    celsiusToFahrenheit,
+    formatTemperature,
+    setTemperatureUnit,
+    initUnitPreference,
+    interpretWeatherCode,
+    classifyUVIndex,
+    getWeatherTheme,
+    applyWeatherTheme,
+    findHourlyStartIndex,
+    extractHourlyForecast,
+    formatHourlyTimeLabel,
+    renderHourlyForecast,
+    renderDailyForecast,
+    renderDashboard,
+    saveRecentCity,
+    getRecentCities,
+    clearRecentCities,
+    renderRecentCities,
+    getCityCoordinates,
+    getWeatherData,
+    searchWeather,
+    handleGeolocationSearch,
+    refreshCurrentWeather,
+    showLoading,
+    hideLoading,
+    showError,
+    hideError
+  };
 }
