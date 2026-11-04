@@ -305,7 +305,13 @@ const DOM = {
   tempHourlyCanvas: document.getElementById('chart-temp-hourly'),
   tempDailyCanvas: document.getElementById('chart-temp-daily'),
   humidityHourlyCanvas: document.getElementById('chart-humidity-hourly'),
-  windHourlyCanvas: document.getElementById('chart-wind-hourly')
+  windHourlyCanvas: document.getElementById('chart-wind-hourly'),
+
+  // Progressive Web App Controls (Phase 21)
+  installPwaBtn: document.getElementById('install-pwa-btn'),
+  pwaUpdateBanner: document.getElementById('pwa-update-banner'),
+  pwaUpdateReloadBtn: document.getElementById('pwa-update-reload-btn'),
+  pwaUpdateDismissBtn: document.getElementById('pwa-update-dismiss-btn')
 };
 
 // Interactive Weather Analytics Chart Instances (Phase 20)
@@ -315,6 +321,12 @@ const chartInstances = {
   humidityHourly: null,
   windHourly: null
 };
+
+// Progressive Web App & Service Worker State (Phase 21)
+let deferredInstallPrompt = null;
+let swRegistration = null;
+let waitingServiceWorker = null;
+let isExplicitSwUpdate = false;
 
 // State Management & Network Resilience (Phase 17 & Phase 19)
 let currentUnit = 'C'; // 'C' | 'F'
@@ -827,6 +839,158 @@ function handleOnlineState() {
 function handleOfflineState() {
   isOnline = false;
   showOfflineBanner('You are currently offline. Weather updates will resume when connectivity is restored.');
+}
+
+// --------------------------------------------------------------------------
+// Progressive Web Application & Service Worker Handlers (Phase 21)
+// --------------------------------------------------------------------------
+
+/**
+ * Displays the PWA update banner when a new Service Worker is waiting.
+ * @param {ServiceWorker|null} worker
+ */
+function showPwaUpdateBanner(worker = null) {
+  waitingServiceWorker = worker;
+  if (DOM.pwaUpdateBanner) {
+    DOM.pwaUpdateBanner.hidden = false;
+  }
+}
+
+/**
+ * Hides the PWA update notification banner.
+ */
+function hidePwaUpdateBanner() {
+  if (DOM.pwaUpdateBanner) {
+    DOM.pwaUpdateBanner.hidden = true;
+  }
+}
+
+/**
+ * Commands the waiting service worker to skip waiting and activate,
+ * then reloads the window to load the latest application shell.
+ */
+function applyServiceWorkerUpdate() {
+  isExplicitSwUpdate = true;
+  if (waitingServiceWorker) {
+    try {
+      waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+    } catch (_) {}
+  }
+  hidePwaUpdateBanner();
+  if (typeof window !== 'undefined' && window.location) {
+    window.location.reload();
+  }
+}
+
+/**
+ * Captures the beforeinstallprompt event to provide an accessible PWA installation button.
+ * Detects whether the app is already operating in standalone display mode.
+ */
+function initPwaInstallPrompt() {
+  if (typeof window === 'undefined') return;
+
+  const isStandalone = (
+    (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches) ||
+    window.navigator?.standalone === true
+  );
+
+  if (isStandalone) {
+    if (DOM.installPwaBtn) DOM.installPwaBtn.hidden = true;
+    return;
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    if (DOM.installPwaBtn) {
+      DOM.installPwaBtn.hidden = false;
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    if (DOM.installPwaBtn) {
+      DOM.installPwaBtn.hidden = true;
+    }
+    console.log('[PWA] Weather Dashboard successfully installed as standalone application.');
+  });
+}
+
+/**
+ * Triggers the browser's native PWA installation prompt upon user button click.
+ * @async
+ */
+async function handleInstallPwaClick() {
+  if (!deferredInstallPrompt) return;
+
+  try {
+    await deferredInstallPrompt.prompt();
+    const choiceResult = await deferredInstallPrompt.userChoice;
+    if (choiceResult && choiceResult.outcome === 'accepted') {
+      console.log('[PWA] User accepted the installation prompt.');
+    }
+  } catch (err) {
+    console.warn('[PWA] Installation prompt encountered an error:', err);
+  } finally {
+    deferredInstallPrompt = null;
+    if (DOM.installPwaBtn) {
+      DOM.installPwaBtn.hidden = true;
+    }
+  }
+}
+
+/**
+ * Safely registers the Progressive Web App service worker on modern browsers.
+ * Non-blocking: gracefully returns if unsupported or running in test environments.
+ * @async
+ * @returns {Promise<ServiceWorkerRegistration|null>}
+ */
+async function registerServiceWorker() {
+  if (
+    typeof window === 'undefined' ||
+    typeof navigator === 'undefined' ||
+    !('serviceWorker' in navigator)
+  ) {
+    return null;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+    swRegistration = registration;
+
+    // Check if there is already an updated worker waiting to activate
+    if (registration.waiting) {
+      showPwaUpdateBanner(registration.waiting);
+    }
+
+    // Listen for new updates discovered during browser lifecycle checks
+    registration.addEventListener('updatefound', () => {
+      const installingWorker = registration.installing;
+      if (!installingWorker) return;
+
+      installingWorker.addEventListener('statechange', () => {
+        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          // New version is installed and waiting
+          showPwaUpdateBanner(installingWorker);
+        }
+      });
+    });
+
+    // Listen for controller changes to coordinate refresh ONLY when explicitly requested
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!isExplicitSwUpdate) return;
+      if (typeof window !== 'undefined' && window.location) {
+        window.location.reload();
+      }
+    });
+
+    return registration;
+  } catch (err) {
+    // Service worker registration failures (e.g. untrusted origins or sandbox restrictions)
+    // should never block the primary weather dashboard
+    console.warn('[PWA] Service Worker registration failed (non-blocking):', err);
+    return null;
+  }
 }
 
 /**
@@ -2871,6 +3035,19 @@ function setupEventListeners() {
   // Initialize features
   initUnitPreference();
   renderRecentCities();
+
+  // Progressive Web App Controls & Lifecycle (Phase 21)
+  if (DOM.installPwaBtn) {
+    DOM.installPwaBtn.addEventListener('click', handleInstallPwaClick);
+  }
+  if (DOM.pwaUpdateReloadBtn) {
+    DOM.pwaUpdateReloadBtn.addEventListener('click', applyServiceWorkerUpdate);
+  }
+  if (DOM.pwaUpdateDismissBtn) {
+    DOM.pwaUpdateDismissBtn.addEventListener('click', hidePwaUpdateBanner);
+  }
+  initPwaInstallPrompt();
+  registerServiceWorker();
 }
 
 // Expose core methods globally for tests, accessibility tools, and programmatic access
@@ -2940,6 +3117,26 @@ if (typeof window !== 'undefined') {
   window.updateOrInitChart = updateOrInitChart;
   window.destroyAllCharts = destroyAllCharts;
   window.renderAnalyticsCharts = renderAnalyticsCharts;
+  window.showPwaUpdateBanner = showPwaUpdateBanner;
+  window.hidePwaUpdateBanner = hidePwaUpdateBanner;
+  window.applyServiceWorkerUpdate = applyServiceWorkerUpdate;
+  window.initPwaInstallPrompt = initPwaInstallPrompt;
+  window.handleInstallPwaClick = handleInstallPwaClick;
+  window.registerServiceWorker = registerServiceWorker;
+  Object.defineProperty(window, 'deferredInstallPrompt', {
+    get: () => deferredInstallPrompt,
+    set: (v) => { deferredInstallPrompt = v; },
+    configurable: true
+  });
+  Object.defineProperty(window, 'swRegistration', {
+    get: () => swRegistration,
+    configurable: true
+  });
+  Object.defineProperty(window, 'waitingServiceWorker', {
+    get: () => waitingServiceWorker,
+    set: (v) => { waitingServiceWorker = v; },
+    configurable: true
+  });
   Object.defineProperty(window, 'chartInstances', {
     get: () => chartInstances,
     configurable: true
@@ -3043,6 +3240,12 @@ if (typeof module !== 'undefined' && module.exports) {
     updateOrInitChart,
     destroyAllCharts,
     renderAnalyticsCharts,
-    chartInstances
+    chartInstances,
+    showPwaUpdateBanner,
+    hidePwaUpdateBanner,
+    applyServiceWorkerUpdate,
+    initPwaInstallPrompt,
+    handleInstallPwaClick,
+    registerServiceWorker
   };
 }

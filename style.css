@@ -249,6 +249,40 @@ body.theme-foggy {
   gap: 12px;
 }
 
+.install-pwa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--accent-cyan);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  backdrop-filter: var(--glass-backdrop-blur);
+  -webkit-backdrop-filter: var(--glass-backdrop-blur);
+}
+
+.install-pwa-btn:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--accent-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+.install-pwa-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
 .unit-toggle-wrapper {
   display: inline-flex;
   background: var(--glass-bg);
@@ -720,6 +754,100 @@ body.theme-foggy {
 .offline-icon {
   color: #fbbf24;
   flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   6.5. PWA Service Worker Update Banner (Phase 21)
+   -------------------------------------------------------------------------- */
+.pwa-update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.22) 0%, rgba(56, 189, 248, 0.22) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: var(--radius-md);
+  color: #f1f5f9;
+  backdrop-filter: var(--glass-backdrop-blur);
+  -webkit-backdrop-filter: var(--glass-backdrop-blur);
+  box-shadow: var(--shadow-sm);
+  max-width: 680px;
+  margin: 0 auto;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pwa-update-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.pwa-update-icon {
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+}
+
+.pwa-update-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pwa-update-reload-btn {
+  background: var(--btn-gradient);
+  border: none;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.825rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwa-update-reload-btn:hover {
+  background: var(--btn-gradient-hover);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.pwa-update-reload-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+.pwa-update-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.35rem;
+  cursor: pointer;
+  padding: 8px 12px;
+  min-height: 44px;
+  min-width: 44px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.pwa-update-dismiss-btn:hover {
+  color: #ffffff;
+}
+
+.pwa-update-dismiss-btn:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
 }
 
 /* --------------------------------------------------------------------------
@@ -2169,5 +2297,21 @@ body.theme-foggy {
 
   .spinner {
     animation: spin 3s linear infinite; /* Subtle continuous rotation without flashing */
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15. Progressive Web App: Standalone Display Mode (Phase 21)
+   -------------------------------------------------------------------------- */
+@media (display-mode: standalone) {
+  body {
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .install-pwa-btn {
+    display: none !important;
   }
 }

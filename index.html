@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Professional real-time weather dashboard powered by Open-Meteo API. Search any city for real-time temperature, humidity, wind speed, pressure, and UV index.">
   <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WeatherDash">
+
+  <!-- Progressive Web App Manifest & App Icons (Phase 21) -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>Weather Dashboard | Real-Time Forecast &amp; Metrics</title>
 
   <!-- Performance Optimization: Resource Hints for DNS Pre-resolution & Pre-connect -->
@@ -37,8 +46,18 @@
         </div>
       </div>
 
-      <!-- Unit Toggle (Celsius / Fahrenheit) -->
+      <!-- Header Actions: Unit Toggle & PWA Install Button -->
       <div class="header-actions">
+        <!-- PWA Install Button (Phase 21) -->
+        <button type="button" class="install-pwa-btn" id="install-pwa-btn" aria-label="Install Weather Dashboard App" title="Install Weather Dashboard as application" hidden>
+          <svg class="install-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span class="install-text">Install</span>
+        </button>
+
         <div class="unit-toggle-wrapper" id="unit-toggle-wrapper" role="group" aria-label="Temperature unit selection">
           <button type="button" class="unit-toggle-btn active" id="unit-c-btn" data-unit="C" aria-pressed="true" aria-label="Display temperature in Celsius">&deg;C</button>
           <button type="button" class="unit-toggle-btn" id="unit-f-btn" data-unit="F" aria-pressed="false" aria-label="Display temperature in Fahrenheit">&deg;F</button>
@@ -108,6 +127,26 @@
             <line x1="12" y1="20" x2="12.01" y2="20"/>
           </svg>
           <span id="offline-message" class="offline-message">You are currently offline. Showing cached data where available.</span>
+        </div>
+      </div>
+
+      <!-- PWA Update Notification Banner (Phase 21) -->
+      <div id="pwa-update-banner" class="pwa-update-banner" role="status" aria-live="polite" hidden>
+        <div class="pwa-update-content">
+          <svg class="pwa-update-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          <span class="pwa-update-text">A new version of Weather Dashboard is available.</span>
+        </div>
+        <div class="pwa-update-actions">
+          <button type="button" id="pwa-update-reload-btn" class="pwa-update-reload-btn" aria-label="Update application now">
+            Update Now
+          </button>
+          <button type="button" id="pwa-update-dismiss-btn" class="pwa-update-dismiss-btn" aria-label="Dismiss update notification">
+            &times;
+          </button>
         </div>
       </div>
 

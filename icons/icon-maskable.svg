@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient (Full bleed, no radius) -->
+    <linearGradient id="mask-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f1c3f" />
+      <stop offset="50%" stop-color="#0b1329" />
+      <stop offset="100%" stop-color="#050914" />
+    </linearGradient>
+
+    <!-- Sun Glow Gradient -->
+    <linearGradient id="mask-sun-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+
+    <!-- Cloud Gradient -->
+    <linearGradient id="mask-cloud-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#e0f2fe" />
+      <stop offset="80%" stop-color="#7dd3fc" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+
+    <filter id="mask-cloud-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0284c7" flood-opacity="0.35" />
+    </filter>
+
+    <filter id="mask-sun-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Full-Bleed Background for Adaptive Masking -->
+  <rect width="512" height="512" fill="url(#mask-bg)" />
+
+  <!-- Inner Safe Zone Content (Scaled to 78% and centered) -->
+  <g transform="translate(256, 256) scale(0.78) translate(-256, -256)">
+    <!-- Sun Rays & Core -->
+    <g transform="translate(190, 150)" filter="url(#mask-sun-glow)">
+      <circle cx="80" cy="80" r="92" fill="rgba(251, 191, 36, 0.15)" />
+      <g stroke="url(#mask-sun-grad)" stroke-width="8" stroke-linecap="round">
+        <line x1="80" y1="10" x2="80" y2="-10" />
+        <line x1="80" y1="150" x2="80" y2="170" />
+        <line x1="10" y1="80" x2="-10" y2="80" />
+        <line x1="150" y1="80" x2="170" y2="80" />
+        <line x1="30" y1="30" x2="16" y2="16" />
+        <line x1="130" y1="130" x2="144" y2="144" />
+        <line x1="30" y1="130" x2="16" y2="144" />
+        <line x1="130" y1="30" x2="144" y2="16" />
+      </g>
+      <circle cx="80" cy="80" r="54" fill="url(#mask-sun-grad)" />
+    </g>
+
+    <!-- Stylized Atmospheric Cloud -->
+    <g filter="url(#mask-cloud-shadow)">
+      <path d="M176 384 h184 a72 72 0 0 0 24 -140 a96 96 0 0 0 -180 -28 a68 68 0 0 0 -96 68 a68 68 0 0 0 68 100 Z"
+            fill="url(#mask-cloud-grad)" />
+      <path d="M182 248 a80 80 0 0 1 126 -16 a84 84 0 0 0 -120 20 Z"
+            fill="#ffffff" opacity="0.6" />
+    </g>
+
+    <!-- Weather Dots -->
+    <circle cx="210" cy="416" r="6" fill="#38bdf8" opacity="0.8" />
+    <circle cx="256" cy="416" r="6" fill="#38bdf8" opacity="0.8" />
+    <circle cx="302" cy="416" r="6" fill="#38bdf8" opacity="0.8" />
+  </g>
+</svg>
