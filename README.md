@@ -1,25 +1,26 @@
 # 🌤️ Real-Time Weather Dashboard
 
-> An enterprise-grade, high-performance, real-time meteorological forecast web application engineered with **Vanilla JavaScript (ES6+)**, **semantic HTML5**, and **CSS3 Glassmorphism**, powered by the open **Open-Meteo REST APIs** and **BigDataCloud Reverse Geocoding**.
+> An enterprise-grade, high-performance, real-time meteorological forecast and air quality monitoring web application engineered with **Vanilla JavaScript (ES6+)**, **semantic HTML5**, and **CSS3 Glassmorphism**, powered by the open **Open-Meteo REST APIs** and **BigDataCloud Reverse Geocoding**.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](script.js)
 [![HTML5 Semantic](https://img.shields.io/badge/HTML5-Semantic-E34F26?style=for-the-badge&logo=html5&logoColor=white)](index.html)
 [![CSS3 Glassmorphism](https://img.shields.io/badge/CSS3-Glassmorphism-1572B6?style=for-the-badge&logo=css3&logoColor=white)](style.css)
-[![Tests Passing](https://img.shields.io/badge/Tests-98%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
+[![Tests Passing](https://img.shields.io/badge/Tests-130%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
 [![WCAG 2.1 AA](https://img.shields.io/badge/Accessibility-WCAG_2.1_AA-blueviolet?style=for-the-badge)](tests/e2e/accessibility-deep-audit.spec.js)
 
 ---
 
 ## 📌 1. Project Overview
 
-The **Real-Time Weather Dashboard** provides live meteorological data, 24-hour hourly progressions, and 7-day extended forecasts for any city worldwide or via browser geolocation. The application emphasizes clean software engineering, asynchronous resilience, strict accessibility, and sub-millisecond memory performance:
+The **Real-Time Weather Dashboard** provides live meteorological data, 24-hour hourly progressions, 7-day extended forecasts, and comprehensive atmospheric air quality monitoring for any city worldwide or via browser geolocation. The application emphasizes clean software engineering, asynchronous fault tolerance, strict accessibility, and sub-millisecond memory performance:
 
 * **Zero Runtime Dependencies:** Built 100% natively in Vanilla JavaScript (ES6+), HTML5, and CSS3. Requires zero build steps, compilers, bundlers, or runtime Node.js dependencies to execute in modern web browsers.
-* **Dual In-Memory Caching Engine:** Fast `Map`-based caching stores city coordinates (30-min TTL) and meteorological forecasts (5-min TTL) with 4-decimal coordinate keys (~11m resolution) and FIFO memory eviction.
+* **Dual In-Memory Caching Engine:** Fast `Map`-based caching stores city coordinates (30-min TTL), meteorological forecasts (5-min TTL), and air quality readings (5-min TTL) with 4-decimal coordinate keys (~11m resolution) and FIFO memory eviction.
+* **Air Quality Monitoring Module:** Integrates Open-Meteo Air Quality API to deliver dual European AQI and US AQI comparisons, PM2.5, PM10, Nitrogen Dioxide, and Ozone concentrations without ever blocking the primary weather dashboard.
 * **Network Resilience & Offline Experience:** Resilient request pipeline with `AbortController` timeout enforcement, bounded transient retries for HTTP 5xx responses, HTTP 429 rate limit handling, persistent offline banner notifications, and state-aware Retry actions.
 * **Dynamic Adaptive Glassmorphism:** Deep translucent navy palette that morphs dynamically based on real-time WMO weather codes (Sunny, Clear Night, Cloudy, Overcast, Rainy, Snowy, Thunderstorm, Foggy).
-* **Automated Testing Suite:** 98 verified automated tests spanning unit logic, DOM integrations, REST API error handling, WCAG 2.1 AA accessibility, 9 responsive viewport layouts, and network resilience.
+* **Automated Testing Suite:** 130 verified automated tests spanning unit logic, DOM integrations, REST API error handling, WCAG 2.1 AA accessibility, 9 responsive viewport layouts, air quality monitoring, and network resilience.
 * **Zero API Key Requirement:** Immediate local setup with no authentication barriers or secret tokens.
 
 ---
@@ -71,6 +72,31 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
 * Renders a 7-day forecast grid displaying localized day names (`Today`, `Mon`, `Tue`), weather condition descriptions, condition icons, and daily maximum/minimum temperatures.
 * Built with CSS Grid: displays a full 7-column layout on desktop viewports and gracefully stacks down to 4, 3, 2, and 1 column on tablets and mobile screens.
 
+### 🍃 Air Quality Monitoring Module (Phase 19)
+* **Dual Index Comparison:**
+  * **European AQI (EAQI):** Evaluated against European Environment Agency standards on a 0–100+ scale:
+    * `0 - 20`: **Good**
+    * `21 - 40`: **Fair**
+    * `41 - 60`: **Moderate**
+    * `61 - 80`: **Poor**
+    * `81 - 100`: **Very Poor**
+    * `> 100`: **Extremely Poor**
+  * **United States AQI (US AQI):** Evaluated against US EPA standards on a 0–500 scale:
+    * `0 - 50`: **Good**
+    * `51 - 100`: **Moderate**
+    * `101 - 150`: **Sensitive Groups**
+    * `151 - 200`: **Unhealthy**
+    * `201 - 300`: **Very Unhealthy**
+    * `301+`: **Hazardous**
+* **Detailed Atmospheric Pollutants:**
+  * **PM2.5:** Fine inhalable particulate matter (\( \mu\text{g/m}^3 \)).
+  * **PM10:** Coarse particulate matter including dust and pollen (\( \mu\text{g/m}^3 \)).
+  * **Nitrogen Dioxide (NO2):** Gaseous emission from combustion and traffic (\( \mu\text{g/m}^3 \)).
+  * **Ozone (O3):** Ground-level photochemical smog concentration (\( \mu\text{g/m}^3 \)).
+* **Relevant Observation Timestamp:** Formats the station observation time (e.g. `6:30 PM • Nov 4`).
+* **Non-Blocking Fault Isolation:** If the Air Quality API encounters a network failure, rate limit, or server downtime, the weather dashboard displays normally without disruption. Air quality displays unavailable indicators (`--`) without fabricating readings.
+* **Informational Health Disclaimer:** Clear advisory note (`role="note"`) explaining that AQI categories are for informational guidance and do not constitute personal medical diagnoses.
+
 ### 📍 Browser Geolocation ("Use My Location")
 * Single-click geolocation access using the HTML5 `navigator.geolocation` API.
 * Asynchronous generation tracking guarantees that slow or delayed GPS prompts never overwrite newer city searches.
@@ -83,7 +109,7 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
 * Includes a **Clear** history button to purge recent search memory instantly.
 
 ### 🔄 Manual Refresh with Cache Bypass
-* Dedicated refresh button (`#refresh-btn`) in the header lets users bypass client-side caches to fetch fresh meteorological observations on demand.
+* Dedicated refresh button (`#refresh-btn`) in the header lets users bypass client-side caches to fetch fresh meteorological and air quality observations on demand.
 * Visual cache badge indicates whether current data was served **Live** or from in-memory **Cached** storage, including age and observation timestamps.
 
 ### 🛡️ Network Resilience & Offline Experience
@@ -105,9 +131,10 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
 | **Styling** | CSS3 | Custom Properties (Design Tokens), Glassmorphic `backdrop-filter`, CSS Grid, Flexbox, media queries for 9 viewports. |
 | **Application Logic** | Vanilla JavaScript (ES6+) | `async/await`, Fetch API, `AbortController`, `DocumentFragment` DOM batching, `localStorage`, `Map` cache. |
 | **Weather APIs** | Open-Meteo REST API | Free meteorological forecasting and geocoding services (zero API key required). |
+| **Air Quality API** | Open-Meteo Air Quality API | Dual European/US AQI and pollutant concentrations (zero API key required). |
 | **Reverse Geocoding** | BigDataCloud REST API | Client-side reverse geocoding to resolve GPS coordinates into human-readable city names. |
 | **Unit & Integration Tests** | Vitest (v5.1.0) | High-speed unit and integration test runner with JSDOM environment and V8 coverage. |
-| **End-to-End Tests** | Playwright (v1.64.1) | Headless Chromium browser automation covering system flows, a11y, viewports, and resilience. |
+| **End-to-End Tests** | Playwright (v1.64.1) | Headless Chromium browser automation covering user flows, a11y, viewports, air quality, and resilience. |
 
 ---
 
@@ -139,7 +166,18 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
   | `wind_speed_unit` | String | `kmh` (kilometers per hour). |
   | `forecast_days` | Integer | `7` |
 
-### 3. BigDataCloud Reverse Geocoding API
+### 3. Open-Meteo Air Quality API (Phase 19)
+* **Base URL:** `https://air-quality-api.open-meteo.com/v1/air-quality`
+* **Method:** `GET`
+* **Query Parameters:**
+  | Parameter | Type | Value / Purpose |
+  | :--- | :--- | :--- |
+  | `latitude` | Float | Geographic latitude of target location. |
+  | `longitude` | Float | Geographic longitude of target location. |
+  | `current` | String | `european_aqi,us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone` |
+  | `timezone` | String | `auto` |
+
+### 4. BigDataCloud Reverse Geocoding API
 * **Base URL:** `https://api.bigdatacloud.net/data/reverse-geocode-client`
 * **Method:** `GET`
 * **Query Parameters:**
@@ -149,7 +187,7 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
   | `longitude` | Float | Device GPS longitude from `navigator.geolocation`. |
   | `localityLanguage` | String | `en` |
 
-### 4. WMO Weather Interpretation (Table 4677)
+### 5. WMO Weather Interpretation (Table 4677)
 Standard World Meteorological Organization codes decoded into human-readable conditions and day/night visual icons:
 
 | Code(s) | Description | Day Icon | Night Icon |
@@ -176,6 +214,7 @@ Standard World Meteorological Organization codes decoded into human-readable con
 1. **Sub-Millisecond In-Memory Caching:**
    - `geoCache`: Stores geocoded city coordinates for 30 minutes (`GEO_CACHE_TTL_MS = 1800000`). Repeated searches return in `<1ms` without network traffic.
    - `weatherCache`: Stores meteorological metrics for 5 minutes (`CACHE_TTL_MS = 300000`).
+   - `airQualityCache`: Stores air quality readings for 5 minutes (`AQ_CACHE_TTL_MS = 300000`).
    - Coordinate Precision: Keys are normalized to 4 decimal places (~11m resolution), preventing accidental cache collisions between adjacent microclimates.
    - Memory Safety: Enforces a strict 30-entry cap (`MAX_CACHE_ENTRIES = 30`) using FIFO eviction to eliminate memory leaks during extended browser sessions.
 2. **DOM Batching via `DocumentFragment`:**
@@ -267,12 +306,15 @@ weather_dashboard/
     ├── fixtures/
     │   └── weatherData.js              # Deterministic Open-Meteo & BigDataCloud mock fixtures
     ├── unit/
-    │   └── weather.test.js             # 35 unit tests (conversions, WMO decoding, cache, UV)
+    │   ├── air-quality.test.js         # 19 air quality unit tests (EAQI, US AQI, timestamps, cache)
+    │   └── weather.test.js             # 35 weather unit tests (conversions, WMO decoding, cache, UV)
     ├── integration/
-    │   ├── api.test.js                 # 15 integration tests (API parsing, 429/500, timeouts)
-    │   └── dom.test.js                 # 9 integration tests (DOM rendering, unit toggle, history)
+    │   ├── air-quality-api.test.js     # 7 air quality API integration & fault-isolation tests
+    │   ├── api.test.js                 # 15 weather API integration tests (parsing, 429/500, timeouts)
+    │   └── dom.test.js                 # 9 DOM integration tests (rendering, unit toggle, history)
     └── e2e/
         ├── accessibility-deep-audit.spec.js  # 6 deep WCAG 2.1 AA accessibility tests
+        ├── air-quality.spec.js               # 6 air quality E2E tests (metrics, badges, disclaimer, fault tolerance)
         ├── dashboard.spec.js                 # 22 complete user experience & system flow tests
         ├── network-resilience.spec.js        # 8 network resilience & offline experience tests
         └── responsive-audit.spec.js          # 9 responsive viewport layout tests
@@ -317,9 +359,9 @@ npx playwright install chromium
 | Command | Suite | Purpose |
 | :--- | :--- | :--- |
 | `npm test` | Complete Test Suite | Executes all Vitest unit/integration tests and all Playwright E2E browser tests. |
-| `npm run test:unit` | Vitest Unit Tests | Tests temperature conversions, number formatting, WMO interpretation, UV classification, and cache eviction. |
-| `npm run test:integration` | Vitest Integration Tests | Tests API JSON payload extraction, HTTP 429/500 error handling, DOM rendering, and unit toggling. |
-| `npm run test:e2e` | Playwright E2E Tests | Executes full browser automation in Chromium across user flows, accessibility, viewports, and resilience. |
+| `npm run test:unit` | Vitest Unit Tests | Tests temperature conversions, number formatting, WMO interpretation, UV classification, AQI classifications, and cache eviction. |
+| `npm run test:integration` | Vitest Integration Tests | Tests weather and air quality API JSON extraction, HTTP 429/500 error handling, DOM rendering, and unit toggling. |
+| `npm run test:e2e` | Playwright E2E Tests | Executes full browser automation in Chromium across user flows, accessibility, viewports, air quality, and resilience. |
 | `npm run test:coverage` | V8 Coverage Report | Generates detailed statement, function, line, and branch coverage metrics. |
 
 ### Verified Test Results
@@ -327,14 +369,17 @@ npx playwright install chromium
 --------------------------------------------------------------------------------
 Test Suites:
   ✓ tests/unit/weather.test.js (35 tests) ............................ PASSED
+  ✓ tests/unit/air-quality.test.js (19 tests) ........................ PASSED
   ✓ tests/integration/api.test.js (15 tests) ......................... PASSED
+  ✓ tests/integration/air-quality-api.test.js (7 tests) .............. PASSED
   ✓ tests/integration/dom.test.js (9 tests) .......................... PASSED
   ✓ tests/e2e/accessibility-deep-audit.spec.js (6 tests) ............. PASSED
+  ✓ tests/e2e/air-quality.spec.js (6 tests) .......................... PASSED
   ✓ tests/e2e/dashboard.spec.js (22 tests) ........................... PASSED
   ✓ tests/e2e/responsive-audit.spec.js (9 viewports) ................. PASSED
   ✓ tests/e2e/network-resilience.spec.js (8 tests) ................... PASSED
 --------------------------------------------------------------------------------
-Total: 98 passed, 0 failed, 0 skipped (100% passing across 7 test suites)
+Total: 130 passed, 0 failed, 0 skipped (100% passing across 10 test suites)
 ```
 
 ---
@@ -366,9 +411,17 @@ Total: 98 passed, 0 failed, 0 skipped (100% passing across 7 test suites)
 |  [ 7-DAY EXTENDED FORECAST ]                                                          |
 |    [ Today: 26°/17° ] [ Tue: 25°/16° ] [ Wed: 24°/15° ] [ Thu: 27°/18° ] ...          |
 +---------------------------------------------------------------------------------------+
+|  [ AIR QUALITY INDEX ]                             Observed: 6:30 PM • Nov 4          |
+|    +------------------------------------+------------------------------------+        |
+|    | European AQI: 97 [ VERY POOR ]     | United States AQI: 211 [ V.UNHEALTHY]|      |
+|    +------------------------------------+------------------------------------+        |
+|    | PM2.5: 133.2 μg/m³ | PM10: 194.2 μg/m³ | NO2: 84.3 μg/m³ | O3: 62.0 μg/m³|       |
+|    +-------------------------------------------------------------------------+        |
+|    | ℹ️ Notice: AQI metrics are informational and not medical diagnoses.      |        |
++---------------------------------------------------------------------------------------+
 |  [ ERROR BANNER ] ⚠️ Network connection error.                 [ Retry ] [ Dismiss ]   |
 +---------------------------------------------------------------------------------------+
-|  Footer: Meteorological data provided by Open-Meteo REST API (CC BY 4.0)               |
+|  Footer: Meteorological & Air Quality data provided by Open-Meteo REST API (CC BY 4.0) |
 +---------------------------------------------------------------------------------------+
 ```
 
@@ -377,7 +430,7 @@ Total: 98 passed, 0 failed, 0 skipped (100% passing across 7 test suites)
 ## 🔮 13. Future Roadmap
 
 * [ ] **Progressive Web App (PWA):** Register a Service Worker and `manifest.json` for full offline asset precaching and native mobile installability.
-* [ ] **Air Quality Index (AQI):** Integrate Open-Meteo's Air Quality API to display real-time PM2.5, PM10, Ozone, and European Air Quality Index metrics.
+* [x] **Air Quality Index (AQI):** Integrated Open-Meteo Air Quality API with European AQI, US AQI, PM2.5, PM10, NO2, and Ozone.
 * [ ] **Interactive Precipitation Radar:** Embed a Leaflet.js interactive map powered by RainViewer precipitation radar tile overlays.
 * [ ] **Multi-Language Support (i18n):** Provide seamless runtime language toggles for Spanish, French, German, Japanese, and Hindi.
 * [ ] **Severe Weather Warnings:** Connect to national meteorological CAP (Common Alerting Protocol) feeds to surface severe weather bulletins.
@@ -387,5 +440,5 @@ Total: 98 passed, 0 failed, 0 skipped (100% passing across 7 test suites)
 ## 📄 14. License & Attribution
 
 * **Software License:** [MIT License](LICENSE) — free for educational, personal, and commercial use.
-* **Weather Data:** Provided by [Open-Meteo](https://open-meteo.com/) under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license.
+* **Weather & Air Quality Data:** Provided by [Open-Meteo](https://open-meteo.com/) under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license.
 * **Geocoding Data:** Provided by [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) and [BigDataCloud](https://www.bigdatacloud.net/).

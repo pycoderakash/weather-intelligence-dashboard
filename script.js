@@ -17,8 +17,10 @@ const API_CONFIG = {
   STORAGE_KEY_UNIT: 'weather_dashboard_temp_unit',
   MAX_HISTORY_ITEMS: 5,
   TIMEOUT_MS: 10000,
+  AIR_QUALITY_URL: 'https://air-quality-api.open-meteo.com/v1/air-quality',
   // Performance Optimization: In-Memory Cache TTL (Time-To-Live) & Cap
   CACHE_TTL_MS: 300000,       // 5 minutes for weather forecasts
+  AQ_CACHE_TTL_MS: 300000,    // 5 minutes for air quality forecasts
   GEO_CACHE_TTL_MS: 1800000,  // 30 minutes for city coordinates
   MAX_CACHE_ENTRIES: 30       // Prevents memory leak in long sessions
 };
@@ -26,8 +28,9 @@ const API_CONFIG = {
 // --------------------------------------------------------------------------
 // In-Memory Performance Caching Stores & Diagnostics
 // --------------------------------------------------------------------------
-const geoCache = new Map();     // key: normalized city name -> { data, timestamp }
-const weatherCache = new Map(); // key: "lat,lon" (4 decimals) -> { data, timestamp }
+const geoCache = new Map();        // key: normalized city name -> { data, timestamp }
+const weatherCache = new Map();    // key: "lat,lon" (4 decimals) -> { data, timestamp }
+const airQualityCache = new Map(); // key: "lat,lon" (4 decimals) -> { data, timestamp }
 
 const cacheDiagnostics = {
   geoHits: 0,
@@ -150,6 +153,7 @@ function invalidateCache(target) {
 function clearWeatherCache() {
   geoCache.clear();
   weatherCache.clear();
+  airQualityCache.clear();
   cacheDiagnostics.geoHits = 0;
   cacheDiagnostics.geoMisses = 0;
   cacheDiagnostics.weatherHits = 0;
@@ -170,6 +174,7 @@ function getCacheStats() {
   return {
     geoEntries: geoCache.size,
     weatherEntries: weatherCache.size,
+    airQualityEntries: airQualityCache.size,
     maxCapacity: API_CONFIG.MAX_CACHE_ENTRIES,
     hits: totalHits,
     misses: totalMisses,
@@ -278,10 +283,24 @@ const DOM = {
   hourlySection: document.getElementById('hourly-forecast-section'),
   hourlyTrack: document.getElementById('hourly-forecast-track'),
   dailySection: document.getElementById('daily-forecast-section'),
-  dailyGrid: document.getElementById('daily-forecast-grid')
+  dailyGrid: document.getElementById('daily-forecast-grid'),
+
+  // Air Quality Monitoring (Phase 19)
+  airQualitySection: document.getElementById('air-quality-section'),
+  aqiObservationTime: document.getElementById('aqi-observation-time'),
+  eaqiValue: document.getElementById('eaqi-value'),
+  eaqiBadge: document.getElementById('eaqi-badge'),
+  eaqiStatus: document.getElementById('eaqi-status'),
+  usAqiValue: document.getElementById('us-aqi-value'),
+  usAqiBadge: document.getElementById('us-aqi-badge'),
+  usAqiStatus: document.getElementById('us-aqi-status'),
+  pm25Value: document.getElementById('pm25-value'),
+  pm10Value: document.getElementById('pm10-value'),
+  no2Value: document.getElementById('no2-value'),
+  ozoneValue: document.getElementById('ozone-value')
 };
 
-// State Management & Network Resilience (Phase 17)
+// State Management & Network Resilience (Phase 17 & Phase 19)
 let currentUnit = 'C'; // 'C' | 'F'
 let currentSearchRequestId = 0;
 let isSearchInProgress = false;
@@ -289,6 +308,7 @@ let isGeolocationPending = false;
 let activeAbortController = null;
 let lastLoadedLocation = null;
 let lastLoadedWeather = null;
+let lastLoadedAirQuality = null;
 let lastFailedAction = null; // { type: 'city'|'geo'|'refresh', value?: string }
 let isOnline = typeof navigator !== 'undefined' ? (navigator.onLine !== false) : true;
 
@@ -1100,6 +1120,200 @@ function renderDailyForecast(dailyList) {
 }
 
 // --------------------------------------------------------------------------
+// 6b. Air Quality Monitoring Presentation Services (Phase 19)
+// --------------------------------------------------------------------------
+
+/**
+ * Classifies European Air Quality Index (EAQI) based on European Environment Agency standards.
+ * Scale: 0 to 100+
+ * @param {number|null} val - EAQI numeric reading
+ * @returns {{ label: string, className: string, status: string }}
+ */
+function classifyEuropeanAQI(val) {
+  if (!isValidNumber(val) || val < 0) {
+    return { label: '--', className: 'aqi-badge-unknown', status: 'Data unavailable' };
+  }
+  if (val <= 20) {
+    return { label: 'Good', className: 'aqi-badge-good', status: 'Satisfactory air quality (0–20)' };
+  }
+  if (val <= 40) {
+    return { label: 'Fair', className: 'aqi-badge-fair', status: 'Acceptable air quality (21–40)' };
+  }
+  if (val <= 60) {
+    return { label: 'Moderate', className: 'aqi-badge-moderate', status: 'Moderate air pollution (41–60)' };
+  }
+  if (val <= 80) {
+    return { label: 'Poor', className: 'aqi-badge-poor', status: 'Degraded air quality (61–80)' };
+  }
+  if (val <= 100) {
+    return { label: 'Very Poor', className: 'aqi-badge-very-poor', status: 'Very degraded air quality (81–100)' };
+  }
+  return { label: 'Extremely Poor', className: 'aqi-badge-extremely-poor', status: 'Severe air pollution levels (>100)' };
+}
+
+/**
+ * Classifies United States EPA Air Quality Index (US AQI).
+ * Scale: 0 to 500+
+ * @param {number|null} val - US AQI numeric reading
+ * @returns {{ label: string, className: string, status: string }}
+ */
+function classifyUSAQI(val) {
+  if (!isValidNumber(val) || val < 0) {
+    return { label: '--', className: 'aqi-badge-unknown', status: 'Data unavailable' };
+  }
+  if (val <= 50) {
+    return { label: 'Good', className: 'aqi-badge-good', status: 'Air quality is satisfactory (0–50)' };
+  }
+  if (val <= 100) {
+    return { label: 'Moderate', className: 'aqi-badge-moderate', status: 'Air quality is acceptable (51–100)' };
+  }
+  if (val <= 150) {
+    return { label: 'Sensitive Groups', className: 'aqi-badge-sensitive', status: 'Unhealthy for sensitive groups (101–150)' };
+  }
+  if (val <= 200) {
+    return { label: 'Unhealthy', className: 'aqi-badge-unhealthy', status: 'General public may experience effects (151–200)' };
+  }
+  if (val <= 300) {
+    return { label: 'Very Unhealthy', className: 'aqi-badge-very-unhealthy', status: 'Health alert: risk is increased (201–300)' };
+  }
+  return { label: 'Hazardous', className: 'aqi-badge-hazardous', status: 'Health warning: emergency conditions (301+)' };
+}
+
+/**
+ * Formats API observation ISO timestamp into localized 12-hour time and date string.
+ * @param {string|null} timeStr - ISO 8601 string (e.g. "2026-11-04T18:30")
+ * @returns {string} Formatted label (e.g. "6:30 PM • Nov 4")
+ */
+function formatAQIObservationTime(timeStr) {
+  if (typeof timeStr !== 'string' || timeStr.trim().length < 13) return '--';
+  const clean = timeStr.trim();
+  const rawHour = parseInt(clean.slice(11, 13), 10);
+  const minute = clean.length >= 16 ? clean.slice(14, 16) : '00';
+  if (isNaN(rawHour) || rawHour < 0 || rawHour > 23) return clean;
+
+  const period = rawHour >= 12 ? 'PM' : 'AM';
+  const displayHour = rawHour % 12 === 0 ? 12 : rawHour % 12;
+  const timeFormatted = `${displayHour}:${minute} ${period}`;
+
+  if (clean.length >= 10 && clean.includes('-')) {
+    const parts = clean.slice(0, 10).split('-');
+    if (parts.length === 3) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const mIdx = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      if (mIdx >= 0 && mIdx < 12 && !isNaN(day)) {
+        return `${timeFormatted} • ${months[mIdx]} ${day}`;
+      }
+    }
+  }
+
+  return timeFormatted;
+}
+
+/**
+ * Renders the air quality metrics and classifications into the DOM.
+ * @param {object} aqData - Normalized air quality data object
+ */
+function renderAirQuality(aqData) {
+  if (!DOM.airQualitySection) return;
+
+  if (!aqData || typeof aqData !== 'object') {
+    renderAirQualityUnavailable();
+    return;
+  }
+
+  // 1. Observation Timestamp
+  if (DOM.aqiObservationTime) {
+    const formattedTime = formatAQIObservationTime(aqData.observedAt);
+    updateTextIfChanged(DOM.aqiObservationTime, formattedTime);
+    if (aqData.observedAt) {
+      DOM.aqiObservationTime.setAttribute('datetime', aqData.observedAt);
+    }
+  }
+
+  // 2. European AQI
+  const eaqiClass = classifyEuropeanAQI(aqData.europeanAqi);
+  if (DOM.eaqiValue) {
+    updateTextIfChanged(DOM.eaqiValue, formatNumber(aqData.europeanAqi, 0, '--'));
+  }
+  if (DOM.eaqiBadge) {
+    updateTextIfChanged(DOM.eaqiBadge, eaqiClass.label);
+    const badgeClass = `aqi-badge ${eaqiClass.className}`;
+    if (DOM.eaqiBadge.className !== badgeClass) {
+      DOM.eaqiBadge.className = badgeClass;
+    }
+  }
+  if (DOM.eaqiStatus) {
+    updateTextIfChanged(DOM.eaqiStatus, eaqiClass.status);
+  }
+
+  // 3. United States AQI
+  const usAqiClass = classifyUSAQI(aqData.usAqi);
+  if (DOM.usAqiValue) {
+    updateTextIfChanged(DOM.usAqiValue, formatNumber(aqData.usAqi, 0, '--'));
+  }
+  if (DOM.usAqiBadge) {
+    updateTextIfChanged(DOM.usAqiBadge, usAqiClass.label);
+    const badgeClass = `aqi-badge ${usAqiClass.className}`;
+    if (DOM.usAqiBadge.className !== badgeClass) {
+      DOM.usAqiBadge.className = badgeClass;
+    }
+  }
+  if (DOM.usAqiStatus) {
+    updateTextIfChanged(DOM.usAqiStatus, usAqiClass.status);
+  }
+
+  // 4. Detailed Pollutants (PM2.5, PM10, NO2, O3)
+  if (DOM.pm25Value) {
+    updateTextIfChanged(DOM.pm25Value, formatNumber(aqData.pm25, 1, '--'));
+  }
+  if (DOM.pm10Value) {
+    updateTextIfChanged(DOM.pm10Value, formatNumber(aqData.pm10, 1, '--'));
+  }
+  if (DOM.no2Value) {
+    updateTextIfChanged(DOM.no2Value, formatNumber(aqData.nitrogenDioxide, 1, '--'));
+  }
+  if (DOM.ozoneValue) {
+    updateTextIfChanged(DOM.ozoneValue, formatNumber(aqData.ozone, 1, '--'));
+  }
+
+  DOM.airQualitySection.hidden = false;
+}
+
+/**
+ * Gracefully displays unavailable indicators for the Air Quality section.
+ * Does not fabricate readings and preserves normal UI operation.
+ * @param {string} [reason]
+ */
+function renderAirQualityUnavailable(reason = 'Air quality data currently unavailable for this region.') {
+  if (!DOM.airQualitySection) return;
+
+  if (DOM.aqiObservationTime) {
+    updateTextIfChanged(DOM.aqiObservationTime, 'Unavailable');
+  }
+  if (DOM.eaqiValue) updateTextIfChanged(DOM.eaqiValue, '--');
+  if (DOM.eaqiBadge) {
+    updateTextIfChanged(DOM.eaqiBadge, '--');
+    DOM.eaqiBadge.className = 'aqi-badge aqi-badge-unknown';
+  }
+  if (DOM.eaqiStatus) updateTextIfChanged(DOM.eaqiStatus, reason);
+
+  if (DOM.usAqiValue) updateTextIfChanged(DOM.usAqiValue, '--');
+  if (DOM.usAqiBadge) {
+    updateTextIfChanged(DOM.usAqiBadge, '--');
+    DOM.usAqiBadge.className = 'aqi-badge aqi-badge-unknown';
+  }
+  if (DOM.usAqiStatus) updateTextIfChanged(DOM.usAqiStatus, reason);
+
+  if (DOM.pm25Value) updateTextIfChanged(DOM.pm25Value, '--');
+  if (DOM.pm10Value) updateTextIfChanged(DOM.pm10Value, '--');
+  if (DOM.no2Value) updateTextIfChanged(DOM.no2Value, '--');
+  if (DOM.ozoneValue) updateTextIfChanged(DOM.ozoneValue, '--');
+
+  DOM.airQualitySection.hidden = false;
+}
+
+// --------------------------------------------------------------------------
 // 7. Asynchronous API Integration Services
 // --------------------------------------------------------------------------
 
@@ -1502,6 +1716,132 @@ async function getWeatherData(latitude, longitude, signal, bypassCache = false) 
   return weatherResult;
 }
 
+/**
+ * 3. Air Quality Fetching Function (Phase 19)
+ * Retrieves European AQI, US AQI, PM2.5, PM10, Nitrogen Dioxide, and Ozone from Open-Meteo Air Quality API.
+ * In-memory caching with 5-minute TTL.
+ *
+ * @async
+ * @param {number} latitude
+ * @param {number} longitude
+ * @param {AbortSignal} [signal]
+ * @param {boolean} [bypassCache=false]
+ * @returns {Promise<object>}
+ */
+async function getAirQualityData(latitude, longitude, signal, bypassCache = false) {
+  if (!isValidNumber(latitude) || !isValidNumber(longitude)) {
+    throw new Error('Valid numerical latitude and longitude are required for air quality.');
+  }
+
+  const cacheKey = buildCoordinateCacheKey(latitude, longitude);
+
+  // In-Memory Cache Lookup (0ms response, zero bandwidth)
+  if (!bypassCache) {
+    const cachedEntry = getCacheEntry(airQualityCache, cacheKey, API_CONFIG.AQ_CACHE_TTL_MS, 'airQuality');
+    if (cachedEntry) {
+      const aqCopy = JSON.parse(JSON.stringify(cachedEntry.data));
+      aqCopy.isCached = true;
+      aqCopy.cachedAt = cachedEntry.timestamp;
+      return aqCopy;
+    }
+  }
+
+  const params = new URLSearchParams({
+    latitude: latitude.toString(),
+    longitude: longitude.toString(),
+    current: [
+      'european_aqi',
+      'us_aqi',
+      'pm2_5',
+      'pm10',
+      'nitrogen_dioxide',
+      'ozone'
+    ].join(','),
+    timezone: 'auto'
+  });
+
+  const url = `${API_CONFIG.AIR_QUALITY_URL}?${params.toString()}`;
+
+  let response;
+  try {
+    response = await fetchWithNetworkResilience(url, { signal }, API_CONFIG.TIMEOUT_MS, 1);
+  } catch (netErr) {
+    if (netErr.name === 'AbortError') {
+      throw netErr;
+    }
+    if (netErr.message && (netErr.message.includes('timed out') || netErr.message.includes('offline'))) {
+      throw netErr;
+    }
+    throw new Error('Network connection error. Unable to reach air quality service.');
+  }
+
+  if (response.status === 429) {
+    throw new Error('Air quality service unavailable (HTTP 429). Please try again later.');
+  }
+
+  if (!response.ok) {
+    throw new Error(`Air quality service unavailable (HTTP ${response.status}). Please try again later.`);
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch (jsonErr) {
+    throw new Error('Received an invalid response format from air quality service.');
+  }
+
+  if (!data || typeof data !== 'object' || !data.current || typeof data.current !== 'object') {
+    throw new Error('Incomplete air quality information received from service.');
+  }
+
+  const current = data.current;
+  const result = {
+    observedAt: typeof current.time === 'string' ? current.time : null,
+    europeanAqi: isValidNumber(current.european_aqi) ? current.european_aqi : null,
+    usAqi: isValidNumber(current.us_aqi) ? current.us_aqi : null,
+    pm25: isValidNumber(current.pm2_5) ? current.pm2_5 : null,
+    pm10: isValidNumber(current.pm10) ? current.pm10 : null,
+    nitrogenDioxide: isValidNumber(current.nitrogen_dioxide) ? current.nitrogen_dioxide : null,
+    ozone: isValidNumber(current.ozone) ? current.ozone : null,
+    fetchedAt: Date.now(),
+    isCached: false
+  };
+
+  setCacheEntry(airQualityCache, cacheKey, result);
+  return result;
+}
+
+/**
+ * Asynchronously fetches and renders air quality in a non-blocking manner.
+ * Guarantees that air quality API failures will never block or break the primary weather dashboard.
+ *
+ * @async
+ * @param {number} latitude
+ * @param {number} longitude
+ * @param {AbortSignal} [signal]
+ * @param {boolean} [bypassCache=false]
+ * @returns {Promise<object|null>}
+ */
+async function fetchAndRenderAirQuality(latitude, longitude, signal, bypassCache = false) {
+  if (!isValidNumber(latitude) || !isValidNumber(longitude)) {
+    return null;
+  }
+
+  try {
+    const aqData = await getAirQualityData(latitude, longitude, signal, bypassCache);
+    lastLoadedAirQuality = aqData;
+    renderAirQuality(aqData);
+    return aqData;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      return null;
+    }
+    console.warn('[AirQualityModule] Air quality fetch failed (non-blocking):', err.message);
+    renderAirQualityUnavailable(err.message || 'Air quality data currently unavailable.');
+    return null;
+  }
+}
+
 // --------------------------------------------------------------------------
 // 8. Search Orchestration & Geolocation
 // --------------------------------------------------------------------------
@@ -1538,8 +1878,17 @@ async function searchWeather(cityOverride, bypassCache = false) {
         lastLoadedLocation = cachedGeo.data;
         lastLoadedWeather = { ...cachedWeather.data, isCached: true };
         renderDashboard(lastLoadedLocation, lastLoadedWeather);
+
+        const cachedAq = getCacheEntry(airQualityCache, coordKey, API_CONFIG.AQ_CACHE_TTL_MS, 'airQuality');
+        if (cachedAq) {
+          lastLoadedAirQuality = { ...cachedAq.data, isCached: true };
+          renderAirQuality(lastLoadedAirQuality);
+        } else {
+          renderAirQualityUnavailable('Air quality not available in offline cache.');
+        }
+
         showOfflineBanner(`You are offline. Showing cached weather for "${cachedGeo.data.name}".`);
-        return { location: lastLoadedLocation, weather: lastLoadedWeather };
+        return { location: lastLoadedLocation, weather: lastLoadedWeather, airQuality: lastLoadedAirQuality };
       }
     }
   }
@@ -1576,6 +1925,10 @@ async function searchWeather(cityOverride, bypassCache = false) {
 
     renderDashboard(location, weather);
     saveRecentCity(location.name);
+
+    // Fetch and render Air Quality non-blockingly without delaying weather presentation (Phase 19)
+    fetchAndRenderAirQuality(location.latitude, location.longitude, signal, bypassCache)
+      .catch((aqErr) => console.warn('[WeatherDashboard] Non-blocking air quality error:', aqErr));
 
     if (DOM.searchInput) {
       DOM.searchInput.value = location.name;
@@ -1784,6 +2137,10 @@ function handleGeolocationSearch() {
           lastLoadedWeather = weather;
 
           renderDashboard(location, weather);
+
+          // Fetch and render Air Quality non-blockingly without delaying weather presentation (Phase 19)
+          fetchAndRenderAirQuality(lat, lon, signal, false)
+            .catch((aqErr) => console.warn('[WeatherDashboard Geolocation] Non-blocking air quality error:', aqErr));
 
           // Privacy & Usability: only persist real resolved city names into recent searches
           if (locationName && locationName !== 'Your Location' && locationName !== 'My Location') {
@@ -2046,9 +2403,20 @@ if (typeof window !== 'undefined') {
     get: () => weatherCache,
     configurable: true
   });
+  Object.defineProperty(window, 'airQualityCache', {
+    get: () => airQualityCache,
+    configurable: true
+  });
   window.findHourlyStartIndex = findHourlyStartIndex;
   window.extractHourlyForecast = extractHourlyForecast;
   window.formatHourlyTimeLabel = formatHourlyTimeLabel;
+  window.classifyEuropeanAQI = classifyEuropeanAQI;
+  window.classifyUSAQI = classifyUSAQI;
+  window.formatAQIObservationTime = formatAQIObservationTime;
+  window.renderAirQuality = renderAirQuality;
+  window.renderAirQualityUnavailable = renderAirQualityUnavailable;
+  window.getAirQualityData = getAirQualityData;
+  window.fetchAndRenderAirQuality = fetchAndRenderAirQuality;
   Object.defineProperty(window, 'isGeolocationPending', {
     get: () => isGeolocationPending,
     configurable: true
@@ -2067,6 +2435,11 @@ if (typeof window !== 'undefined') {
     set: (v) => { lastLoadedLocation = v; },
     configurable: true
   });
+  Object.defineProperty(window, 'lastLoadedAirQuality', {
+    get: () => lastLoadedAirQuality,
+    set: (v) => { lastLoadedAirQuality = v; },
+    configurable: true
+  });
 }
 
 if (typeof document !== 'undefined') {
@@ -2083,6 +2456,7 @@ if (typeof module !== 'undefined' && module.exports) {
     API_CONFIG,
     geoCache,
     weatherCache,
+    airQualityCache,
     cacheDiagnostics,
     buildCoordinateCacheKey,
     setCacheEntry,
@@ -2125,6 +2499,13 @@ if (typeof module !== 'undefined' && module.exports) {
     showOfflineBanner,
     hideOfflineBanner,
     handleOnlineState,
-    handleOfflineState
+    handleOfflineState,
+    classifyEuropeanAQI,
+    classifyUSAQI,
+    formatAQIObservationTime,
+    renderAirQuality,
+    renderAirQualityUnavailable,
+    getAirQualityData,
+    fetchAndRenderAirQuality
   };
 }

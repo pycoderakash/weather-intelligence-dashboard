@@ -1441,6 +1441,282 @@ body.theme-foggy {
 }
 
 /* --------------------------------------------------------------------------
+   11b. Air Quality Monitoring Section (Phase 19)
+   -------------------------------------------------------------------------- */
+.air-quality-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 320px;
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aqi-timestamp-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.aqi-timestamp-text time {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Dual AQI Index Comparison Grid */
+.aqi-indexes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.aqi-index-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: var(--glass-backdrop-blur);
+  -webkit-backdrop-filter: var(--glass-backdrop-blur);
+  box-shadow: var(--shadow-sm), var(--glass-inner-glow);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
+  gap: 10px;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.aqi-index-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(56, 189, 248, 0.12);
+}
+
+.aqi-index-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aqi-index-title {
+  font-size: 0.925rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-main);
+}
+
+.aqi-standard-badge {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}
+
+.aqi-index-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 2px 0;
+}
+
+.aqi-index-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.aqi-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+  line-height: 1.2;
+}
+
+/* AQI Classification Colors */
+.aqi-badge.aqi-badge-good {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #6ee7b7;
+}
+
+.aqi-badge.aqi-badge-fair {
+  background: rgba(6, 182, 212, 0.18);
+  border: 1px solid rgba(6, 182, 212, 0.45);
+  color: #67e8f9;
+}
+
+.aqi-badge.aqi-badge-moderate {
+  background: rgba(234, 179, 8, 0.18);
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  color: #fde047;
+}
+
+.aqi-badge.aqi-badge-sensitive,
+.aqi-badge.aqi-badge-poor {
+  background: rgba(249, 115, 22, 0.18);
+  border: 1px solid rgba(249, 115, 22, 0.45);
+  color: #fdba74;
+}
+
+.aqi-badge.aqi-badge-unhealthy,
+.aqi-badge.aqi-badge-very-poor {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+.aqi-badge.aqi-badge-very-unhealthy,
+.aqi-badge.aqi-badge-extremely-poor {
+  background: rgba(168, 85, 247, 0.22);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  color: #d8b4fe;
+}
+
+.aqi-badge.aqi-badge-hazardous {
+  background: rgba(220, 38, 38, 0.28);
+  border: 1px solid rgba(220, 38, 38, 0.6);
+  color: #fecaca;
+}
+
+.aqi-badge.aqi-badge-unknown {
+  background: rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
+
+.aqi-index-footer {
+  width: 100%;
+}
+
+.aqi-subtext {
+  font-size: 0.775rem;
+  color: var(--text-faint);
+  line-height: 1.3;
+}
+
+/* Detailed Pollutants Grid */
+.pollutants-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+.pollutant-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  backdrop-filter: var(--glass-backdrop-blur);
+  -webkit-backdrop-filter: var(--glass-backdrop-blur);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 115px;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.pollutant-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.pollutant-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.pollutant-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.pollutant-fullname {
+  font-size: 0.725rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.pollutant-body {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.pollutant-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+.pollutant-unit {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.pollutant-footer {
+  width: 100%;
+}
+
+.pollutant-desc {
+  font-size: 0.725rem;
+  color: var(--text-faint);
+  line-height: 1.25;
+}
+
+/* Informational Disclaimer Note (Requirement 8) */
+.aqi-disclaimer-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  margin-top: 4px;
+}
+
+.disclaimer-icon {
+  color: #38bdf8;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.disclaimer-text {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.disclaimer-text strong {
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
    12. Application Footer
    -------------------------------------------------------------------------- */
 .app-footer {
@@ -1547,6 +1823,11 @@ body.theme-foggy {
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
   }
+
+  .pollutants-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
 }
 
 /* Tablet (768px to 1023px) */
@@ -1577,6 +1858,11 @@ body.theme-foggy {
 
   .daily-forecast-grid {
     grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .aqi-indexes-grid {
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
@@ -1728,6 +2014,10 @@ body.theme-foggy {
   }
 
   .daily-forecast-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pollutants-grid {
     grid-template-columns: 1fr;
   }
 

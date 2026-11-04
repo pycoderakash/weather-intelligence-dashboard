@@ -312,6 +312,136 @@
           </div>
         </section>
 
+        <!-- 6. Air Quality Monitoring Section (Phase 19) -->
+        <section class="air-quality-section" id="air-quality-section" aria-label="Air Quality Monitoring" hidden>
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <h3 class="section-title">Air Quality Index</h3>
+              <span class="section-subtitle">Atmospheric pollution & pollutant concentrations</span>
+            </div>
+            <div class="aqi-timestamp-wrap">
+              <svg class="clock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="14" height="14">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span class="aqi-timestamp-text">Observed: <time id="aqi-observation-time">--</time></span>
+            </div>
+          </div>
+
+          <!-- Primary AQI Comparison Grid (European vs US AQI) -->
+          <div class="aqi-indexes-grid" id="aqi-indexes-grid">
+            
+            <!-- European AQI Card -->
+            <article class="aqi-index-card eaqi-card" id="eaqi-card">
+              <div class="aqi-index-header">
+                <span class="aqi-index-title">European AQI</span>
+                <span class="aqi-standard-badge" title="European Environment Agency standard">EEA Scale (0–100+)</span>
+              </div>
+              <div class="aqi-index-body">
+                <span id="eaqi-value" class="aqi-index-value">--</span>
+                <span id="eaqi-badge" class="aqi-badge aqi-badge-unknown">--</span>
+              </div>
+              <div class="aqi-index-footer">
+                <span id="eaqi-status" class="aqi-subtext">European air quality standard</span>
+              </div>
+            </article>
+
+            <!-- US AQI Card -->
+            <article class="aqi-index-card us-aqi-card" id="us-aqi-card">
+              <div class="aqi-index-header">
+                <span class="aqi-index-title">United States AQI</span>
+                <span class="aqi-standard-badge" title="United States Environmental Protection Agency standard">US EPA Scale (0–500)</span>
+              </div>
+              <div class="aqi-index-body">
+                <span id="us-aqi-value" class="aqi-index-value">--</span>
+                <span id="us-aqi-badge" class="aqi-badge aqi-badge-unknown">--</span>
+              </div>
+              <div class="aqi-index-footer">
+                <span id="us-aqi-status" class="aqi-subtext">US EPA air quality standard</span>
+              </div>
+            </article>
+
+          </div>
+
+          <!-- Pollutant Particulate Concentrations Grid -->
+          <div class="pollutants-grid" id="pollutants-grid" aria-label="Detailed Air Pollutants">
+            
+            <!-- PM2.5 Card -->
+            <article class="pollutant-card" id="pm25-card">
+              <div class="pollutant-header">
+                <span class="pollutant-name">PM<sub>2.5</sub></span>
+                <span class="pollutant-fullname">Fine Particulate</span>
+              </div>
+              <div class="pollutant-body">
+                <span id="pm25-value" class="pollutant-value">--</span>
+                <span class="pollutant-unit">μg/m³</span>
+              </div>
+              <div class="pollutant-footer">
+                <span class="pollutant-desc">Combustion particles, smoke</span>
+              </div>
+            </article>
+
+            <!-- PM10 Card -->
+            <article class="pollutant-card" id="pm10-card">
+              <div class="pollutant-header">
+                <span class="pollutant-name">PM<sub>10</sub></span>
+                <span class="pollutant-fullname">Coarse Particulate</span>
+              </div>
+              <div class="pollutant-body">
+                <span id="pm10-value" class="pollutant-value">--</span>
+                <span class="pollutant-unit">μg/m³</span>
+              </div>
+              <div class="pollutant-footer">
+                <span class="pollutant-desc">Dust, pollen, mold spores</span>
+              </div>
+            </article>
+
+            <!-- Nitrogen Dioxide (NO2) Card -->
+            <article class="pollutant-card" id="no2-card">
+              <div class="pollutant-header">
+                <span class="pollutant-name">NO<sub>2</sub></span>
+                <span class="pollutant-fullname">Nitrogen Dioxide</span>
+              </div>
+              <div class="pollutant-body">
+                <span id="no2-value" class="pollutant-value">--</span>
+                <span class="pollutant-unit">μg/m³</span>
+              </div>
+              <div class="pollutant-footer">
+                <span class="pollutant-desc">Vehicle exhaust, power plants</span>
+              </div>
+            </article>
+
+            <!-- Ozone (O3) Card -->
+            <article class="pollutant-card" id="ozone-card">
+              <div class="pollutant-header">
+                <span class="pollutant-name">O<sub>3</sub></span>
+                <span class="pollutant-fullname">Ground Ozone</span>
+              </div>
+              <div class="pollutant-body">
+                <span id="ozone-value" class="pollutant-value">--</span>
+                <span class="pollutant-unit">μg/m³</span>
+              </div>
+              <div class="pollutant-footer">
+                <span class="pollutant-desc">Smog photochemical reactions</span>
+              </div>
+            </article>
+
+          </div>
+
+          <!-- Informational Medical Disclaimer Note (Requirement 8) -->
+          <div class="aqi-disclaimer-note" id="aqi-disclaimer-note" role="note" aria-label="Health Disclaimer">
+            <svg class="disclaimer-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <p class="disclaimer-text">
+              <strong>Notice:</strong> Air quality index categories and pollutant metrics are provided for general informational guidance only and do not constitute personal medical diagnoses or health recommendations.
+            </p>
+          </div>
+
+        </section>
+
       </section>
 
     </main>

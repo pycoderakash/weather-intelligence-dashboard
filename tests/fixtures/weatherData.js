@@ -85,10 +85,42 @@ const mockReverseGeoDelhi = {
   longitude: 77.23
 };
 
+const mockAirQualityDelhi = {
+  latitude: 28.7,
+  longitude: 77.2,
+  timezone: 'Asia/Kolkata',
+  current: {
+    time: '2026-11-04T18:30',
+    european_aqi: 97,
+    us_aqi: 211,
+    pm2_5: 133.2,
+    pm10: 194.2,
+    nitrogen_dioxide: 84.3,
+    ozone: 62.0
+  }
+};
+
+const mockAirQualityClean = {
+  latitude: 35.69,
+  longitude: 139.69,
+  timezone: 'Asia/Tokyo',
+  current: {
+    time: '2026-11-04T12:00',
+    european_aqi: 18,
+    us_aqi: 32,
+    pm2_5: 8.5,
+    pm10: 14.2,
+    nitrogen_dioxide: 12.1,
+    ozone: 24.0
+  }
+};
+
 module.exports = {
   mockGeocodingDelhi,
   mockGeocodingTokyo,
   mockGeocodingEmpty,
   mockWeatherDelhi,
-  mockReverseGeoDelhi
+  mockReverseGeoDelhi,
+  mockAirQualityDelhi,
+  mockAirQualityClean
 };
