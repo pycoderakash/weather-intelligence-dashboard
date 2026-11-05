@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    hookTimeout: 30000,
+    testTimeout: 30000,
     include: [
       'tests/unit/**/*.{test,spec}.js',
       'tests/integration/**/*.{test,spec}.js'

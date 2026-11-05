@@ -19,6 +19,8 @@ const STATIC_ASSETS = [
   './script.js',
   './manifest.json',
   './vendor/chart.umd.min.js',
+  './vendor/leaflet/leaflet.css',
+  './vendor/leaflet/leaflet.js',
   './icons/icon.svg',
   './icons/icon-maskable.svg',
   './icons/icon-192.png',
@@ -37,6 +39,8 @@ const BYPASS_API_HOSTS = [
   'api.open-meteo.com',
   'geocoding-api.open-meteo.com',
   'air-quality-api.open-meteo.com',
+  'archive-api.open-meteo.com',
+  'climate-api.open-meteo.com',
   'api.bigdatacloud.net'
 ];
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Professional real-time weather dashboard powered by Open-Meteo API. Search any city for real-time temperature, humidity, wind speed, pressure, and UV index.">
+  <meta name="description" content="Professional real-time weather intelligence dashboard powered by Open-Meteo API. Interactive radar map, hourly timeline, 7-day forecast, monthly calendar, and climate reports.">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,539 +19,2382 @@
   <!-- Performance Optimization: Resource Hints for DNS Pre-resolution & Pre-connect -->
   <link rel="preconnect" href="https://geocoding-api.open-meteo.com" crossorigin>
   <link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
+  <link rel="preconnect" href="https://air-quality-api.open-meteo.com" crossorigin>
   <link rel="preconnect" href="https://api.bigdatacloud.net" crossorigin>
+  <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
   <link rel="dns-prefetch" href="https://geocoding-api.open-meteo.com">
   <link rel="dns-prefetch" href="https://api.open-meteo.com">
+  <link rel="dns-prefetch" href="https://air-quality-api.open-meteo.com">
   <link rel="dns-prefetch" href="https://api.bigdatacloud.net">
+  <link rel="dns-prefetch" href="https://tile.openstreetmap.org">
 
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="style.css">
   <script src="vendor/chart.umd.min.js" defer></script>
+  <script src="vendor/leaflet/leaflet.js" defer></script>
   <script src="script.js" defer></script>
 </head>
 <body>
   <!-- Accessibility: Skip to Main Content Link (WCAG 2.4.1) -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <div class="app-container" id="app-container">
+  <!-- Mobile Sidebar Overlay Backdrop -->
+  <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+  <!-- Primary Dashboard Layout Shell -->
+  <div class="app-container dashboard-layout" id="app-container">
     
-    <!-- 1. Application Header & 2. Weather Dashboard Title -->
-    <header class="app-header" id="app-header">
-      <div class="header-brand">
-        <svg class="header-icon" id="header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="32" height="32">
-          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
-        </svg>
-        <div class="header-text">
-          <h1 class="app-title" id="app-title">Weather Dashboard</h1>
-          <p class="app-subtitle" id="app-subtitle">Real-time meteorological insights powered by Open-Meteo</p>
-        </div>
-      </div>
-
-      <!-- Header Actions: Unit Toggle & PWA Install Button -->
-      <div class="header-actions">
-        <!-- PWA Install Button (Phase 21) -->
-        <button type="button" class="install-pwa-btn" id="install-pwa-btn" aria-label="Install Weather Dashboard App" title="Install Weather Dashboard as application" hidden>
-          <svg class="install-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          <span class="install-text">Install</span>
-        </button>
-
-        <div class="unit-toggle-wrapper" id="unit-toggle-wrapper" role="group" aria-label="Temperature unit selection">
-          <button type="button" class="unit-toggle-btn active" id="unit-c-btn" data-unit="C" aria-pressed="true" aria-label="Display temperature in Celsius">&deg;C</button>
-          <button type="button" class="unit-toggle-btn" id="unit-f-btn" data-unit="F" aria-pressed="false" aria-label="Display temperature in Fahrenheit">&deg;F</button>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <main class="main-content" id="main-content">
-
-      <!-- 3. City Search Input & 4. Search Button -->
-      <section class="search-section" id="search-section" aria-label="City Search">
-        <form class="search-form" id="search-form" role="search" novalidate>
-          <div class="search-input-wrapper">
-            <label for="search-input" class="visually-hidden">Search city name</label>
-            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.3-4.3"/>
+    <!-- ====================================================================
+         1. PROFESSIONAL SIDEBAR NAVIGATION
+         ==================================================================== -->
+    <aside class="dashboard-sidebar" id="dashboard-sidebar" aria-label="Main Navigation">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="brand-icon-wrap" aria-hidden="true">
+            <svg class="header-icon brand-icon" id="header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28">
+              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
             </svg>
-            <input 
-              type="search" 
-              id="search-input" 
-              class="search-input" 
-              name="city" 
-              placeholder="Enter city name (e.g., London, Tokyo, New York)..." 
-              autocomplete="off" 
-              spellcheck="false" 
-              required 
-              aria-label="City name"
-              aria-describedby="search-hint"
-            >
-            <button type="button" id="clear-search-btn" class="clear-search-btn" aria-label="Clear search input" hidden>
+          </div>
+          <div class="brand-text">
+            <h1 class="app-title" id="app-title">Weather Dashboard</h1>
+            <span class="brand-subtitle">Intelligence Suite</span>
+          </div>
+        </div>
+        <button type="button" class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close navigation menu">
+          &times;
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="sidebar-nav" id="sidebar-nav" aria-label="Dashboard Views">
+        <ul class="nav-list" role="tablist">
+          <li class="nav-item" role="none">
+            <button type="button" class="nav-link active" id="nav-overview" data-view="overview" role="tab" aria-selected="true" aria-controls="view-overview" aria-label="Overview">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+                <rect width="7" height="9" x="3" y="3" rx="1"/>
+                <rect width="7" height="5" x="14" y="3" rx="1"/>
+                <rect width="7" height="9" x="14" y="12" rx="1"/>
+                <rect width="7" height="5" x="3" y="16" rx="1"/>
+              </svg>
+              <span class="nav-text">Overview</span>
+            </button>
+          </li>
+          <li class="nav-item" role="none">
+            <button type="button" class="nav-link" id="nav-map" data-view="map" role="tab" aria-selected="false" aria-controls="view-map" aria-label="Weather Map">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+                <line x1="9" y1="3" x2="9" y2="18"/>
+                <line x1="15" y1="6" x2="15" y2="21"/>
+              </svg>
+              <span class="nav-text">Weather Map</span>
+              <span class="nav-pill">Radar</span>
+            </button>
+          </li>
+          <li class="nav-item" role="none">
+            <button type="button" class="nav-link" id="nav-forecast" data-view="forecast" role="tab" aria-selected="false" aria-controls="view-forecast" aria-label="Forecast">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+                <path d="M12 2v2"/>
+                <path d="m4.93 4.93 1.41 1.41"/>
+                <path d="M20 12h2"/>
+                <path d="m19.07 4.93-1.41 1.41"/>
+                <path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/>
+                <path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>
+              </svg>
+              <span class="nav-text">Forecast</span>
+            </button>
+          </li>
+          <li class="nav-item" role="none">
+            <button type="button" class="nav-link" id="nav-analytics" data-view="analytics" role="tab" aria-selected="false" aria-controls="view-analytics" aria-label="Analytics">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+              <span class="nav-text">Analytics</span>
+            </button>
+          </li>
+          <li class="nav-item" role="none">
+            <button type="button" class="nav-link" id="nav-calendar" data-view="calendar" role="tab" aria-selected="false" aria-controls="view-calendar" aria-label="Calendar">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <span class="nav-text">Calendar</span>
+            </button>
+          </li>
+          <li class="nav-item" role="none">
+            <button type="button" class="nav-link" id="nav-climate" data-view="climate" role="tab" aria-selected="false" aria-controls="view-climate" aria-label="Climate Reports">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <span class="nav-text">Climate Reports</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Sidebar Active Location Card -->
+      <div class="sidebar-location-card" id="sidebar-location-card">
+        <div class="sidebar-loc-header">
+          <span class="sidebar-loc-label">Active City</span>
+          <span class="sidebar-loc-pulse" aria-hidden="true"></span>
+        </div>
+        <div class="sidebar-loc-name" id="sidebar-loc-name">--</div>
+        <div class="sidebar-loc-meta">
+          <span class="sidebar-loc-temp" id="sidebar-loc-temp">--&deg;C</span>
+          <span class="sidebar-loc-cond" id="sidebar-loc-cond">Awaiting Search</span>
+        </div>
+        <!-- Severe Weather Status Pill in Sidebar -->
+        <div class="sidebar-alert-pill" id="sidebar-alert-pill" hidden>
+          <span class="sap-icon" aria-hidden="true">⚠️</span>
+          <span class="sap-text" id="sap-text">No Hazards</span>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="sidebar-status">
+          <span class="status-dot online" aria-hidden="true"></span>
+          <span class="status-caption">Open-Meteo REST</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ====================================================================
+         2. MAIN DASHBOARD WRAPPER (Top Bar + Dynamic Views Container)
+         ==================================================================== -->
+    <div class="dashboard-main-wrapper" id="dashboard-main-wrapper">
+
+      <!-- Top Navigation Bar -->
+      <header class="app-header dashboard-topbar" id="app-header">
+        <div class="topbar-left">
+          <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Toggle navigation sidebar" title="Toggle Navigation Sidebar">
+            <svg class="hamburger-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div class="topbar-title-group">
+            <span class="topbar-breadcrumb">Intelligence Dashboard</span>
+            <h2 class="topbar-view-title" id="topbar-view-title">Overview</h2>
+          </div>
+        </div>
+
+        <!-- Location Search Form in Topbar -->
+        <div class="topbar-center">
+          <section class="search-section" id="search-section" aria-label="City Search">
+            <form class="search-form" id="search-form" role="search" novalidate>
+              <div class="search-input-wrapper">
+                <label for="search-input" class="visually-hidden">Search city name</label>
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.3-4.3"/>
+                </svg>
+                <input 
+                  type="search" 
+                  id="search-input" 
+                  class="search-input" 
+                  name="city" 
+                  placeholder="Search global city (e.g., London, Tokyo, New York)..." 
+                  autocomplete="off" 
+                  spellcheck="false" 
+                  required 
+                  aria-label="City name"
+                  aria-describedby="search-hint"
+                >
+                <button type="button" id="clear-search-btn" class="clear-search-btn" aria-label="Clear search input" hidden>
+                  &times;
+                </button>
+              </div>
+              <button type="submit" id="search-btn" class="search-btn" aria-label="Search weather for entered city">
+                <span class="btn-text">Search</span>
+              </button>
+              <button type="button" id="geo-btn" class="geo-btn" aria-label="Use my current location" title="Use my current location (Reverse geocoding by BigDataCloud)">
+                <svg class="geo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polygon points="12 2 15 8 12 14 9 8 12 2"/>
+                </svg>
+                <span class="geo-btn-text">My Location</span>
+              </button>
+            </form>
+            <p id="search-hint" class="search-hint visually-hidden">Enter a city name and press Enter or click Search</p>
+            
+            <!-- Search History / Recent Cities Chips -->
+            <div class="recent-searches-container" id="recent-searches-container" aria-label="Recent Searches" hidden>
+              <span class="recent-searches-label">Recent:</span>
+              <div class="recent-chips" id="recent-chips" role="list"></div>
+              <button type="button" class="clear-history-btn" id="clear-history-btn" aria-label="Clear recent search history">Clear</button>
+            </div>
+          </section>
+        </div>
+
+        <!-- Header Actions: Unit Toggle, PWA Install & Actions -->
+        <div class="topbar-right header-actions">
+          <!-- Open Map Button -->
+          <button type="button" class="header-action-btn" id="open-map-btn" aria-label="Open Interactive Weather Map" title="Open Interactive Weather Map">
+            <span aria-hidden="true">🗺️</span>
+            <span class="btn-text">Open Map</span>
+          </button>
+
+          <!-- PWA Install Button (Phase 21) -->
+          <button type="button" class="install-pwa-btn" id="install-pwa-btn" aria-label="Install Weather Dashboard App" title="Install Weather Dashboard as application" hidden>
+            <svg class="install-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span class="install-text">Install</span>
+          </button>
+
+          <!-- Temperature Unit Toggle -->
+          <div class="unit-toggle-wrapper" id="unit-toggle-wrapper" role="group" aria-label="Temperature unit selection">
+            <button type="button" class="unit-toggle-btn active" id="unit-c-btn" data-unit="C" aria-pressed="true" aria-label="Display temperature in Celsius">&deg;C</button>
+            <button type="button" class="unit-toggle-btn" id="unit-f-btn" data-unit="F" aria-pressed="false" aria-label="Display temperature in Fahrenheit">&deg;F</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content Area -->
+      <main class="main-content" id="main-content">
+
+        <!-- Offline Status Banner (Network Resilience - Phase 17) -->
+        <div id="offline-banner" class="offline-banner" role="status" aria-live="polite" hidden>
+          <div class="offline-content">
+            <svg class="offline-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+              <line x1="1" y1="1" x2="23" y2="23"/>
+              <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+              <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+              <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+              <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+              <line x1="12" y1="20" x2="12.01" y2="20"/>
+            </svg>
+            <span id="offline-message" class="offline-message">You are currently offline. Showing cached data where available.</span>
+          </div>
+        </div>
+
+        <!-- PWA Update Notification Banner (Phase 21) -->
+        <div id="pwa-update-banner" class="pwa-update-banner" role="status" aria-live="polite" hidden>
+          <div class="pwa-update-content">
+            <svg class="pwa-update-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            <span class="pwa-update-text">A new version of Weather Dashboard is available.</span>
+          </div>
+          <div class="pwa-update-actions">
+            <button type="button" id="pwa-update-reload-btn" class="pwa-update-reload-btn" aria-label="Update application now">
+              Update Now
+            </button>
+            <button type="button" id="pwa-update-dismiss-btn" class="pwa-update-dismiss-btn" aria-label="Dismiss update notification">
               &times;
             </button>
           </div>
-          <button type="submit" id="search-btn" class="search-btn" aria-label="Search weather for entered city">
-            <span class="btn-text">Search</span>
-          </button>
-          <button type="button" id="geo-btn" class="geo-btn" aria-label="Use my current location" title="Use my current location (Reverse geocoding by BigDataCloud)">
-            <svg class="geo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="loading-indicator" role="status" aria-live="polite" aria-label="Loading weather data" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="loading-text" id="loading-text">Fetching current weather data...</p>
+        </div>
+
+        <!-- Error Message Container -->
+        <div id="error-container" class="error-container" role="alert" aria-live="assertive" hidden>
+          <div class="error-content">
+            <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22">
               <circle cx="12" cy="12" r="10"/>
-              <polygon points="12 2 15 8 12 14 9 8 12 2"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <span class="geo-btn-text">My Location</span>
-          </button>
-        </form>
-        <p id="search-hint" class="search-hint visually-hidden">Enter a city name and press Enter or click Search</p>
-        
-        <!-- Search History / Recent Cities Chips -->
-        <div class="recent-searches-container" id="recent-searches-container" aria-label="Recent Searches" hidden>
-          <span class="recent-searches-label">Recent:</span>
-          <div class="recent-chips" id="recent-chips" role="list"></div>
-          <button type="button" class="clear-history-btn" id="clear-history-btn" aria-label="Clear recent search history">Clear</button>
-        </div>
-      </section>
-
-      <!-- Offline Status Banner (Network Resilience - Phase 17) -->
-      <div id="offline-banner" class="offline-banner" role="status" aria-live="polite" hidden>
-        <div class="offline-content">
-          <svg class="offline-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
-            <line x1="1" y1="1" x2="23" y2="23"/>
-            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
-            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
-            <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
-            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-            <line x1="12" y1="20" x2="12.01" y2="20"/>
-          </svg>
-          <span id="offline-message" class="offline-message">You are currently offline. Showing cached data where available.</span>
-        </div>
-      </div>
-
-      <!-- PWA Update Notification Banner (Phase 21) -->
-      <div id="pwa-update-banner" class="pwa-update-banner" role="status" aria-live="polite" hidden>
-        <div class="pwa-update-content">
-          <svg class="pwa-update-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
-            <polyline points="23 4 23 10 17 10"/>
-            <polyline points="1 20 1 14 7 14"/>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-          </svg>
-          <span class="pwa-update-text">A new version of Weather Dashboard is available.</span>
-        </div>
-        <div class="pwa-update-actions">
-          <button type="button" id="pwa-update-reload-btn" class="pwa-update-reload-btn" aria-label="Update application now">
-            Update Now
-          </button>
-          <button type="button" id="pwa-update-dismiss-btn" class="pwa-update-dismiss-btn" aria-label="Dismiss update notification">
-            &times;
-          </button>
-        </div>
-      </div>
-
-      <!-- 5. Loading Indicator -->
-      <div id="loading-indicator" class="loading-indicator" role="status" aria-live="polite" aria-label="Loading weather data" hidden>
-        <div class="spinner" aria-hidden="true"></div>
-        <p class="loading-text" id="loading-text">Fetching current weather data...</p>
-      </div>
-
-      <!-- 6. Error Message Container -->
-      <div id="error-container" class="error-container" role="alert" aria-live="assertive" hidden>
-        <div class="error-content">
-          <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <p id="error-message" class="error-message">Unable to find requested city. Please verify spelling and try again.</p>
-        </div>
-        <div class="error-actions" id="error-actions">
-          <button type="button" id="retry-btn" class="retry-btn" aria-label="Retry last weather request" hidden>
-            Retry
-          </button>
-          <button type="button" id="error-dismiss-btn" class="error-dismiss-btn" aria-label="Dismiss error message">
-            &times;
-          </button>
-        </div>
-      </div>
-
-      <!-- 7. Main Weather Information Section -->
-      <section class="weather-dashboard" id="weather-dashboard" aria-label="Weather Forecast Display" aria-live="polite">
-        
-        <!-- Primary Weather Card -->
-        <article class="weather-card primary-card" id="weather-card">
-          
-          <!-- 8. City and Country Information -->
-          <div class="location-container" id="location-container">
-            <div class="location-header">
-              <svg class="location-pin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22">
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              <h2 id="location-name" class="location-name">--</h2>
-            </div>
-            <p id="location-details" class="location-details">Search for a city to display current weather</p>
+            <p id="error-message" class="error-message">Unable to find requested city. Please verify spelling and try again.</p>
           </div>
-
-          <!-- Hero Weather Representation -->
-          <div class="weather-hero" id="weather-hero">
-            
-            <!-- 10. Weather Condition & Icon -->
-            <div class="condition-wrapper" id="condition-wrapper">
-              <div id="weather-icon-container" class="weather-icon-container" aria-hidden="true">
-                <span id="weather-icon" class="weather-icon">--</span>
-              </div>
-              <p id="weather-condition" class="weather-condition">Awaiting Search</p>
-            </div>
-
-            <!-- 9. Temperature Display & 11. Feels-like Temperature -->
-            <div class="temperature-wrapper" id="temperature-wrapper">
-              <div class="temp-reading" id="temp-reading">
-                <span id="current-temperature" class="current-temperature">--</span>
-                <span class="temp-unit" aria-label="degrees Celsius">&deg;C</span>
-              </div>
-              <p class="feels-like-text" id="feels-like-container">
-                Feels like <span id="feels-like-temp">--</span><span id="feels-like-unit">&deg;C</span>
-              </p>
-            </div>
-
-          </div>
-
-          <!-- 16. Last Updated Information & Cache Freshness Controls -->
-          <div class="last-updated-container" id="last-updated-container">
-            <svg class="clock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <p class="last-updated-text">
-              Last updated: <time id="last-updated-time" datetime="">--</time>
-              <span id="cache-badge" class="cache-badge cache-badge-live" title="Data source freshness">Live</span>
-            </p>
-            <button type="button" id="refresh-btn" class="refresh-btn" aria-label="Refresh weather data (bypass cache)" title="Refresh weather data (bypass cache)">
-              <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="14" height="14">
-                <polyline points="23 4 23 10 17 10"/>
-                <polyline points="1 20 1 14 7 14"/>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-              </svg>
-              <span>Refresh</span>
+          <div class="error-actions" id="error-actions">
+            <button type="button" id="retry-btn" class="retry-btn" aria-label="Retry last weather request" hidden>
+              Retry
+            </button>
+            <button type="button" id="error-dismiss-btn" class="error-dismiss-btn" aria-label="Dismiss error message">
+              &times;
             </button>
           </div>
+        </div>
 
-        </article>
-
-        <!-- Weather Metrics Grid -->
-        <section class="weather-metrics-section" id="weather-metrics-section" aria-label="Detailed Weather Metrics">
-          <h3 class="visually-hidden">Weather Parameters</h3>
-          <div class="metrics-grid" id="metrics-grid">
-            
-            <!-- 12. Humidity Card -->
-            <article class="metric-card" id="humidity-card">
-              <div class="metric-header">
-                <span class="metric-label">Humidity</span>
-                <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
-                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-                </svg>
-              </div>
-              <div class="metric-body">
-                <span id="humidity-value" class="metric-value">--</span>
-                <span class="metric-unit" aria-hidden="true">%</span>
-              </div>
-              <div class="metric-footer">
-                <span class="metric-subtext" id="humidity-status">Relative humidity</span>
-              </div>
-            </article>
-
-            <!-- 13. Wind Speed Card -->
-            <article class="metric-card" id="wind-card">
-              <div class="metric-header">
-                <span class="metric-label">Wind Speed</span>
-                <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
-                  <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
-                  <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
-                  <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
-                </svg>
-              </div>
-              <div class="metric-body">
-                <span id="wind-value" class="metric-value">--</span>
-                <span class="metric-unit" aria-hidden="true">km/h</span>
-              </div>
-              <div class="metric-footer">
-                <span class="metric-subtext" id="wind-status">Wind at 10m altitude</span>
-              </div>
-            </article>
-
-            <!-- 14. Atmospheric Pressure Card -->
-            <article class="metric-card" id="pressure-card">
-              <div class="metric-header">
-                <span class="metric-label">Pressure</span>
-                <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="m14 14-4-4"/>
-                  <path d="M12 6v2"/>
-                  <path d="M6 12h2"/>
-                  <path d="M18 12h-2"/>
-                </svg>
-              </div>
-              <div class="metric-body">
-                <span id="pressure-value" class="metric-value">--</span>
-                <span class="metric-unit" aria-hidden="true">hPa</span>
-              </div>
-              <div class="metric-footer">
-                <span class="metric-subtext" id="pressure-status">Surface atmospheric pressure</span>
-              </div>
-            </article>
-
-            <!-- 15. UV Index Card -->
-            <article class="metric-card" id="uv-card">
-              <div class="metric-header">
-                <span class="metric-label" id="uv-label">Today's Maximum UV Index</span>
-                <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
-                  <circle cx="12" cy="12" r="4"/>
-                  <path d="M12 2v2"/>
-                  <path d="M12 20v2"/>
-                  <path d="m4.93 4.93 1.41 1.41"/>
-                  <path d="m17.66 17.66 1.41 1.41"/>
-                  <path d="M2 12h2"/>
-                  <path d="M20 12h2"/>
-                  <path d="m6.34 17.66-1.41 1.41"/>
-                  <path d="m19.07 4.93-1.41 1.41"/>
-                </svg>
-              </div>
-              <div class="metric-body">
-                <span id="uv-value" class="metric-value">--</span>
-                <span id="uv-badge" class="uv-badge">--</span>
-              </div>
-              <div class="metric-footer">
-                <span class="metric-subtext" id="uv-status">Peak solar ultraviolet intensity</span>
-              </div>
-            </article>
-
+        <!-- ====================================================================
+             SEVERE WEATHER & ATMOSPHERIC HAZARDS ALERT BANNER
+             WMO Common Alerting Protocol (CAP-v1.2) Compatible Engine
+             ==================================================================== -->
+        <div id="severe-weather-banner" class="severe-weather-banner" role="alert" aria-live="assertive" hidden>
+          <div class="swb-pulse-ring" aria-hidden="true"></div>
+          <div class="swb-icon-wrap" id="swb-icon-wrap">
+            <span class="swb-icon" id="swb-icon" aria-hidden="true">⚡</span>
           </div>
-        </section>
-
-        <!-- 4. Hourly Forecast Section (Upcoming 24 Hours) -->
-        <section class="forecast-section hourly-section" id="hourly-forecast-section" aria-label="Hourly Weather Forecast" hidden>
-          <div class="section-header">
-            <h3 class="section-title">Hourly Forecast</h3>
-            <span class="section-subtitle">Upcoming 24 hours</span>
-          </div>
-          <div class="hourly-forecast-track" id="hourly-forecast-track" role="region" tabindex="0" aria-label="Hourly temperature forecast. Use left and right arrow keys to scroll.">
-            <!-- Dynamically populated hourly cards -->
-          </div>
-        </section>
-
-        <!-- 5. Seven-Day Extended Forecast Section -->
-        <section class="forecast-section daily-section" id="daily-forecast-section" aria-label="7-Day Extended Weather Forecast" hidden>
-          <div class="section-header">
-            <h3 class="section-title">7-Day Forecast</h3>
-            <span class="section-subtitle">Daily overview</span>
-          </div>
-          <div class="daily-forecast-grid" id="daily-forecast-grid" role="list">
-            <!-- Dynamically populated 7-day cards -->
-          </div>
-        </section>
-
-        <!-- 6. Air Quality Monitoring Section (Phase 19) -->
-        <section class="air-quality-section" id="air-quality-section" aria-label="Air Quality Monitoring" hidden>
-          <div class="section-header">
-            <div class="section-title-wrap">
-              <h3 class="section-title">Air Quality Index</h3>
-              <span class="section-subtitle">Atmospheric pollution & pollutant concentrations</span>
+          <div class="swb-body">
+            <div class="swb-badge-row">
+              <span class="swb-severity-badge warning" id="swb-severity-badge">Warning</span>
+              <span class="swb-event-type" id="swb-event-type">Severe Hazard</span>
+              <span class="swb-timing-badge" id="swb-timing-badge">Active Now</span>
             </div>
-            <div class="aqi-timestamp-wrap">
-              <svg class="clock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="14" height="14">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              <span class="aqi-timestamp-text">Observed: <time id="aqi-observation-time">--</time></span>
+            <h4 class="swb-headline" id="swb-headline">Severe Weather Alert in effect</h4>
+            <p class="swb-summary" id="swb-summary">
+              Hazardous atmospheric conditions detected at station.
+            </p>
+          </div>
+          <div class="swb-actions">
+            <button type="button" class="btn btn-alert-inspect" id="swb-inspect-btn" aria-label="Inspect severe weather warning details and safety instructions">
+              <span>Safety Actions</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button type="button" class="swb-audio-btn" id="swb-audio-btn" aria-label="Toggle alert sound" title="Mute/Unmute alert sound">
+              <span id="swb-audio-icon" aria-hidden="true">🔔</span>
+            </button>
+            <button type="button" class="swb-dismiss-btn" id="swb-dismiss-btn" aria-label="Dismiss severe weather alert banner" title="Dismiss banner">&times;</button>
+          </div>
+        </div>
+
+        <!-- ====================================================================
+             DYNAMIC VIEWS CONTAINER
+             ==================================================================== -->
+        <div class="dashboard-views" id="dashboard-views">
+
+          <!-- ------------------------------------------------------------------
+               VIEW 1: OVERVIEW (Default Active Dashboard)
+               ------------------------------------------------------------------ -->
+          <section class="dashboard-view active" id="view-overview" data-view="overview" aria-label="Weather Overview">
+            
+            <section class="weather-dashboard" id="weather-dashboard" aria-label="Weather Forecast Display" aria-live="polite">
+              
+              <!-- Primary Weather Card -->
+              <article class="weather-card primary-card" id="weather-card">
+                
+                <!-- City and Country Information -->
+                <div class="location-container" id="location-container">
+                  <div class="location-header">
+                    <svg class="location-pin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22">
+                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <h2 id="location-name" class="location-name">--</h2>
+                  </div>
+                  <p id="location-details" class="location-details">Search for a city to display current weather</p>
+                </div>
+
+                <!-- Hero Weather Representation -->
+                <div class="weather-hero" id="weather-hero">
+                  
+                  <!-- Weather Condition & Icon -->
+                  <div class="condition-wrapper" id="condition-wrapper">
+                    <div id="weather-icon-container" class="weather-icon-container" aria-hidden="true">
+                      <span id="weather-icon" class="weather-icon">--</span>
+                    </div>
+                    <p id="weather-condition" class="weather-condition">Awaiting Search</p>
+                  </div>
+
+                  <!-- Temperature Display & Feels-like Temperature -->
+                  <div class="temperature-wrapper" id="temperature-wrapper">
+                    <div class="temp-reading" id="temp-reading">
+                      <span id="current-temperature" class="current-temperature">--</span>
+                      <span class="temp-unit" aria-label="degrees Celsius">&deg;C</span>
+                    </div>
+                    <p class="feels-like-text" id="feels-like-container">
+                      Feels like <span id="feels-like-temp">--</span><span id="feels-like-unit">&deg;C</span>
+                    </p>
+                  </div>
+
+                </div>
+
+                <!-- Last Updated Information & Cache Freshness Controls -->
+                <div class="last-updated-container" id="last-updated-container">
+                  <svg class="clock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <p class="last-updated-text">
+                    Last updated: <time id="last-updated-time" datetime="">--</time>
+                    <span id="cache-badge" class="cache-badge cache-badge-live" title="Data source freshness">Live</span>
+                  </p>
+                  <button type="button" id="refresh-btn" class="refresh-btn" aria-label="Refresh weather data (bypass cache)" title="Refresh weather data (bypass cache)">
+                    <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="14" height="14">
+                      <polyline points="23 4 23 10 17 10"/>
+                      <polyline points="1 20 1 14 7 14"/>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+              </article>
+
+              <!-- Weather Metrics Grid -->
+              <section class="weather-metrics-section" id="weather-metrics-section" aria-label="Detailed Weather Metrics">
+                <h3 class="visually-hidden">Weather Parameters</h3>
+                <div class="metrics-grid" id="metrics-grid">
+                  
+                  <!-- Humidity Card -->
+                  <article class="metric-card" id="humidity-card">
+                    <div class="metric-header">
+                      <span class="metric-label">Humidity</span>
+                      <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="humidity-value" class="metric-value">--</span>
+                      <span class="metric-unit" aria-hidden="true">%</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="humidity-status">Relative humidity</span>
+                    </div>
+                  </article>
+
+                  <!-- Wind Speed Card -->
+                  <article class="metric-card" id="wind-card" aria-label="Wind Speed">
+                    <div class="metric-header">
+                      <span class="metric-label">Wind Speed</span>
+                      <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
+                        <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
+                        <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="wind-value" class="metric-value">--</span>
+                      <span id="wind-unit" class="metric-unit" aria-hidden="true">km/h</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="wind-status">Wind at 10m altitude</span>
+                    </div>
+                  </article>
+
+                  <!-- Wind Direction Card -->
+                  <article class="metric-card" id="wind-direction-card" aria-label="Wind Direction">
+                    <div class="metric-header">
+                      <span class="metric-label">Wind Direction</span>
+                      <svg class="metric-icon compass-arrow-icon" id="wind-direction-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <polygon points="12 2 19 21 12 17 5 21 12 2"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="wind-direction-value" class="metric-value">--</span>
+                      <span id="wind-direction-cardinal" class="metric-badge metric-badge-info">--</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="wind-direction-status">Direction of surface airflow</span>
+                    </div>
+                  </article>
+
+                  <!-- Atmospheric Pressure Card -->
+                  <article class="metric-card" id="pressure-card" aria-label="Atmospheric Pressure">
+                    <div class="metric-header">
+                      <span class="metric-label">Pressure</span>
+                      <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="m14 14-4-4"/>
+                        <path d="M12 6v2"/>
+                        <path d="M6 12h2"/>
+                        <path d="M18 12h-2"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="pressure-value" class="metric-value">--</span>
+                      <span id="pressure-unit" class="metric-unit" aria-hidden="true">hPa</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="pressure-status">Surface atmospheric pressure</span>
+                    </div>
+                  </article>
+
+                  <!-- Visibility Card -->
+                  <article class="metric-card" id="visibility-card" aria-label="Atmospheric Visibility">
+                    <div class="metric-header">
+                      <span class="metric-label">Visibility</span>
+                      <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="visibility-value" class="metric-value">--</span>
+                      <span id="visibility-unit" class="metric-unit" aria-hidden="true">km</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="visibility-status">Horizontal atmospheric transparency</span>
+                    </div>
+                  </article>
+
+                  <!-- Cloud Coverage Card -->
+                  <article class="metric-card" id="cloud-cover-card" aria-label="Cloud Coverage">
+                    <div class="metric-header">
+                      <span class="metric-label">Cloud Coverage</span>
+                      <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="cloud-cover-value" class="metric-value">--</span>
+                      <span id="cloud-cover-badge" class="metric-badge">--</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="cloud-cover-status">Total celestial sky obscuration</span>
+                    </div>
+                  </article>
+
+                  <!-- UV Index Card -->
+                  <article class="metric-card" id="uv-card" aria-label="UV Radiation Index">
+                    <div class="metric-header">
+                      <span class="metric-label" id="uv-label">Today's Maximum UV Index</span>
+                      <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <circle cx="12" cy="12" r="4"/>
+                        <path d="M12 2v2"/>
+                        <path d="M12 20v2"/>
+                        <path d="m4.93 4.93 1.41 1.41"/>
+                        <path d="m17.66 17.66 1.41 1.41"/>
+                        <path d="M2 12h2"/>
+                        <path d="M20 12h2"/>
+                        <path d="m6.34 17.66-1.41 1.41"/>
+                        <path d="m19.07 4.93-1.41 1.41"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="uv-value" class="metric-value">--</span>
+                      <span id="uv-badge" class="uv-badge">--</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="uv-status">Peak solar ultraviolet intensity</span>
+                    </div>
+                  </article>
+
+                  <!-- Sunrise Card -->
+                  <article class="metric-card" id="sunrise-card" aria-label="Sunrise Time">
+                    <div class="metric-header">
+                      <span class="metric-label">Sunrise</span>
+                      <svg class="metric-icon metric-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <path d="M12 2v6M4.93 10.93l4.24 4.24M2 18h20M20 18a8 8 0 1 0-16 0"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="sunrise-value" class="metric-value">--</span>
+                      <span id="sunrise-badge" class="metric-badge metric-badge-sun">Dawn</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="sunrise-status">Solar daylight threshold</span>
+                    </div>
+                  </article>
+
+                  <!-- Sunset Card -->
+                  <article class="metric-card" id="sunset-card" aria-label="Sunset Time">
+                    <div class="metric-header">
+                      <span class="metric-label">Sunset</span>
+                      <svg class="metric-icon metric-icon-dusk" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <path d="M12 10V4M4.93 10.93l4.24 4.24M2 18h20M20 18a8 8 0 1 0-16 0"/>
+                        <path d="m16 10-4 4-4-4"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="sunset-value" class="metric-value">--</span>
+                      <span id="sunset-badge" class="metric-badge metric-badge-dusk">Dusk</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="sunset-status">Solar twilight threshold</span>
+                    </div>
+                  </article>
+
+                  <!-- Moonrise Card -->
+                  <article class="metric-card" id="moonrise-card" aria-label="Moonrise Time">
+                    <div class="metric-header">
+                      <span class="metric-label">Moonrise</span>
+                      <svg class="metric-icon metric-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                        <path d="M19 14v7M16 17l3-3 3 3"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="moonrise-value" class="metric-value">--</span>
+                      <span id="moonrise-badge" class="metric-badge metric-badge-moon">Rise</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="moonrise-status">Ascending lunar horizon</span>
+                    </div>
+                  </article>
+
+                  <!-- Moonset Card -->
+                  <article class="metric-card" id="moonset-card" aria-label="Moonset Time">
+                    <div class="metric-header">
+                      <span class="metric-label">Moonset</span>
+                      <svg class="metric-icon metric-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="20" height="20">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                        <path d="M19 21v-7M16 18l3 3 3-3"/>
+                      </svg>
+                    </div>
+                    <div class="metric-body">
+                      <span id="moonset-value" class="metric-value">--</span>
+                      <span id="moonset-badge" class="metric-badge metric-badge-moon">Set</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="moonset-status">Descending lunar horizon</span>
+                    </div>
+                  </article>
+
+                  <!-- Moon Phase Card -->
+                  <article class="metric-card" id="moon-phase-card" aria-label="Moon Phase and Illumination">
+                    <div class="metric-header">
+                      <span class="metric-label">Moon Phase</span>
+                      <span id="moon-phase-icon" class="metric-icon-phase" aria-hidden="true">🌑</span>
+                    </div>
+                    <div class="metric-body">
+                      <span id="moon-phase-value" class="metric-value">--</span>
+                      <span id="moon-phase-badge" class="metric-badge">--</span>
+                    </div>
+                    <div class="metric-footer">
+                      <span class="metric-subtext" id="moon-phase-status">Lunar cycle progression</span>
+                    </div>
+                  </article>
+
+                </div>
+              </section>
+
+              <!-- Hourly Forecast Section (Upcoming 24 Hours) -->
+              <section class="forecast-section hourly-section" id="hourly-forecast-section" aria-label="Hourly Weather Forecast" hidden>
+                <div class="section-header">
+                  <div class="section-title-wrap">
+                    <h3 class="section-title">Hourly Forecast</h3>
+                    <span class="section-subtitle">Upcoming 24-hour meteorological progression</span>
+                  </div>
+                </div>
+                <div class="hourly-forecast-track" id="hourly-forecast-track" role="region" tabindex="0" aria-label="Hourly temperature forecast. Use left and right arrow keys to scroll.">
+                  <!-- Dynamically populated hourly cards -->
+                </div>
+
+                <!-- Detailed Hourly Inspector Card -->
+                <article class="hourly-detail-card" id="hourly-detail-card" aria-label="Detailed Forecast for Selected Hour">
+                  <div class="hourly-detail-header">
+                    <div class="hourly-detail-title-group">
+                      <div class="hourly-detail-badge-wrap">
+                        <span class="hourly-detail-badge" id="hourly-detail-badge">Selected Hour</span>
+                        <span class="hourly-detail-context" id="hourly-detail-context">Timeline Inspector</span>
+                      </div>
+                      <h4 class="hourly-detail-time" id="hourly-detail-time">--</h4>
+                      <span class="hourly-detail-condition-text" id="hourly-detail-condition">--</span>
+                    </div>
+                    <div class="hourly-detail-primary">
+                      <span class="hourly-detail-icon" id="hourly-detail-icon" aria-hidden="true">☀️</span>
+                      <div class="hourly-detail-temp-wrap">
+                        <span class="hourly-detail-temp" id="hourly-detail-temp">--</span>
+                        <span class="hourly-detail-feels" id="hourly-detail-feels">Feels like --</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="hourly-detail-grid">
+                    <div class="hourly-detail-metric-card" id="hourly-detail-pop-card">
+                      <div class="h-metric-label">
+                        <svg class="h-metric-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                        <span>Precip. Probability</span>
+                      </div>
+                      <div class="h-metric-value" id="hourly-detail-pop">--</div>
+                      <div class="h-metric-subtext" id="hourly-detail-pop-status">Probability of rain or snow</div>
+                    </div>
+
+                    <div class="hourly-detail-metric-card" id="hourly-detail-precip-card">
+                      <div class="h-metric-label">
+                        <svg class="h-metric-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="m4 14 8-8 8 8"/><path d="M12 6v12"/></svg>
+                        <span>Precipitation Amount</span>
+                      </div>
+                      <div class="h-metric-value" id="hourly-detail-precip">--</div>
+                      <div class="h-metric-subtext" id="hourly-detail-precip-status">Accumulation within hour</div>
+                    </div>
+
+                    <div class="hourly-detail-metric-card" id="hourly-detail-humidity-card">
+                      <div class="h-metric-label">
+                        <svg class="h-metric-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                        <span>Relative Humidity</span>
+                      </div>
+                      <div class="h-metric-value" id="hourly-detail-humidity">--</div>
+                      <div class="h-metric-subtext" id="hourly-detail-humidity-status">Atmospheric moisture content</div>
+                    </div>
+
+                    <div class="hourly-detail-metric-card" id="hourly-detail-wind-card">
+                      <div class="h-metric-label">
+                        <svg class="h-metric-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
+                        <span>Wind Speed</span>
+                      </div>
+                      <div class="h-metric-value" id="hourly-detail-wind">--</div>
+                      <div class="h-metric-subtext" id="hourly-detail-wind-status">Surface velocity at 10m</div>
+                    </div>
+
+                    <div class="hourly-detail-metric-card" id="hourly-detail-direction-card">
+                      <div class="h-metric-label">
+                        <svg class="h-metric-svg compass-arrow-icon" id="hourly-detail-direction-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><polygon points="12 2 19 21 12 17 5 21 12 2"/></svg>
+                        <span>Wind Direction</span>
+                      </div>
+                      <div class="h-metric-value" id="hourly-detail-direction">--</div>
+                      <div class="h-metric-subtext" id="hourly-detail-direction-status">Direction of surface airflow</div>
+                    </div>
+
+                    <div class="hourly-detail-metric-card" id="hourly-detail-cloud-card">
+                      <div class="h-metric-label">
+                        <svg class="h-metric-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+                        <span>Cloud Coverage</span>
+                      </div>
+                      <div class="h-metric-value" id="hourly-detail-cloud">--</div>
+                      <div class="h-metric-subtext" id="hourly-detail-cloud-status">Sky obscuration level</div>
+                    </div>
+                  </div>
+                </article>
+              </section>
+
+              <!-- Seven-Day Extended Forecast Section -->
+              <section class="forecast-section daily-section" id="daily-forecast-section" aria-label="7-Day Extended Weather Forecast" hidden>
+                <div class="section-header">
+                  <div class="section-title-wrap">
+                    <h3 class="section-title">7-Day Forecast</h3>
+                    <span class="section-subtitle">Daily extended overview</span>
+                  </div>
+                </div>
+                <div class="daily-forecast-grid" id="daily-forecast-grid" role="list">
+                  <!-- Dynamically populated 7-day cards -->
+                </div>
+              </section>
+
+              <!-- Air Quality Monitoring Section (Phase 19) -->
+              <section class="air-quality-section" id="air-quality-section" aria-label="Air Quality Monitoring" hidden>
+                <div class="section-header">
+                  <div class="section-title-wrap">
+                    <h3 class="section-title">Air Quality Index</h3>
+                    <span class="section-subtitle">Atmospheric pollution & pollutant concentrations</span>
+                  </div>
+                  <div class="aqi-timestamp-wrap">
+                    <svg class="clock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="14" height="14">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span class="aqi-timestamp-text">Observed: <time id="aqi-observation-time">--</time></span>
+                  </div>
+                </div>
+
+                <!-- Primary AQI Comparison Grid -->
+                <div class="aqi-indexes-grid" id="aqi-indexes-grid">
+                  <article class="aqi-index-card eaqi-card" id="eaqi-card">
+                    <div class="aqi-index-header">
+                      <span class="aqi-index-title">European AQI</span>
+                      <span class="aqi-standard-badge" title="European Environment Agency standard">EEA Scale (0–100+)</span>
+                    </div>
+                    <div class="aqi-index-body">
+                      <span id="eaqi-value" class="aqi-index-value">--</span>
+                      <span id="eaqi-badge" class="aqi-badge aqi-badge-unknown">--</span>
+                    </div>
+                    <div class="aqi-index-footer">
+                      <span id="eaqi-status" class="aqi-subtext">European air quality standard</span>
+                    </div>
+                  </article>
+
+                  <article class="aqi-index-card us-aqi-card" id="us-aqi-card">
+                    <div class="aqi-index-header">
+                      <span class="aqi-index-title">United States AQI</span>
+                      <span class="aqi-standard-badge" title="United States Environmental Protection Agency standard">US EPA Scale (0–500)</span>
+                    </div>
+                    <div class="aqi-index-body">
+                      <span id="us-aqi-value" class="aqi-index-value">--</span>
+                      <span id="us-aqi-badge" class="aqi-badge aqi-badge-unknown">--</span>
+                    </div>
+                    <div class="aqi-index-footer">
+                      <span id="us-aqi-status" class="aqi-subtext">US EPA air quality standard</span>
+                    </div>
+                  </article>
+                </div>
+
+                <!-- Pollutant Concentrations Grid -->
+                <div class="pollutants-grid" id="pollutants-grid" aria-label="Detailed Air Pollutants">
+                  <article class="pollutant-card" id="pm25-card">
+                    <div class="pollutant-header">
+                      <span class="pollutant-name">PM<sub>2.5</sub></span>
+                      <span class="pollutant-fullname">Fine Particulate</span>
+                    </div>
+                    <div class="pollutant-body">
+                      <span id="pm25-value" class="pollutant-value">--</span>
+                      <span class="pollutant-unit">μg/m³</span>
+                    </div>
+                    <div class="pollutant-footer">
+                      <span class="pollutant-desc">Combustion particles, smoke</span>
+                    </div>
+                  </article>
+
+                  <article class="pollutant-card" id="pm10-card">
+                    <div class="pollutant-header">
+                      <span class="pollutant-name">PM<sub>10</sub></span>
+                      <span class="pollutant-fullname">Coarse Particulate</span>
+                    </div>
+                    <div class="pollutant-body">
+                      <span id="pm10-value" class="pollutant-value">--</span>
+                      <span class="pollutant-unit">μg/m³</span>
+                    </div>
+                    <div class="pollutant-footer">
+                      <span class="pollutant-desc">Dust, pollen, mold spores</span>
+                    </div>
+                  </article>
+
+                  <article class="pollutant-card" id="no2-card">
+                    <div class="pollutant-header">
+                      <span class="pollutant-name">NO<sub>2</sub></span>
+                      <span class="pollutant-fullname">Nitrogen Dioxide</span>
+                    </div>
+                    <div class="pollutant-body">
+                      <span id="no2-value" class="pollutant-value">--</span>
+                      <span class="pollutant-unit">μg/m³</span>
+                    </div>
+                    <div class="pollutant-footer">
+                      <span class="pollutant-desc">Vehicle exhaust, power plants</span>
+                    </div>
+                  </article>
+
+                  <article class="pollutant-card" id="ozone-card">
+                    <div class="pollutant-header">
+                      <span class="pollutant-name">O<sub>3</sub></span>
+                      <span class="pollutant-fullname">Ground Ozone</span>
+                    </div>
+                    <div class="pollutant-body">
+                      <span id="ozone-value" class="pollutant-value">--</span>
+                      <span class="pollutant-unit">μg/m³</span>
+                    </div>
+                    <div class="pollutant-footer">
+                      <span class="pollutant-desc">Smog photochemical reactions</span>
+                    </div>
+                  </article>
+                </div>
+
+                <div class="aqi-disclaimer-note" id="aqi-disclaimer-note" role="note" aria-label="Health Disclaimer">
+                  <svg class="disclaimer-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <p class="disclaimer-text">
+                    <strong>Notice:</strong> Air quality index categories and pollutant metrics are provided for general informational guidance only and do not constitute personal medical diagnoses or health recommendations.
+                  </p>
+                </div>
+              </section>
+
+              <!-- Interactive Weather Analytics Section (Phase 20) -->
+              <section class="analytics-section" id="analytics-section" aria-label="Interactive Weather Analytics" hidden>
+                <div class="section-header">
+                  <div class="section-title-wrap">
+                    <h3 class="section-title">Weather Analytics</h3>
+                    <span class="section-subtitle">Interactive 24-hour and 7-day meteorological trends</span>
+                  </div>
+                </div>
+                <div class="analytics-grid" id="analytics-grid">
+                  <article class="analytics-card" id="chart-temp-hourly-card">
+                    <div class="chart-header">
+                      <span class="chart-title">24-Hour Temperature</span>
+                      <span class="chart-badge">Hourly</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                      <canvas id="chart-temp-hourly" role="img" aria-label="24-hour temperature line chart"></canvas>
+                    </div>
+                  </article>
+
+                  <article class="analytics-card" id="chart-temp-daily-card">
+                    <div class="chart-header">
+                      <span class="chart-title">7-Day High &amp; Low Temperature</span>
+                      <span class="chart-badge">Daily</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                      <canvas id="chart-temp-daily" role="img" aria-label="7-day high and low temperature range chart"></canvas>
+                    </div>
+                  </article>
+
+                  <article class="analytics-card" id="chart-humidity-hourly-card">
+                    <div class="chart-header">
+                      <span class="chart-title">24-Hour Relative Humidity</span>
+                      <span class="chart-badge">Hourly</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                      <canvas id="chart-humidity-hourly" role="img" aria-label="24-hour relative humidity line chart"></canvas>
+                    </div>
+                  </article>
+
+                  <article class="analytics-card" id="chart-wind-hourly-card">
+                    <div class="chart-header">
+                      <span class="chart-title">24-Hour Wind Speed</span>
+                      <span class="chart-badge">Hourly</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                      <canvas id="chart-wind-hourly" role="img" aria-label="24-hour wind speed line chart"></canvas>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <!-- Quick Intelligence Preview Hub -->
+              <section class="overview-highlights-section" id="overview-highlights-section" aria-label="Intelligence Modules">
+                <div class="section-header">
+                  <div class="section-title-wrap">
+                    <h3 class="section-title">Intelligence Hub</h3>
+                    <span class="section-subtitle">Direct access to specialized meteorological modules</span>
+                  </div>
+                </div>
+                <div class="highlights-grid">
+                  <!-- Quick Map Card -->
+                  <article class="highlight-card">
+                    <div class="highlight-icon-wrap" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+                        <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+                      </svg>
+                    </div>
+                    <div class="highlight-body">
+                      <h4 class="highlight-title">Interactive Weather Map</h4>
+                      <p class="highlight-desc">Explore precipitation radar tile overlays, cloud patterns, and geographic telemetry.</p>
+                      <button type="button" class="highlight-action-btn" data-nav-target="map">Open Weather Map &rarr;</button>
+                    </div>
+                  </article>
+
+                  <!-- Quick Calendar Card -->
+                  <article class="highlight-card">
+                    <div class="highlight-icon-wrap" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                    </div>
+                    <div class="highlight-body">
+                      <h4 class="highlight-title">Monthly Weather Calendar</h4>
+                      <p class="highlight-desc">Inspect monthly weather trajectories, daily thermal spreads, and day-by-day outlooks.</p>
+                      <button type="button" class="highlight-action-btn" data-nav-target="calendar">Open Calendar &rarr;</button>
+                    </div>
+                  </article>
+
+                  <!-- Quick Climate Card -->
+                  <article class="highlight-card">
+                    <div class="highlight-icon-wrap" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                      </svg>
+                    </div>
+                    <div class="highlight-body">
+                      <h4 class="highlight-title">Climate &amp; Seasonal Trends</h4>
+                      <p class="highlight-desc">Atmospheric stability analysis, thermal comfort index, and hemisphere-aware seasonal models.</p>
+                      <button type="button" class="highlight-action-btn" data-nav-target="climate">Open Climate Report &rarr;</button>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+            </section>
+          </section>
+
+          <!-- ------------------------------------------------------------------
+               VIEW 2: WEATHER MAP (Leaflet.js Interactive Weather Map & Radar)
+               ------------------------------------------------------------------ -->
+          <section class="dashboard-view" id="view-map" data-view="map" aria-label="Interactive Weather Map" hidden>
+            <div class="view-header">
+              <div class="view-header-text">
+                <h3 class="view-title">Interactive Weather Map</h3>
+                <p class="view-subtitle">High-resolution OpenStreetMap geographical telemetry with live precipitation radar and meteorological overlays</p>
+              </div>
+            </div>
+
+            <!-- Map Viewport Container Card -->
+            <div class="map-container-card" id="map-container-card">
+              <div class="map-toolbar">
+                <!-- In-Map City Search -->
+                <div class="map-search-bar" role="search" aria-label="Map location search">
+                  <form id="map-search-form" class="map-search-form">
+                    <input type="text" id="map-search-input" class="map-search-input" placeholder="Search city on map..." aria-label="Search city on map" autocomplete="off" />
+                    <button type="submit" id="map-search-btn" class="map-btn map-search-btn" aria-label="Search city">Search</button>
+                  </form>
+                </div>
+                <!-- Layer Selection Controls -->
+                <div class="map-layer-controls" role="group" aria-label="Map Layer Selection">
+                  <button type="button" class="map-btn map-layer-btn active" id="map-layer-radar" data-layer="radar" aria-pressed="true">Precipitation Radar</button>
+                  <button type="button" class="map-btn map-layer-btn" id="map-layer-temp" data-layer="temp" aria-pressed="false">Temperature</button>
+                  <button type="button" class="map-btn map-layer-btn" id="map-layer-clouds" data-layer="clouds" aria-pressed="false">Satellite Clouds</button>
+                  <button type="button" class="map-btn map-layer-btn" id="map-layer-wind" data-layer="wind" aria-pressed="false">Wind</button>
+                  <button type="button" class="map-btn map-layer-btn" id="map-layer-osm" data-layer="osm" aria-pressed="false">Street Map</button>
+                </div>
+                <!-- Action Controls: Geolocation & Full-Screen -->
+                <div class="map-action-controls">
+                  <button type="button" class="map-btn map-locate-btn" id="map-locate-btn" aria-label="Locate my position on map" title="Use current location">📍 Locate Me</button>
+                  <button type="button" class="map-btn map-fullscreen-btn" id="map-fullscreen-btn" aria-pressed="false" aria-label="Toggle full-screen map view" title="Toggle full-screen view">⛶ Full Screen</button>
+                </div>
+                <!-- Zoom Controls -->
+                <div class="map-zoom-controls">
+                  <button type="button" class="map-btn map-zoom-btn" id="map-zoom-in" aria-label="Zoom in">+</button>
+                  <button type="button" class="map-btn map-zoom-btn" id="map-zoom-out" aria-label="Zoom out">&minus;</button>
+                  <button type="button" class="map-btn map-zoom-btn" id="map-recenter" aria-label="Recenter on current city">Center</button>
+                </div>
+              </div>
+
+              <!-- Honest Layer Status Notification Banner (for unconfigured API keys or upstream outages) -->
+              <div class="map-layer-status" id="map-layer-status" role="status" aria-live="polite" hidden></div>
+
+              <div class="map-viewport" id="map-viewport" role="region" aria-label="Interactive Leaflet weather map canvas" tabindex="0">
+                <div class="map-tile-grid" id="map-tile-grid" hidden></div>
+                <div class="map-radar-overlay" id="map-radar-overlay" hidden></div>
+                <!-- Center Location Pin (fallback for headless/non-JS) -->
+                <div class="map-marker" id="map-marker" hidden>
+                  <div class="marker-pulse" aria-hidden="true"></div>
+                  <div class="marker-pin" id="map-marker-pin">
+                    <span class="marker-icon" id="map-marker-icon">📍</span>
+                    <span class="marker-temp" id="map-marker-temp">--&deg;C</span>
+                  </div>
+                  <div class="marker-label" id="map-marker-label">Active Location</div>
+                </div>
+                <!-- Coordinate & Tile Telemetry HUD -->
+                <div class="map-hud" id="map-hud">
+                  <span class="hud-coords" id="map-hud-coords">Coords: Awaiting search</span>
+                  <span class="hud-zoom" id="map-hud-zoom">Zoom: 10</span>
+                  <span class="hud-source" id="map-hud-source">Map: OpenStreetMap &bull; Radar: RainViewer</span>
+                </div>
+              </div>
+
+              <!-- Map Footer Bar: Legends & Active Condition Display -->
+              <div class="map-footer-bar">
+                <!-- 1. Precipitation Colour Legend -->
+                <div class="radar-legend" id="radar-legend" role="region" aria-label="Precipitation color legend">
+                  <span class="legend-label">Precipitation:</span>
+                  <span class="legend-swatch light">Light (0.1–2.5 mm/h)</span>
+                  <span class="legend-swatch moderate">Mod (2.5–10 mm/h)</span>
+                  <span class="legend-swatch heavy">Heavy (10–50 mm/h)</span>
+                  <span class="legend-swatch severe">Hail/Storm (&gt;50 mm/h)</span>
+                </div>
+
+                <!-- 2. Temperature Colour Legend -->
+                <div class="temp-legend" id="temp-legend" role="region" aria-label="Temperature color legend" hidden>
+                  <span class="legend-label">Temperature:</span>
+                  <span class="legend-swatch temp-freezing" id="legend-temp-freezing">&lt;-10&deg;</span>
+                  <span class="legend-swatch temp-v-cold" id="legend-temp-vcold">-10–0&deg;</span>
+                  <span class="legend-swatch temp-cold" id="legend-temp-cold">0–10&deg;</span>
+                  <span class="legend-swatch temp-mild" id="legend-temp-mild">10–20&deg;</span>
+                  <span class="legend-swatch temp-warm" id="legend-temp-warm">20–30&deg;</span>
+                  <span class="legend-swatch temp-hot" id="legend-temp-hot">30–40&deg;</span>
+                  <span class="legend-swatch temp-extreme" id="legend-temp-extreme">&gt;40&deg;</span>
+                </div>
+
+                <!-- Weather Condition Legend -->
+                <div class="map-condition-legend" id="map-condition-legend">
+                  <span class="condition-legend-icon" id="map-condition-icon">⛅</span>
+                  <span class="condition-legend-text" id="map-condition-text">Click any map location to inspect real weather</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ------------------------------------------------------------------
+               VIEW 3: EXTENDED FORECAST (Detailed 7-Day & Hourly Deep Dive)
+               ------------------------------------------------------------------ -->
+          <section class="dashboard-view" id="view-forecast" data-view="forecast" aria-label="Extended Weather Forecast" hidden>
+            <div class="view-header">
+              <div class="view-header-text">
+                <h3 class="view-title">Extended Forecast Deep-Dive</h3>
+                <span class="view-subtitle">Detailed 7-day diurnal temperature spreads, condition outlooks, and progression matrices</span>
+              </div>
+            </div>
+
+            <!-- Detailed 7-Day Cards with Visual Temperature Range Spectrum -->
+            <div class="forecast-deep-dive-grid" id="forecast-deep-dive-grid">
+              <!-- Dynamically populated extended daily cards with range bars -->
+            </div>
+
+            <!-- Hourly Progression Matrix -->
+            <div class="forecast-table-card">
+              <div class="table-card-header">
+                <h4 class="table-card-title">24-Hour Detailed Meteorological Matrix</h4>
+                <span class="table-card-badge">Timezone Aligned</span>
+              </div>
+              <div class="forecast-table-wrapper">
+                <table class="forecast-table" id="forecast-hourly-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Time</th>
+                      <th scope="col">Condition</th>
+                      <th scope="col">Temperature</th>
+                      <th scope="col">Relative Humidity</th>
+                      <th scope="col">Wind Velocity</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecast-hourly-tbody">
+                    <tr><td colspan="5" class="table-empty">Search a city to inspect 24-hour meteorological table.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ------------------------------------------------------------------
+               VIEW 4: WEATHER ANALYTICS (Expanded Analytical View)
+               ------------------------------------------------------------------ -->
+          <section class="dashboard-view" id="view-analytics" data-view="analytics" aria-label="Weather Analytics" hidden>
+            <div class="view-header">
+              <div class="view-header-text">
+                <h3 class="view-title">Meteorological Analytics &amp; Visualization Suite</h3>
+                <span class="view-subtitle">Hardware-accelerated mathematical progressions with Bézier smoothing, interactive filters, and dynamic unit recalculations</span>
+              </div>
+            </div>
+
+            <!-- Interactive Controls Toolbar: Time Ranges & Metric Filters -->
+            <div class="analytics-toolbar" id="analytics-toolbar" role="region" aria-label="Chart filters and time range controls">
+              <!-- Time Range Filters -->
+              <div class="analytics-filter-block">
+                <span class="analytics-filter-title">Time Horizon:</span>
+                <div class="analytics-filter-pills" id="analytics-range-filters" role="group" aria-label="Selectable time ranges">
+                  <button type="button" class="analytics-filter-pill" id="filter-range-today" data-range="today" aria-pressed="false">Today</button>
+                  <button type="button" class="analytics-filter-pill active" id="filter-range-24h" data-range="24h" aria-pressed="true">Next 24 Hours</button>
+                  <button type="button" class="analytics-filter-pill" id="filter-range-7d" data-range="7d" aria-pressed="false">Next 7 Days</button>
+                  <button type="button" class="analytics-filter-pill" id="filter-range-custom" data-range="custom" aria-pressed="false">Custom (Full Period)</button>
+                </div>
+              </div>
+
+              <!-- Metric Category Filters -->
+              <div class="analytics-filter-block">
+                <span class="analytics-filter-title">Metric Category:</span>
+                <div class="analytics-filter-pills" id="analytics-metric-filters" role="group" aria-label="Metric category filters">
+                  <button type="button" class="analytics-filter-pill active" id="filter-metric-all" data-metric="all" aria-pressed="true">All Metrics (9)</button>
+                  <button type="button" class="analytics-filter-pill" id="filter-metric-temp" data-metric="temp" aria-pressed="false">Thermal</button>
+                  <button type="button" class="analytics-filter-pill" id="filter-metric-precip" data-metric="precip" aria-pressed="false">Precipitation</button>
+                  <button type="button" class="analytics-filter-pill" id="filter-metric-atmosphere" data-metric="atmosphere" aria-pressed="false">Atmosphere &amp; Wind</button>
+                  <button type="button" class="analytics-filter-pill" id="filter-metric-solar" data-metric="solar" aria-pressed="false">Solar UV</button>
+                  <button type="button" class="analytics-filter-pill" id="filter-metric-conditions" data-metric="conditions" aria-pressed="false">Conditions</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Statistical Summaries Bar -->
+            <div class="analytics-stats-grid" id="analytics-stats-grid">
+              <div class="stat-card">
+                <span class="stat-label">24h Mean Temperature</span>
+                <span class="stat-value" id="stat-mean-temp">--</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">7-Day Maximum High</span>
+                <span class="stat-value" id="stat-peak-high">--</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">7-Day Minimum Low</span>
+                <span class="stat-value" id="stat-peak-low">--</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Peak Wind Velocity</span>
+                <span class="stat-value" id="stat-peak-wind">--</span>
+              </div>
+            </div>
+
+            <!-- 9-Chart Data Visualization Suite Grid -->
+            <div class="analytics-suite-grid" id="analytics-suite-grid">
+              <!-- 1. Temperature Line Chart -->
+              <article class="analytics-card" id="chart-temp-card" data-category="temp">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">Temperature Progression</span>
+                    <span class="chart-desc">Ambient 2m air temperature trajectory</span>
+                  </div>
+                  <span class="chart-badge">Line</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-temp-canvas" role="img" aria-label="Temperature line chart"></canvas>
+                </div>
+              </article>
+
+              <!-- 2. Feels-Like Temperature Line Chart -->
+              <article class="analytics-card" id="chart-feels-card" data-category="temp">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">Feels-Like Temperature</span>
+                    <span class="chart-desc">Apparent thermal comfort combining wind and moisture</span>
+                  </div>
+                  <span class="chart-badge chart-badge-amber">Apparent</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-feels-canvas" role="img" aria-label="Feels-like temperature line chart"></canvas>
+                </div>
+              </article>
+
+              <!-- 3. Precipitation Bar Chart -->
+              <article class="analytics-card" id="chart-precip-card" data-category="precip">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">Precipitation Amount</span>
+                    <span class="chart-desc">Accumulated rain, drizzle, or snow volume</span>
+                  </div>
+                  <span class="chart-badge chart-badge-blue">Bar</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-precip-canvas" role="img" aria-label="Precipitation bar chart"></canvas>
+                </div>
+              </article>
+
+              <!-- 4. Rain Probability Chart -->
+              <article class="analytics-card" id="chart-rain-prob-card" data-category="precip">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">Rain Probability</span>
+                    <span class="chart-desc">Likelihood of measurable precipitation</span>
+                  </div>
+                  <span class="chart-badge chart-badge-indigo">Probability</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-rain-prob-canvas" role="img" aria-label="Rain probability area chart"></canvas>
+                </div>
+              </article>
+
+              <!-- 5. Humidity Area Chart -->
+              <article class="analytics-card" id="chart-humidity-card" data-category="atmosphere">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">Relative Humidity</span>
+                    <span class="chart-desc">Atmospheric moisture saturation ratio</span>
+                  </div>
+                  <span class="chart-badge chart-badge-teal">Area</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-humidity-canvas" role="img" aria-label="Relative humidity area chart"></canvas>
+                </div>
+              </article>
+
+              <!-- 6. Wind Speed Chart -->
+              <article class="analytics-card" id="chart-wind-card" data-category="atmosphere">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">Wind Speed</span>
+                    <span class="chart-desc">Surface velocity measured at 10m altitude</span>
+                  </div>
+                  <span class="chart-badge chart-badge-purple">Velocity</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-wind-canvas" role="img" aria-label="Wind speed chart"></canvas>
+                </div>
+              </article>
+
+              <!-- 7. Atmospheric Pressure Chart -->
+              <article class="analytics-card" id="chart-pressure-card" data-category="atmosphere">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">Atmospheric Pressure</span>
+                    <span class="chart-desc">Mean sea-level barometric pressure</span>
+                  </div>
+                  <span class="chart-badge chart-badge-emerald">Barometric</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-pressure-canvas" role="img" aria-label="Atmospheric pressure line chart"></canvas>
+                </div>
+              </article>
+
+              <!-- 8. UV Index Chart -->
+              <article class="analytics-card" id="chart-uv-card" data-category="solar">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">UV Index</span>
+                    <span class="chart-desc">Solar ultraviolet radiation intensity</span>
+                  </div>
+                  <span class="chart-badge chart-badge-yellow">Solar</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-uv-canvas" role="img" aria-label="UV index chart"></canvas>
+                </div>
+              </article>
+
+              <!-- 9. Weather Condition Distribution Doughnut Chart -->
+              <article class="analytics-card" id="chart-condition-dist-card" data-category="conditions">
+                <div class="chart-header">
+                  <div class="chart-title-wrap">
+                    <span class="chart-title">Weather Condition Breakdown</span>
+                    <span class="chart-desc">Categorical distribution across active horizon</span>
+                  </div>
+                  <span class="chart-badge chart-badge-cyan">Doughnut</span>
+                </div>
+                <div class="suite-canvas-wrapper tall">
+                  <canvas id="chart-condition-dist-canvas" role="img" aria-label="Weather condition distribution doughnut chart"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <!-- Legacy Expanded Charts Hook (Hidden fallback for backwards compatibility) -->
+            <div class="analytics-expanded-grid" hidden>
+              <canvas id="chart-temp-hourly-full"></canvas>
+              <canvas id="chart-temp-daily-full"></canvas>
+            </div>
+          </section>
+
+          <!-- ------------------------------------------------------------------
+               VIEW 5: MONTHLY CALENDAR NAVIGATION
+               ------------------------------------------------------------------ -->
+          <section class="dashboard-view" id="view-calendar" data-view="calendar" aria-label="Monthly Weather Calendar" hidden>
+            <div class="view-header">
+              <div class="view-header-text">
+                <h3 class="view-title">Monthly Weather Calendar</h3>
+                <span class="view-subtitle">Chronological weather calendar with daily forecast projections, interactive thermal &amp; precipitation heatmaps, and active day inspector</span>
+              </div>
+              <div class="calendar-controls">
+                <div class="cal-dropdown-selectors" role="group" aria-label="Month and year selectors">
+                  <select id="cal-month-select" class="cal-select" aria-label="Select month">
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                  </select>
+                  <select id="cal-year-select" class="cal-select" aria-label="Select year">
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
+                  </select>
+                </div>
+                <div class="cal-nav-buttons" role="group" aria-label="Month navigation">
+                  <button type="button" class="cal-nav-btn" id="cal-prev-btn" aria-label="Previous month">&larr; Prev</button>
+                  <button type="button" class="cal-nav-btn today" id="cal-today-btn">Today</button>
+                  <button type="button" class="cal-nav-btn" id="cal-next-btn" aria-label="Next month">Next &rarr;</button>
+                </div>
+                <div class="cal-mode-controls" role="group" aria-label="Calendar Visualization Mode">
+                  <button type="button" class="cal-mode-btn active" id="cal-mode-standard" data-cal-mode="standard" aria-pressed="true">Standard</button>
+                  <button type="button" class="cal-mode-btn" id="cal-mode-temp" data-cal-mode="temp" aria-pressed="false">🌡️ Temp Heatmap</button>
+                  <button type="button" class="cal-mode-btn" id="cal-mode-precip" data-cal-mode="precip" aria-pressed="false">💧 Rain Heatmap</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="calendar-layout-grid">
+              <!-- Main Month Grid Card -->
+              <div class="calendar-card" id="cal-card">
+                <div class="calendar-month-header">
+                  <h4 class="calendar-month-title" id="cal-month-title">--</h4>
+                  <span class="calendar-month-badge" id="cal-month-mode-badge">7-Day Forecast Overlay</span>
+                </div>
+                <div class="calendar-weekdays" role="row">
+                  <span role="columnheader">Sun</span>
+                  <span role="columnheader">Mon</span>
+                  <span role="columnheader">Tue</span>
+                  <span role="columnheader">Wed</span>
+                  <span role="columnheader">Thu</span>
+                  <span role="columnheader">Fri</span>
+                  <span role="columnheader">Sat</span>
+                </div>
+                <div class="calendar-days-grid" id="cal-days-grid" role="grid" aria-label="Monthly calendar days">
+                  <!-- Dynamically populated 35-42 calendar day cells -->
+                </div>
+
+                <!-- Dynamic Heatmap Legend Bar -->
+                <div class="calendar-legend-bar" id="cal-legend-bar" role="region" aria-label="Calendar heatmap legend" hidden>
+                  <!-- Populated dynamically when Temp or Precip Heatmap is active -->
+                </div>
+              </div>
+
+              <!-- Selected Day Inspector Card -->
+              <div class="calendar-inspector-card" id="cal-day-detail-card" role="region" aria-label="Selected day weather inspector">
+                <div class="inspector-header">
+                  <div class="inspector-badge-wrap">
+                    <span class="inspector-badge">Day Inspector</span>
+                    <span class="inspector-coverage-pill" id="cal-inspector-coverage">Active Forecast</span>
+                  </div>
+                  <h4 class="inspector-date" id="cal-inspector-date">Select a Date</h4>
+                </div>
+                <div class="inspector-body">
+                  <div class="inspector-hero">
+                    <span class="inspector-icon" id="cal-inspector-icon">📅</span>
+                    <div class="inspector-temps">
+                      <span class="inspector-temp-range" id="cal-inspector-temp">--</span>
+                      <span class="inspector-mean-temp" id="cal-inspector-mean-temp">Mean: --</span>
+                      <span class="inspector-condition" id="cal-inspector-cond">Select any day on the calendar to inspect meteorological projections.</span>
+                    </div>
+                  </div>
+                  <div class="inspector-metrics-list">
+                    <div class="inspector-metric-item">
+                      <span class="im-label">Forecast Status</span>
+                      <span class="im-val" id="cal-inspector-status">Awaiting Day</span>
+                    </div>
+                    <div class="inspector-metric-item">
+                      <span class="im-label">Precipitation Accumulation</span>
+                      <span class="im-val" id="cal-inspector-precip">--</span>
+                    </div>
+                    <div class="inspector-metric-item">
+                      <span class="im-label">Rain Probability</span>
+                      <span class="im-val" id="cal-inspector-pop">--</span>
+                    </div>
+                    <div class="inspector-metric-item">
+                      <span class="im-label">Peak UV Index</span>
+                      <span class="im-val" id="cal-inspector-uv">--</span>
+                    </div>
+                    <div class="inspector-metric-item">
+                      <span class="im-label">Climatological Guidance</span>
+                      <span class="im-val" id="cal-inspector-guide">Select day for activity advice</span>
+                    </div>
+                  </div>
+                  <div class="cal-inspector-hist-wrap" id="cal-inspector-hist-wrap">
+                    <button type="button" class="btn btn-outline cal-open-hist-btn" id="cal-open-hist-btn" title="View historical reanalysis records for this month in Climate Reports">
+                      <span>🔎</span>
+                      <span>View Historical Archive for This Month</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ------------------------------------------------------------------
+               VIEW 6: CLIMATE REPORTS & SEASONAL TRENDS
+               ------------------------------------------------------------------ -->
+          <section class="dashboard-view" id="view-climate" data-view="climate" aria-label="Climate Reports and Trends" hidden>
+            <div class="view-header">
+              <div class="view-header-text">
+                <h3 class="view-title">Climate Report &amp; Seasonal Trends</h3>
+                <span class="view-subtitle">Atmospheric stability analysis, thermal comfort index, and hemisphere-aware seasonal climatological models</span>
+              </div>
+            </div>
+
+            <!-- Climate Intelligence Grid -->
+            <div class="climate-report-grid">
+              
+              <!-- 1. Thermal Comfort Assessment Card -->
+              <article class="climate-card">
+                <div class="climate-card-header">
+                  <div class="cc-icon-wrap thermal">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                      <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>
+                    </svg>
+                  </div>
+                  <div class="cc-header-info">
+                    <h4 class="cc-title">Thermal Comfort &amp; Heat Stress</h4>
+                    <span class="cc-tag">Apparent Index</span>
+                  </div>
+                </div>
+                <div class="climate-card-body">
+                  <div class="cc-metric-value" id="climate-thermal-val">--</div>
+                  <div class="cc-badge" id="climate-thermal-badge">Awaiting Data</div>
+                  <p class="cc-explanation" id="climate-thermal-desc">
+                    Evaluates the mathematical delta between actual surface temperature and apparent heat index based on relative humidity and 10m wind velocity.
+                  </p>
+                </div>
+              </article>
+
+              <!-- 2. Barometric Stability & Air Mass Card -->
+              <article class="climate-card">
+                <div class="climate-card-header">
+                  <div class="cc-icon-wrap baro">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                      <circle cx="12" cy="12" r="10"/><path d="m14 14-4-4"/><path d="M12 6v2"/>
+                    </svg>
+                  </div>
+                  <div class="cc-header-info">
+                    <h4 class="cc-title">Barometric Stability &amp; Air Mass</h4>
+                    <span class="cc-tag">Pressure Subsidence</span>
+                  </div>
+                </div>
+                <div class="climate-card-body">
+                  <div class="cc-metric-value" id="climate-baro-val">--</div>
+                  <div class="cc-badge" id="climate-baro-badge">Awaiting Data</div>
+                  <p class="cc-explanation" id="climate-baro-desc">
+                    Analyzes mean sea-level barometric pressure (hPa). Pressures exceeding 1013 hPa denote anticyclonic fair weather; under 1008 hPa denotes cyclonic instability.
+                  </p>
+                </div>
+              </article>
+
+              <!-- 3. Respiratory Health & Air Safety Card -->
+              <article class="climate-card">
+                <div class="climate-card-header">
+                  <div class="cc-icon-wrap aqi">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                      <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
+                      <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
+                    </svg>
+                  </div>
+                  <div class="cc-header-info">
+                    <h4 class="cc-title">Respiratory Safety &amp; Inhalable PM</h4>
+                    <span class="cc-tag">WHO Air Guidelines</span>
+                  </div>
+                </div>
+                <div class="climate-card-body">
+                  <div class="cc-metric-value" id="climate-aqi-val">--</div>
+                  <div class="cc-badge" id="climate-aqi-badge">Awaiting Data</div>
+                  <p class="cc-explanation" id="climate-aqi-desc">
+                    Cross-references active European AQI and US EPA metrics against World Health Organization ambient particulate concentration safety limits.
+                  </p>
+                </div>
+              </article>
+
+              <!-- 4. Solar Radiation & Photoperiod Card -->
+              <article class="climate-card">
+                <div class="climate-card-header">
+                  <div class="cc-icon-wrap solar">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                      <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/>
+                      <path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/>
+                    </svg>
+                  </div>
+                  <div class="cc-header-info">
+                    <h4 class="cc-title">Solar Photoperiod &amp; UV Peak</h4>
+                    <span class="cc-tag">Solar Flux</span>
+                  </div>
+                </div>
+                <div class="climate-card-body">
+                  <div class="cc-metric-value" id="climate-solar-val">--</div>
+                  <div class="cc-badge" id="climate-solar-badge">Awaiting Data</div>
+                  <p class="cc-explanation" id="climate-solar-desc">
+                    Latitude-dependent photoperiod calculation modeling astronomical day length and diurnal peak ultraviolet flux index.
+                  </p>
+                </div>
+              </article>
+
+            </div>
+
+            <!-- Seasonal & Yearly Trends Section -->
+            <section class="trends-section" id="trends-section" aria-label="Seasonal &amp; Yearly Trends">
+              <div class="section-header">
+                <div class="section-title-wrap">
+                  <h4 class="section-title">Seasonal &amp; Annual Climatological Trends</h4>
+                  <span class="section-subtitle">Hemisphere-aware seasonal climatological patterns and regional Köppen climate model</span>
+                </div>
+                <div class="trends-hemisphere-badge" id="trends-hemisphere-badge">
+                  Northern Hemisphere
+                </div>
+              </div>
+
+              <!-- 4 Seasons Cards Grid -->
+              <div class="trends-seasons-grid" id="trends-seasons-grid">
+                <!-- Dynamically populated: Spring, Summer, Autumn, Winter cards -->
+              </div>
+
+              <!-- Annual Climate Classification Summary Card -->
+              <div class="climate-classification-card" id="climate-classification-card">
+                <div class="class-card-header">
+                  <span class="class-label">Climatological Classification</span>
+                  <h4 class="class-title" id="climate-koppen-title">Temperate / Continental Zone</h4>
+                </div>
+                <p class="class-description" id="climate-koppen-desc">
+                  Based on geographical latitude and atmospheric observations, this region experiences distinct seasonal variations with moderate diurnal temperature swings.
+                </p>
+              </div>
+            </section>
+
+            <!-- ------------------------------------------------------------------
+                 SECTION 3: HISTORICAL WEATHER ARCHIVE & MULTI-YEAR CLIMATE COMPARISON
+                 ------------------------------------------------------------------ -->
+            <section class="historical-section" id="historical-section" aria-label="Historical Weather Archive &amp; Multi-Year Climate Comparison">
+              <div class="section-header historical-header">
+                <div class="section-title-wrap">
+                  <div class="historical-title-row">
+                    <h4 class="section-title">Historical Weather Archive &amp; Climate Comparison</h4>
+                    <span class="data-category-badge historical" id="hist-category-badge" title="Verified empirical observation reanalysis dataset">
+                      Historical Observation &bull; ERA5 Reanalysis
+                    </span>
+                  </div>
+                  <span class="section-subtitle">
+                    Empirical meteorological observations from the Open-Meteo Historical Archive (1940&ndash;present). Examine monthly telemetry, calculate seasonal statistics, and compare climate shifts across years.
+                  </span>
+                </div>
+                <div class="historical-city-pill" id="hist-city-pill">
+                  <span class="hist-city-label">Station City:</span>
+                  <strong class="hist-city-name" id="hist-city-name">--</strong>
+                </div>
+              </div>
+
+              <!-- Historical Controls Bar -->
+              <div class="historical-controls-card">
+                <form class="historical-controls-form" id="historical-controls-form" onsubmit="return false;">
+                  <div class="hist-control-group">
+                    <label for="hist-year-select" class="hist-label">Observation Year</label>
+                    <select id="hist-year-select" class="hist-select" aria-label="Select Observation Year">
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+
+                  <div class="hist-control-group">
+                    <label for="hist-month-select" class="hist-label">Observation Month</label>
+                    <select id="hist-month-select" class="hist-select" aria-label="Select Observation Month">
+                      <option value="1">January</option>
+                      <option value="2">February</option>
+                      <option value="3">March</option>
+                      <option value="4">April</option>
+                      <option value="5">May</option>
+                      <option value="6">June</option>
+                      <option value="7" selected>July</option>
+                      <option value="8">August</option>
+                      <option value="9">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+
+                  <div class="hist-control-group hist-compare-toggle-group">
+                    <label class="hist-checkbox-label">
+                      <input type="checkbox" id="hist-compare-toggle" class="hist-checkbox">
+                      <span>Compare with Baseline Year</span>
+                    </label>
+                    <select id="hist-compare-year-select" class="hist-select hist-compare-select" aria-label="Select Baseline Comparison Year" disabled>
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+
+                  <div class="hist-action-group">
+                    <button type="button" class="btn btn-primary hist-fetch-btn" id="hist-fetch-btn">
+                      <span class="btn-icon">📊</span>
+                      <span>Load Historical Data</span>
+                    </button>
+                  </div>
+                </form>
+
+                <!-- Status & Cache Telemetry Bar -->
+                <div class="hist-status-bar" id="hist-status-bar">
+                  <span class="hist-status-text" id="hist-status-text">Select a year and month to retrieve archived reanalysis telemetry.</span>
+                  <span class="hist-cache-badge" id="hist-cache-badge" hidden>Cached Memory</span>
+                </div>
+              </div>
+
+              <!-- 10 Required Metrics Monthly Statistics Grid -->
+              <div class="historical-stats-container" id="historical-stats-container">
+                <div class="hist-subhead-row">
+                  <h5 class="hist-subhead">Monthly Meteorological Aggregations (10 Required Metrics)</h5>
+                  <span class="hist-subhead-period" id="hist-period-label">Awaiting Selection</span>
+                </div>
+                
+                <div class="historical-stats-grid" id="hist-stats-grid">
+                  <!-- 1. Daily Max Temp -->
+                  <div class="hist-stat-card">
+                    <div class="hsc-icon">🔥</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Peak Daily Max</span>
+                      <strong class="hsc-val" id="hist-stat-max-temp">--</strong>
+                      <span class="hsc-sub" id="hist-stat-max-date">--</span>
+                    </div>
+                  </div>
+
+                  <!-- 2. Daily Min Temp -->
+                  <div class="hist-stat-card">
+                    <div class="hsc-icon">❄️</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Lowest Daily Min</span>
+                      <strong class="hsc-val" id="hist-stat-min-temp">--</strong>
+                      <span class="hsc-sub" id="hist-stat-min-date">--</span>
+                    </div>
+                  </div>
+
+                  <!-- 3. Mean Temperature -->
+                  <div class="hist-stat-card">
+                    <div class="hsc-icon">🌡️</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Monthly Mean Temp</span>
+                      <strong class="hsc-val" id="hist-stat-mean-temp">--</strong>
+                      <span class="hsc-sub" id="hist-stat-diurnal">Diurnal: --</span>
+                    </div>
+                  </div>
+
+                  <!-- 4. Precipitation Sum -->
+                  <div class="hist-stat-card">
+                    <div class="hsc-icon">🌧️</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Total Precipitation</span>
+                      <strong class="hsc-val" id="hist-stat-total-precip">--</strong>
+                      <span class="hsc-sub" id="hist-stat-rainy-days">Rain days: --</span>
+                    </div>
+                  </div>
+
+                  <!-- 5. Rainfall Sum -->
+                  <div class="hist-stat-card">
+                    <div class="hsc-icon">💧</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Total Rainfall</span>
+                      <strong class="hsc-val" id="hist-stat-total-rain">--</strong>
+                      <span class="hsc-sub" id="hist-stat-dry-days">Dry days: --</span>
+                    </div>
+                  </div>
+
+                  <!-- 6. Relative Humidity -->
+                  <div class="hist-stat-card" id="hist-card-humidity">
+                    <div class="hsc-icon">💦</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Average Humidity</span>
+                      <strong class="hsc-val" id="hist-stat-avg-humidity">--</strong>
+                      <span class="hsc-sub" id="hist-stat-humidity-status">Surface 2m</span>
+                    </div>
+                  </div>
+
+                  <!-- 7. Wind Speed -->
+                  <div class="hist-stat-card">
+                    <div class="hsc-icon">💨</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Peak Wind Speed</span>
+                      <strong class="hsc-val" id="hist-stat-max-wind">--</strong>
+                      <span class="hsc-sub" id="hist-stat-avg-wind">Avg: --</span>
+                    </div>
+                  </div>
+
+                  <!-- 8. Wind Direction -->
+                  <div class="hist-stat-card">
+                    <div class="hsc-icon">🧭</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Dominant Wind Dir</span>
+                      <strong class="hsc-val" id="hist-stat-dominant-wind">--</strong>
+                      <span class="hsc-sub" id="hist-stat-wind-degrees">Vector Azimuth</span>
+                    </div>
+                  </div>
+
+                  <!-- 9. Pressure -->
+                  <div class="hist-stat-card" id="hist-card-pressure">
+                    <div class="hsc-icon">⏱️</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Mean Sea Pressure</span>
+                      <strong class="hsc-val" id="hist-stat-mean-pressure">--</strong>
+                      <span class="hsc-sub" id="hist-stat-pressure-status">MSL Mean</span>
+                    </div>
+                  </div>
+
+                  <!-- 10. Cloud Coverage -->
+                  <div class="hist-stat-card" id="hist-card-clouds">
+                    <div class="hsc-icon">☁️</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Average Cloud Cover</span>
+                      <strong class="hsc-val" id="hist-stat-avg-clouds">--</strong>
+                      <span class="hsc-sub" id="hist-stat-clouds-status">Total Layer</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Seasonal Statistics & Multi-Year Comparison Split Cards -->
+              <div class="historical-analysis-grid">
+                
+                <!-- Seasonal Statistics Card -->
+                <div class="hist-analysis-card seasonal-card" id="hist-seasonal-card">
+                  <div class="hac-header">
+                    <div class="hac-title-wrap">
+                      <span class="hac-badge">Seasonal Climatology</span>
+                      <h5 class="hac-title" id="hist-season-title">Seasonal Climatological Benchmark</h5>
+                    </div>
+                    <span class="hac-icon">🍂</span>
+                  </div>
+                  <div class="hac-body">
+                    <div class="hac-metrics-row">
+                      <div class="hac-metric">
+                        <span class="hac-metric-label">Seasonal Mean Temp</span>
+                        <strong class="hac-metric-val" id="hist-season-mean-temp">--</strong>
+                      </div>
+                      <div class="hac-metric">
+                        <span class="hac-metric-label">Seasonal Precipitation</span>
+                        <strong class="hac-metric-val" id="hist-season-precip">--</strong>
+                      </div>
+                      <div class="hac-metric">
+                        <span class="hac-metric-label">Seasonal Thermal Spread</span>
+                        <strong class="hac-metric-val" id="hist-season-range">--</strong>
+                      </div>
+                    </div>
+                    <p class="hac-desc" id="hist-season-desc">
+                      Seasonal metrics reflect the climatological quadrant for this latitude.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Multi-Year Year-over-Year Comparison Card -->
+                <div class="hist-analysis-card compare-card" id="hist-compare-card">
+                  <div class="hac-header">
+                    <div class="hac-title-wrap">
+                      <span class="hac-badge compare">Climate Shift Analysis</span>
+                      <h5 class="hac-title" id="hist-compare-title">Multi-Year Climate Comparison</h5>
+                    </div>
+                    <span class="hac-icon">⚖️</span>
+                  </div>
+                  <div class="hac-body">
+                    <div class="hac-metrics-row">
+                      <div class="hac-metric">
+                        <span class="hac-metric-label">Temperature Shift (&Delta;T)</span>
+                        <strong class="hac-metric-val" id="hist-compare-temp-delta">--</strong>
+                      </div>
+                      <div class="hac-metric">
+                        <span class="hac-metric-label">Precipitation Variance (&Delta;P)</span>
+                        <strong class="hac-metric-val" id="hist-compare-precip-delta">--</strong>
+                      </div>
+                    </div>
+                    <p class="hac-desc" id="hist-compare-summary">
+                      Enable multi-year comparison and select a baseline comparison year to evaluate long-term temperature anomalies and precipitation variance.
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Historical Charts Grid -->
+              <div class="historical-charts-grid">
+                
+                <!-- Chart 1: Daily Progression Chart -->
+                <div class="hist-chart-card">
+                  <div class="hist-chart-header">
+                    <div class="hist-chart-title-wrap">
+                      <h5 class="hist-chart-title">Daily Temperature &amp; Precipitation Progression</h5>
+                      <span class="hist-chart-subtitle">Dual-axis reanalysis telemetry across the selected month</span>
+                    </div>
+                    <span class="hist-chart-badge">Daily Time Series</span>
+                  </div>
+                  <div class="hist-chart-canvas-wrap">
+                    <canvas id="chart-hist-daily-canvas" height="280" aria-label="Daily Historical Temperature and Precipitation Chart" role="img"></canvas>
+                  </div>
+                </div>
+
+                <!-- Chart 2: Multi-Year Comparison Chart -->
+                <div class="hist-chart-card">
+                  <div class="hist-chart-header">
+                    <div class="hist-chart-title-wrap">
+                      <h5 class="hist-chart-title">Multi-Year Comparative Progression</h5>
+                      <span class="hist-chart-subtitle">Overlaying daily mean temperature trajectories between years</span>
+                    </div>
+                    <span class="hist-chart-badge compare">Multi-Year Overlay</span>
+                  </div>
+                  <div class="hist-chart-canvas-wrap">
+                    <canvas id="chart-hist-compare-canvas" height="280" aria-label="Multi-Year Temperature Comparison Chart" role="img"></canvas>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Daily Historical Observations Table -->
+              <div class="historical-table-card">
+                <div class="hist-table-header">
+                  <div class="hist-table-title-wrap">
+                    <h5 class="hist-table-title">Daily Historical Observations Log</h5>
+                    <span class="hist-table-subtitle">Complete daily records with all 10 meteorological metrics and missing data indicators</span>
+                  </div>
+                  <span class="data-category-badge historical">ERA5 Reanalysis</span>
+                </div>
+                <div class="hist-table-scroll-wrapper" id="hist-table-scroll-wrapper">
+                  <table class="hist-table" id="hist-daily-table" aria-label="Daily Historical Observations Table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Max Temp</th>
+                        <th scope="col">Min Temp</th>
+                        <th scope="col">Mean Temp</th>
+                        <th scope="col">Precip</th>
+                        <th scope="col">Rain</th>
+                        <th scope="col">Humidity</th>
+                        <th scope="col">Peak Wind</th>
+                        <th scope="col">Wind Dir</th>
+                        <th scope="col">Pressure</th>
+                        <th scope="col">Cloud Cover</th>
+                      </tr>
+                    </thead>
+                    <tbody id="hist-daily-tbody">
+                      <tr>
+                        <td colspan="11" class="hist-table-empty">No historical observations loaded. Select a year and month above.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </section>
+
+            <!-- ------------------------------------------------------------------
+                 SECTION 4: SEASONAL & YEARLY WEATHER ANALYTICS & CLIMATE PROJECTIONS
+                 ------------------------------------------------------------------ -->
+            <section class="seasonal-yearly-section" id="seasonal-yearly-section" aria-label="Seasonal and Yearly Weather Analytics">
+              <div class="section-header seasonal-yearly-header">
+                <div class="section-title-wrap">
+                  <div class="historical-title-row">
+                    <h4 class="section-title">Seasonal &amp; Yearly Weather Analytics</h4>
+                    <span class="data-category-badge historical" id="yearly-category-badge" title="Categorical origin of displayed meteorological records">
+                      Historical Reanalysis &bull; ERA5
+                    </span>
+                  </div>
+                  <span class="section-subtitle">
+                    Comprehensive climatological analysis across 4 defined seasons (Winter, Summer, Monsoon, Post-Monsoon), 12-month trends, historical baseline anomalies, and IPCC CMIP6 future climate projections.
+                  </span>
+                </div>
+                <div class="historical-city-pill" id="yearly-city-pill">
+                  <span class="hist-city-label">Station City:</span>
+                  <strong class="hist-city-name" id="yearly-city-name">--</strong>
+                </div>
+              </div>
+
+              <!-- Yearly Controls Card -->
+              <div class="historical-controls-card yearly-controls-card">
+                <form class="historical-controls-form yearly-controls-form" id="yearly-controls-form" onsubmit="return false;">
+                  <div class="hist-control-group">
+                    <label for="yearly-year-select" class="hist-label">Analysis Year</label>
+                    <select id="yearly-year-select" class="hist-select" aria-label="Select Analysis Year">
+                      <!-- Populated dynamically (1950 - 2050) -->
+                    </select>
+                  </div>
+
+                  <div class="hist-control-group hist-compare-toggle-group">
+                    <label class="hist-checkbox-label">
+                      <input type="checkbox" id="yearly-compare-toggle" class="hist-checkbox" checked>
+                      <span>Compare Baseline</span>
+                    </label>
+                    <select id="yearly-compare-select" class="hist-select hist-compare-select" aria-label="Select Baseline Comparison Reference">
+                      <option value="baseline" selected>1991&ndash;2020 WMO Climatological Normal</option>
+                      <!-- Dynamically populated past years -->
+                    </select>
+                  </div>
+
+                  <div class="hist-action-group">
+                    <button type="button" class="btn btn-primary yearly-fetch-btn" id="yearly-fetch-btn">
+                      <span class="btn-icon">📈</span>
+                      <span>Compute Yearly Analytics</span>
+                    </button>
+                  </div>
+                </form>
+
+                <!-- Yearly Status & Cache Telemetry Bar -->
+                <div class="hist-status-bar" id="yearly-status-bar">
+                  <span class="hist-status-text" id="yearly-status-text">Select an analysis year and baseline reference to compute annual and 4-season trends.</span>
+                  <span class="hist-cache-badge" id="yearly-cache-badge" hidden>Cached Memory</span>
+                </div>
+              </div>
+
+              <!-- Future Year Climate Projection Advisory Banner (Displayed for Year >= 2027) -->
+              <div class="yearly-future-banner" id="yearly-future-banner" hidden>
+                <div class="yfb-icon">🔮</div>
+                <div class="yfb-content">
+                  <div class="yfb-header">
+                    <h5 class="yfb-title">Climate Projection Model Mode &bull; IPCC CMIP6 Simulation</h5>
+                    <span class="data-category-badge projection" id="yfb-badge">Model Projection (Not NWP Forecast)</span>
+                  </div>
+                  <p class="yfb-text">
+                    <strong>Notice on Atmospheric Modeling:</strong> Operational numerical weather forecasting cannot predict specific daily weather events years into the future due to atmospheric chaos. For year <span id="yearly-future-year-text">2030</span>, metrics represent high-resolution decadal climate simulations from the <strong>IPCC CMIP6 EC-Earth3P-HR</strong> model (HighResMIP / SSP5-8.5 scenario) combined with <strong>1991&ndash;2020 WMO 30-Year Baseline Normals</strong>.
+                  </p>
+                  <div class="yfb-meta">
+                    <span class="yfb-meta-item"><strong>Dataset:</strong> Open-Meteo Climate API</span>
+                    <span class="yfb-meta-item"><strong>Uncertainty Band:</strong> &plusmn;1.4&deg;C ensemble spread</span>
+                    <span class="yfb-meta-item"><strong>Baseline Reference:</strong> 1991&ndash;2020 Climatological Mean</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Annual Meteorological Overview (6 Required Metrics) -->
+              <div class="historical-stats-container yearly-overview-container" id="yearly-overview-container">
+                <div class="hist-subhead-row">
+                  <h5 class="hist-subhead">Annual Climatological Overview (6 Core Metrics &amp; Historical Anomalies)</h5>
+                  <span class="hist-subhead-period" id="yearly-period-label">Awaiting Computation</span>
+                </div>
+
+                <div class="historical-stats-grid yearly-overview-grid" id="yearly-overview-grid">
+                  <!-- Metric 1: Average Temperature -->
+                  <div class="hist-stat-card yoc-card">
+                    <div class="hsc-icon">🌡️</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Average Temperature</span>
+                      <strong class="hsc-val" id="yearly-stat-mean-temp">--</strong>
+                      <span class="hsc-sub anomaly-sub" id="yearly-stat-temp-anomaly">Anomaly: --</span>
+                    </div>
+                  </div>
+
+                  <!-- Metric 2: Maximum Temperature -->
+                  <div class="hist-stat-card yoc-card">
+                    <div class="hsc-icon">🔥</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Maximum Temperature</span>
+                      <strong class="hsc-val" id="yearly-stat-max-temp">--</strong>
+                      <span class="hsc-sub" id="yearly-stat-max-date">Peak: --</span>
+                    </div>
+                  </div>
+
+                  <!-- Metric 3: Minimum Temperature -->
+                  <div class="hist-stat-card yoc-card">
+                    <div class="hsc-icon">❄️</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Minimum Temperature</span>
+                      <strong class="hsc-val" id="yearly-stat-min-temp">--</strong>
+                      <span class="hsc-sub" id="yearly-stat-min-date">Lowest: --</span>
+                    </div>
+                  </div>
+
+                  <!-- Metric 4: Total Precipitation -->
+                  <div class="hist-stat-card yoc-card">
+                    <div class="hsc-icon">🌧️</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Total Precipitation</span>
+                      <strong class="hsc-val" id="yearly-stat-total-precip">--</strong>
+                      <span class="hsc-sub anomaly-sub" id="yearly-stat-precip-anomaly">Variance: --</span>
+                    </div>
+                  </div>
+
+                  <!-- Metric 5: Average Humidity -->
+                  <div class="hist-stat-card yoc-card" id="yearly-card-humidity">
+                    <div class="hsc-icon">💦</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Average Humidity</span>
+                      <strong class="hsc-val" id="yearly-stat-avg-humidity">--</strong>
+                      <span class="hsc-sub" id="yearly-stat-humidity-desc">Mean Surface RH</span>
+                    </div>
+                  </div>
+
+                  <!-- Metric 6: Average Wind Speed -->
+                  <div class="hist-stat-card yoc-card">
+                    <div class="hsc-icon">💨</div>
+                    <div class="hsc-content">
+                      <span class="hsc-label">Average Wind Speed</span>
+                      <strong class="hsc-val" id="yearly-stat-avg-wind">--</strong>
+                      <span class="hsc-sub" id="yearly-stat-max-wind">Peak Gust: --</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4 Seasonal Categories Cards Grid (Winter, Summer, Monsoon, Post-Monsoon) -->
+              <div class="seasonal-categories-container" id="seasonal-categories-container">
+                <div class="hist-subhead-row">
+                  <h5 class="hist-subhead">Seasonal Climatology (4 Required Categories: Winter, Summer, Monsoon, Post-Monsoon)</h5>
+                  <span class="hist-subhead-period">Full Year Seasonal Partition</span>
+                </div>
+
+                <div class="seasonal-categories-grid" id="seasonal-categories-grid">
+                  
+                  <!-- 1. Winter (Dec, Jan, Feb) -->
+                  <article class="season-card-cat season-cat-winter" id="season-card-winter">
+                    <div class="scc-header">
+                      <div class="scc-title-wrap">
+                        <span class="scc-badge winter">Season 1 &bull; Dec, Jan, Feb</span>
+                        <h5 class="scc-title">Winter</h5>
+                      </div>
+                      <div class="scc-icon">❄️</div>
+                    </div>
+                    <div class="scc-metrics-grid">
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Temp</span>
+                        <strong class="scc-metric-val" id="season-winter-mean-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Max Temp</span>
+                        <strong class="scc-metric-val" id="season-winter-max-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Min Temp</span>
+                        <strong class="scc-metric-val" id="season-winter-min-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Total Precip</span>
+                        <strong class="scc-metric-val" id="season-winter-total-precip">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Humidity</span>
+                        <strong class="scc-metric-val" id="season-winter-avg-humidity">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Wind Speed</span>
+                        <strong class="scc-metric-val" id="season-winter-avg-wind">--</strong>
+                      </div>
+                    </div>
+                    <div class="scc-footer">
+                      <span class="scc-anomaly" id="season-winter-anomaly">&Delta;T: -- &bull; &Delta;P: --</span>
+                    </div>
+                  </article>
+
+                  <!-- 2. Summer (Mar, Apr, May) -->
+                  <article class="season-card-cat season-cat-summer" id="season-card-summer">
+                    <div class="scc-header">
+                      <div class="scc-title-wrap">
+                        <span class="scc-badge summer">Season 2 &bull; Mar, Apr, May</span>
+                        <h5 class="scc-title">Summer</h5>
+                      </div>
+                      <div class="scc-icon">☀️</div>
+                    </div>
+                    <div class="scc-metrics-grid">
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Temp</span>
+                        <strong class="scc-metric-val" id="season-summer-mean-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Max Temp</span>
+                        <strong class="scc-metric-val" id="season-summer-max-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Min Temp</span>
+                        <strong class="scc-metric-val" id="season-summer-min-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Total Precip</span>
+                        <strong class="scc-metric-val" id="season-summer-total-precip">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Humidity</span>
+                        <strong class="scc-metric-val" id="season-summer-avg-humidity">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Wind Speed</span>
+                        <strong class="scc-metric-val" id="season-summer-avg-wind">--</strong>
+                      </div>
+                    </div>
+                    <div class="scc-footer">
+                      <span class="scc-anomaly" id="season-summer-anomaly">&Delta;T: -- &bull; &Delta;P: --</span>
+                    </div>
+                  </article>
+
+                  <!-- 3. Monsoon (Jun, Jul, Aug, Sep) -->
+                  <article class="season-card-cat season-cat-monsoon" id="season-card-monsoon">
+                    <div class="scc-header">
+                      <div class="scc-title-wrap">
+                        <span class="scc-badge monsoon">Season 3 &bull; Jun, Jul, Aug, Sep</span>
+                        <h5 class="scc-title">Monsoon</h5>
+                      </div>
+                      <div class="scc-icon">🌧️</div>
+                    </div>
+                    <div class="scc-metrics-grid">
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Temp</span>
+                        <strong class="scc-metric-val" id="season-monsoon-mean-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Max Temp</span>
+                        <strong class="scc-metric-val" id="season-monsoon-max-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Min Temp</span>
+                        <strong class="scc-metric-val" id="season-monsoon-min-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Total Precip</span>
+                        <strong class="scc-metric-val" id="season-monsoon-total-precip">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Humidity</span>
+                        <strong class="scc-metric-val" id="season-monsoon-avg-humidity">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Wind Speed</span>
+                        <strong class="scc-metric-val" id="season-monsoon-avg-wind">--</strong>
+                      </div>
+                    </div>
+                    <div class="scc-footer">
+                      <span class="scc-anomaly" id="season-monsoon-anomaly">&Delta;T: -- &bull; &Delta;P: --</span>
+                    </div>
+                  </article>
+
+                  <!-- 4. Post-Monsoon (Oct, Nov) -->
+                  <article class="season-card-cat season-cat-post-monsoon" id="season-card-post-monsoon">
+                    <div class="scc-header">
+                      <div class="scc-title-wrap">
+                        <span class="scc-badge post-monsoon">Season 4 &bull; Oct, Nov</span>
+                        <h5 class="scc-title">Post-Monsoon</h5>
+                      </div>
+                      <div class="scc-icon">🍂</div>
+                    </div>
+                    <div class="scc-metrics-grid">
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Temp</span>
+                        <strong class="scc-metric-val" id="season-post-monsoon-mean-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Max Temp</span>
+                        <strong class="scc-metric-val" id="season-post-monsoon-max-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Min Temp</span>
+                        <strong class="scc-metric-val" id="season-post-monsoon-min-temp">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Total Precip</span>
+                        <strong class="scc-metric-val" id="season-post-monsoon-total-precip">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Humidity</span>
+                        <strong class="scc-metric-val" id="season-post-monsoon-avg-humidity">--</strong>
+                      </div>
+                      <div class="scc-metric">
+                        <span class="scc-metric-label">Avg Wind Speed</span>
+                        <strong class="scc-metric-val" id="season-post-monsoon-avg-wind">--</strong>
+                      </div>
+                    </div>
+                    <div class="scc-footer">
+                      <span class="scc-anomaly" id="season-post-monsoon-anomaly">&Delta;T: -- &bull; &Delta;P: --</span>
+                    </div>
+                  </article>
+
+                </div>
+              </div>
+
+              <!-- Interactive Yearly Comparison Charts Grid -->
+              <div class="historical-charts-grid yearly-charts-grid">
+                
+                <!-- Chart 1: Monthly Temperature & Precipitation Trends -->
+                <div class="hist-chart-card">
+                  <div class="hist-chart-header">
+                    <div class="hist-chart-title-wrap">
+                      <h5 class="hist-chart-title">Monthly Trends vs Baseline Normal</h5>
+                      <span class="hist-chart-subtitle">Monthly temperature curves overlaid against 1991&ndash;2020 normal with monthly precipitation bars</span>
+                    </div>
+                    <span class="hist-chart-badge">12-Month Progression</span>
+                  </div>
+                  <div class="hist-chart-canvas-wrap">
+                    <canvas id="chart-yearly-monthly-canvas" height="280" aria-label="12-Month Temperature and Precipitation Progression Chart" role="img"></canvas>
+                  </div>
+                </div>
+
+                <!-- Chart 2: 4-Season Comparison Chart -->
+                <div class="hist-chart-card">
+                  <div class="hist-chart-header">
+                    <div class="hist-chart-title-wrap">
+                      <h5 class="hist-chart-title">Seasonal Climatological Comparison</h5>
+                      <span class="hist-chart-subtitle">Direct metric comparison across Winter, Summer, Monsoon, and Post-Monsoon</span>
+                    </div>
+                    <span class="hist-chart-badge compare">4-Season Comparison</span>
+                  </div>
+                  <div class="hist-chart-canvas-wrap">
+                    <canvas id="chart-yearly-seasonal-canvas" height="280" aria-label="4-Season Comparative Climatology Chart" role="img"></canvas>
+                  </div>
+                </div>
+
+                <!-- Chart 3: Historical Anomalies Chart -->
+                <div class="hist-chart-card">
+                  <div class="hist-chart-header">
+                    <div class="hist-chart-title-wrap">
+                      <h5 class="hist-chart-title">Historical Anomalies (&Delta;T &amp; &Delta;P)</h5>
+                      <span class="hist-chart-subtitle">Monthly temperature shift (&Delta;T &deg;C) and precipitation percentage variance from baseline</span>
+                    </div>
+                    <span class="hist-chart-badge">Anomaly Variance</span>
+                  </div>
+                  <div class="hist-chart-canvas-wrap">
+                    <canvas id="chart-yearly-anomaly-canvas" height="280" aria-label="Historical Temperature and Precipitation Anomaly Chart" role="img"></canvas>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Monthly Trends Progression Table -->
+              <div class="historical-table-card yearly-table-card">
+                <div class="hist-table-header">
+                  <div class="hist-table-title-wrap">
+                    <h5 class="hist-table-title">12-Month Climatological Trend &amp; Anomaly Log</h5>
+                    <span class="hist-table-subtitle">Monthly breakdown across all 6 metrics with seasonal classifications and baseline shifts</span>
+                  </div>
+                  <span class="data-category-badge historical" id="yearly-table-badge">Monthly Series</span>
+                </div>
+                <div class="hist-table-scroll-wrapper" id="yearly-table-scroll-wrapper">
+                  <table class="hist-table" id="yearly-monthly-table" aria-label="12-Month Climatological Trends Table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Month</th>
+                        <th scope="col">Season Category</th>
+                        <th scope="col">Avg Temp</th>
+                        <th scope="col">Max Temp</th>
+                        <th scope="col">Min Temp</th>
+                        <th scope="col">Total Precip</th>
+                        <th scope="col">Avg Humidity</th>
+                        <th scope="col">Avg Wind Speed</th>
+                        <th scope="col">Temp Shift (&Delta;T)</th>
+                        <th scope="col">Precip Shift (&Delta;P%)</th>
+                      </tr>
+                    </thead>
+                    <tbody id="yearly-monthly-tbody">
+                      <tr>
+                        <td colspan="10" class="hist-table-empty">No annual analytics computed. Select an analysis year above.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </section>
+
+          </section>
+
+        </div>
+
+      </main>
+
+      <!-- Application Footer -->
+      <footer class="app-footer" id="app-footer">
+        <div class="footer-content">
+          <p class="footer-attribution">
+            Weather &amp; Air Quality data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo REST API</a>.
+            Reverse geocoding by <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener noreferrer">BigDataCloud</a>.
+            Map tiles by <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>.
+          </p>
+          <p class="footer-note">Weather Dashboard Intelligence Suite &bull; Vanilla JavaScript ES6+, Semantic HTML5 &amp; Glassmorphism.</p>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       SEVERE WEATHER ALERT DETAILS & SAFETY MODAL
+       ==================================================================== -->
+  <div id="severe-alert-modal" class="severe-alert-modal" role="dialog" aria-modal="true" aria-labelledby="modal-alert-headline" hidden>
+    <div class="modal-backdrop" id="alert-modal-backdrop"></div>
+    <div class="modal-container">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-badge-group">
+            <span class="swb-severity-badge warning" id="modal-severity-badge">Warning</span>
+            <span class="modal-urgency-badge" id="modal-urgency-badge">Immediate Life Safety</span>
+            <span class="modal-certainty-badge" id="modal-certainty-badge">Observed</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Close severe weather modal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-title-row">
+            <span class="modal-icon" id="modal-alert-icon">⚡</span>
+            <div>
+              <h3 class="modal-headline" id="modal-alert-headline">Severe Thunderstorm Warning</h3>
+              <span class="modal-region" id="modal-alert-region">Target Area: Delhi, India</span>
             </div>
           </div>
 
-          <!-- Primary AQI Comparison Grid (European vs US AQI) -->
-          <div class="aqi-indexes-grid" id="aqi-indexes-grid">
-            
-            <!-- European AQI Card -->
-            <article class="aqi-index-card eaqi-card" id="eaqi-card">
-              <div class="aqi-index-header">
-                <span class="aqi-index-title">European AQI</span>
-                <span class="aqi-standard-badge" title="European Environment Agency standard">EEA Scale (0–100+)</span>
-              </div>
-              <div class="aqi-index-body">
-                <span id="eaqi-value" class="aqi-index-value">--</span>
-                <span id="eaqi-badge" class="aqi-badge aqi-badge-unknown">--</span>
-              </div>
-              <div class="aqi-index-footer">
-                <span id="eaqi-status" class="aqi-subtext">European air quality standard</span>
-              </div>
-            </article>
-
-            <!-- US AQI Card -->
-            <article class="aqi-index-card us-aqi-card" id="us-aqi-card">
-              <div class="aqi-index-header">
-                <span class="aqi-index-title">United States AQI</span>
-                <span class="aqi-standard-badge" title="United States Environmental Protection Agency standard">US EPA Scale (0–500)</span>
-              </div>
-              <div class="aqi-index-body">
-                <span id="us-aqi-value" class="aqi-index-value">--</span>
-                <span id="us-aqi-badge" class="aqi-badge aqi-badge-unknown">--</span>
-              </div>
-              <div class="aqi-index-footer">
-                <span id="us-aqi-status" class="aqi-subtext">US EPA air quality standard</span>
-              </div>
-            </article>
-
+          <div class="modal-metadata-grid">
+            <div class="mm-item">
+              <span class="mm-label">Severity Level</span>
+              <strong class="mm-val" id="modal-meta-severity">Warning (Level 3)</strong>
+            </div>
+            <div class="mm-item">
+              <span class="mm-label">Hazard Category</span>
+              <strong class="mm-val" id="modal-meta-category">Severe Convective Wind &amp; Lightning</strong>
+            </div>
+            <div class="mm-item">
+              <span class="mm-label">Onset Threshold</span>
+              <strong class="mm-val" id="modal-meta-onset">Observed at Station</strong>
+            </div>
+            <div class="mm-item">
+              <span class="mm-label">Duration / Expiry</span>
+              <strong class="mm-val" id="modal-meta-expires">Next 4 to 6 Hours</strong>
+            </div>
           </div>
 
-          <!-- Pollutant Particulate Concentrations Grid -->
-          <div class="pollutants-grid" id="pollutants-grid" aria-label="Detailed Air Pollutants">
-            
-            <!-- PM2.5 Card -->
-            <article class="pollutant-card" id="pm25-card">
-              <div class="pollutant-header">
-                <span class="pollutant-name">PM<sub>2.5</sub></span>
-                <span class="pollutant-fullname">Fine Particulate</span>
-              </div>
-              <div class="pollutant-body">
-                <span id="pm25-value" class="pollutant-value">--</span>
-                <span class="pollutant-unit">μg/m³</span>
-              </div>
-              <div class="pollutant-footer">
-                <span class="pollutant-desc">Combustion particles, smoke</span>
-              </div>
-            </article>
-
-            <!-- PM10 Card -->
-            <article class="pollutant-card" id="pm10-card">
-              <div class="pollutant-header">
-                <span class="pollutant-name">PM<sub>10</sub></span>
-                <span class="pollutant-fullname">Coarse Particulate</span>
-              </div>
-              <div class="pollutant-body">
-                <span id="pm10-value" class="pollutant-value">--</span>
-                <span class="pollutant-unit">μg/m³</span>
-              </div>
-              <div class="pollutant-footer">
-                <span class="pollutant-desc">Dust, pollen, mold spores</span>
-              </div>
-            </article>
-
-            <!-- Nitrogen Dioxide (NO2) Card -->
-            <article class="pollutant-card" id="no2-card">
-              <div class="pollutant-header">
-                <span class="pollutant-name">NO<sub>2</sub></span>
-                <span class="pollutant-fullname">Nitrogen Dioxide</span>
-              </div>
-              <div class="pollutant-body">
-                <span id="no2-value" class="pollutant-value">--</span>
-                <span class="pollutant-unit">μg/m³</span>
-              </div>
-              <div class="pollutant-footer">
-                <span class="pollutant-desc">Vehicle exhaust, power plants</span>
-              </div>
-            </article>
-
-            <!-- Ozone (O3) Card -->
-            <article class="pollutant-card" id="ozone-card">
-              <div class="pollutant-header">
-                <span class="pollutant-name">O<sub>3</sub></span>
-                <span class="pollutant-fullname">Ground Ozone</span>
-              </div>
-              <div class="pollutant-body">
-                <span id="ozone-value" class="pollutant-value">--</span>
-                <span class="pollutant-unit">μg/m³</span>
-              </div>
-              <div class="pollutant-footer">
-                <span class="pollutant-desc">Smog photochemical reactions</span>
-              </div>
-            </article>
-
-          </div>
-
-          <!-- Informational Medical Disclaimer Note (Requirement 8) -->
-          <div class="aqi-disclaimer-note" id="aqi-disclaimer-note" role="note" aria-label="Health Disclaimer">
-            <svg class="disclaimer-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
-            <p class="disclaimer-text">
-              <strong>Notice:</strong> Air quality index categories and pollutant metrics are provided for general informational guidance only and do not constitute personal medical diagnoses or health recommendations.
+          <!-- Meteorological Trigger & Mechanism -->
+          <div class="modal-section">
+            <h4 class="modal-section-title">Atmospheric Dynamics &amp; Measured Observations</h4>
+            <p class="modal-desc" id="modal-alert-description">
+              Atmospheric instability has produced convective storm cells with peak surface winds exceeding 72 km/h and intense precipitation rates.
             </p>
           </div>
 
-        </section>
-
-        <!-- 7. Interactive Weather Analytics Section (Phase 20) -->
-        <section class="analytics-section" id="analytics-section" aria-label="Interactive Weather Analytics" hidden>
-          <div class="section-header">
-            <div class="section-title-wrap">
-              <h3 class="section-title">Weather Analytics</h3>
-              <span class="section-subtitle">Interactive 24-hour and 7-day meteorological trends</span>
-            </div>
+          <!-- Protective Safety Instructions -->
+          <div class="modal-section modal-safety-section">
+            <h4 class="modal-section-title">Protective Safety Precautions &amp; Action Plan</h4>
+            <ul class="modal-safety-list" id="modal-safety-list">
+              <!-- Dynamically populated safety actions -->
+            </ul>
           </div>
-          <div class="analytics-grid" id="analytics-grid">
-            <!-- 1. 24-Hour Temperature Line Chart -->
-            <article class="analytics-card" id="chart-temp-hourly-card">
-              <div class="chart-header">
-                <span class="chart-title">24-Hour Temperature</span>
-                <span class="chart-badge">Hourly</span>
-              </div>
-              <div class="chart-canvas-wrapper">
-                <canvas id="chart-temp-hourly" role="img" aria-label="24-hour temperature line chart"></canvas>
-              </div>
-            </article>
 
-            <!-- 2. 7-Day High & Low Temperature Chart -->
-            <article class="analytics-card" id="chart-temp-daily-card">
-              <div class="chart-header">
-                <span class="chart-title">7-Day High &amp; Low Temperature</span>
-                <span class="chart-badge">Daily</span>
-              </div>
-              <div class="chart-canvas-wrapper">
-                <canvas id="chart-temp-daily" role="img" aria-label="7-day high and low temperature range chart"></canvas>
-              </div>
-            </article>
-
-            <!-- 3. Hourly Relative Humidity Chart -->
-            <article class="analytics-card" id="chart-humidity-hourly-card">
-              <div class="chart-header">
-                <span class="chart-title">24-Hour Relative Humidity</span>
-                <span class="chart-badge">Hourly</span>
-              </div>
-              <div class="chart-canvas-wrapper">
-                <canvas id="chart-humidity-hourly" role="img" aria-label="24-hour relative humidity line chart"></canvas>
-              </div>
-            </article>
-
-            <!-- 4. Hourly Wind Speed Chart -->
-            <article class="analytics-card" id="chart-wind-hourly-card">
-              <div class="chart-header">
-                <span class="chart-title">24-Hour Wind Speed</span>
-                <span class="chart-badge">Hourly</span>
-              </div>
-              <div class="chart-canvas-wrapper">
-                <canvas id="chart-wind-hourly" role="img" aria-label="24-hour wind speed line chart"></canvas>
-              </div>
-            </article>
+          <!-- Source / CAP Protocol Attribution -->
+          <div class="modal-footer-attribution">
+            <span class="mfa-protocol">Standard: WMO Common Alerting Protocol (CAP-v1.2)</span>
+            <span class="mfa-feed">Meteorological Feed: Open-Meteo REST &amp; Extreme Value Hazard Engine</span>
           </div>
-        </section>
+        </div>
 
-      </section>
-
-    </main>
-
-    <!-- 17. Application Footer -->
-    <footer class="app-footer" id="app-footer">
-      <div class="footer-content">
-        <p class="footer-attribution">
-          Weather data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo API</a>.
-          Reverse geocoding provided by <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener noreferrer">BigDataCloud</a>.
-        </p>
-        <p class="footer-note">Designed with semantic HTML5, modern CSS3, and Vanilla JavaScript.</p>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-ack-btn" id="modal-ack-btn">
+            Acknowledge &amp; Close
+          </button>
+        </div>
       </div>
-    </footer>
-
+    </div>
   </div>
+
 </body>
 </html>

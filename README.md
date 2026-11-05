@@ -6,7 +6,7 @@
 [![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](script.js)
 [![HTML5 Semantic](https://img.shields.io/badge/HTML5-Semantic-E34F26?style=for-the-badge&logo=html5&logoColor=white)](index.html)
 [![CSS3 Glassmorphism](https://img.shields.io/badge/CSS3-Glassmorphism-1572B6?style=for-the-badge&logo=css3&logoColor=white)](style.css)
-[![Tests Passing](https://img.shields.io/badge/Tests-173%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
+[![Tests Passing](https://img.shields.io/badge/Tests-415%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
 [![WCAG 2.1 AA](https://img.shields.io/badge/Accessibility-WCAG_2.1_AA-blueviolet?style=for-the-badge)](tests/e2e/accessibility-deep-audit.spec.js)
 
 ---
@@ -15,14 +15,23 @@
 
 The **Real-Time Weather Dashboard** provides live meteorological data, 24-hour hourly progressions, 7-day extended forecasts, and comprehensive atmospheric air quality monitoring for any city worldwide or via browser geolocation. The application emphasizes clean software engineering, asynchronous fault tolerance, strict accessibility, and sub-millisecond memory performance:
 
-* **Zero Runtime Dependencies:** Built natively in Vanilla JavaScript (ES6+), HTML5, and CSS3. Bundles a local zero-latency Chart.js UMD distribution (`vendor/chart.umd.min.js`) requiring zero build steps, compilers, or runtime Node.js servers to execute in any modern browser.
+* **Multi-View Intelligence Architecture:** 6 dedicated views accessible through an accessible sidebar navigation (`Overview`, `Weather Map`, `Forecast`, `Analytics`, `Calendar`, and `Climate Reports`) with persistent URL hash state and mobile off-canvas drawer.
+* **Severe Weather Warnings & Atmospheric Hazards Alert System (WMO CAP-v1.2):** Full meteorological hazard detection engine following WMO Common Alerting Protocol (CAP-v1.2) standards evaluating real-time observations against 8 extreme atmospheric hazard rules (Excessive Heat, Hard Freeze / Sub-Zero, High Wind / Gale, Severe Thunderstorm & Hail, Flash Flood / Torrential Rain, Toxic Smog / Hazardous AQI, Dense Fog / Zero Visibility, and Extreme Solar UV Radiation) with 4-tier severity hierarchy (`Emergency`, `Warning`, `Watch`, `Advisory`), persistent dynamic warning banner (`#severe-weather-banner`), pulsating attention indicator pill in the sidebar (`#sidebar-alert-pill`), interactive safety precautions modal (`#severe-alert-modal`) with actionable checklists and WMO CAP protocol attribution, and synthesized dual-tone Web Audio API chime with persistent mute preference.
+* **Seasonal & Yearly Weather Analytics & IPCC CMIP6 Climate Projections:** Full multi-year climatological analysis framework partitioning the year into 4 defined seasons (`Winter`, `Summer`, `Monsoon`, `Post-Monsoon`) and tracking 6 core metrics (`Average Temperature`, `Maximum Temperature`, `Minimum Temperature`, `Total Precipitation`, `Average Humidity`, `Average Wind Speed`), 12-month trends, historical baseline anomalies ($\Delta T$ and $\Delta P\%$), and honest future year handling ($\ge 2027$) utilizing the Open-Meteo Climate Projections API with IPCC CMIP6 EC-Earth3P-HR HighResMIP models, prominent uncertainty advisory banners, and 3 Chart.js comparison charts.
+* **Open-Meteo Historical Weather Archive & Multi-Year Climate Comparison:** Full empirical reanalysis integration (ERA5 / ERA5-Land, dating back to 1940) tracking all 10 required meteorological metrics (daily max, min, mean temperatures, precipitation sum, rainfall sum, relative humidity, wind velocity, vector dominant wind direction, atmospheric pressure, and cloud coverage), monthly statistical aggregations, hemisphere-aware seasonal climatological benchmarks, side-by-side multi-year climate anomaly shifts ($\Delta T$ and $\Delta P$ variance), dual-axis progression charts, honest missing-data indicators, and dedicated in-memory performance caching.
+* **9-Chart Meteorological Visualization Suite:** Comprehensive Chart.js analytics suite featuring 9 specialized charts (Temperature, Feels-Like, Precipitation volume, Rain probability, Humidity area, Wind speed, Atmospheric pressure, UV Index, and Condition Distribution doughnut) with 4 time horizons (`Today`, `Next 24 Hours`, `Next 7 Days`, `Custom Period`) and 6 category filters (`All Metrics`, `Thermal`, `Precipitation`, `Atmosphere & Wind`, `Solar UV`, `Conditions`).
+* **Leaflet & OpenStreetMap Interactive Weather Map (12 Core Features):** Fully interactive slippy weather GIS map powered by Leaflet.js with OpenStreetMap base cartography, verified weather overlays (RainViewer precipitation radar, satellite infrared clouds, and OpenWeatherMap temperature/wind raster layer templates with honest transparent unkeyed status notices), in-map city search, on-demand geolocation pinpointing, full-screen map expansion, separate temperature and precipitation colour legends with dynamic °C/°F conversions, and interactive point telemetry popups on any coordinate click.
+* **Interactive Monthly Weather Calendar & Dual Heatmaps (13 Core Features):** Full monthly calendar grid with previous/next month traversal, month and year selectors, daily temperature, maximum temperature, minimum temperature, precipitation accumulation, rain probability, WMO condition icons, interactive Day Inspector card, dynamic Thermal Heatmap mode (5 thermal tiers with gradient swatches), and Precipitation Heatmap mode (5 rainfall tiers with gradient swatches), with strict leap-year mathematics and honest unavailable states outside active 7-day forecast coverage.
+* **Climate Intelligence & Environmental Safety:** Real-time thermal comfort index delta, barometric pressure trend and air mass classification, WHO respiratory particulate health safety assessment, and astronomical solar photoperiod calculations.
+* **Seasonal & Yearly Trends:** Hemisphere-aware 4-season breakdown (Northern, Southern, Equatorial/Tropical) and empirical Köppen climate classification computed dynamically from geographical coordinates and seasonal temperature variances.
+* **Zero Runtime Dependencies:** Built natively in Vanilla JavaScript (ES6+), HTML5, and CSS3. Bundles local zero-latency Chart.js and Leaflet UMD distributions (`vendor/chart.umd.min.js`, `vendor/leaflet/leaflet.js`) requiring zero build steps, compilers, or runtime Node.js servers to execute in any modern browser.
 * **Progressive Web Application (PWA):** Fully installable standalone web application conforming to W3C Web App standards with high-resolution vector and raster icons, offline application shell precaching (`Cache Storage API`), seamless update handling (`SKIP_WAITING`), and dedicated API bypass guarantees for weather and geolocation data.
-* **Dual In-Memory Caching Engine:** Fast `Map`-based caching stores city coordinates (30-min TTL), meteorological forecasts (5-min TTL), and air quality readings (5-min TTL) with 4-decimal coordinate keys (~11m resolution) and FIFO memory eviction.
-* **Interactive Weather Analytics Charts:** 4 hardware-accelerated interactive canvas charts (24-hr temperature, 7-day high/low, 24-hr humidity, and 24-hr wind speed) featuring smooth Bézier transitions, gradient fills, and dynamic °C/°F unit toggling without canvas recreation.
+* **Dual In-Memory Caching Engine:** Fast `Map`-based caching stores city coordinates (30-min TTL), meteorological forecasts (5-min TTL), air quality readings (5-min TTL), and historical reanalysis observations (24-hour TTL) with 4-decimal coordinate keys (~11m resolution) and FIFO memory eviction.
+* **Interactive Weather Analytics Charts:** 4 hardware-accelerated interactive canvas charts in the Overview alongside the dedicated 9-chart suite in Analytics, featuring smooth Bézier transitions, gradient fills, and dynamic °C/°F unit toggling without canvas recreation.
 * **Air Quality Monitoring Module:** Integrates Open-Meteo Air Quality API to deliver dual European AQI and US AQI comparisons, PM2.5, PM10, Nitrogen Dioxide, and Ozone concentrations without ever blocking the primary weather dashboard.
 * **Network Resilience & Offline Experience:** Resilient request pipeline with `AbortController` timeout enforcement, bounded transient retries for HTTP 5xx responses, HTTP 429 rate limit handling, persistent offline banner notifications, and state-aware Retry actions.
 * **Dynamic Adaptive Glassmorphism:** Deep translucent navy palette that morphs dynamically based on real-time WMO weather codes (Sunny, Clear Night, Cloudy, Overcast, Rainy, Snowy, Thunderstorm, Foggy).
-* **Automated Testing Suite:** 173 verified automated tests spanning unit logic, DOM integrations, REST API error handling, WCAG 2.1 AA accessibility, 9 responsive viewport layouts, air quality monitoring, network resilience, interactive canvas analytics, and PWA Service Worker lifecycle.
+* **Automated Testing Suite:** 415 verified automated tests (301 Vitest unit/integration tests + 114 Playwright E2E tests) spanning unit logic, DOM integrations, REST API error handling, WCAG 2.1 AA accessibility, 9 responsive viewport layouts, air quality monitoring, network resilience, interactive canvas analytics, PWA Service Worker lifecycle, dashboard redesign navigation, detailed weather overview, 9-chart visualization suite, Leaflet interactive weather map, interactive monthly weather calendar, Open-Meteo historical weather reanalysis archive, seasonal & yearly weather analytics with climate projections, and WMO CAP severe weather atmospheric hazard alerts.
 * **Zero API Key Requirement:** Immediate local setup with no authentication barriers or secret tokens.
 
 ---
@@ -50,25 +59,47 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
 * ⛈️ `theme-thunderstorm`: Electric deep violet and moody indigo
 * 🌫️ `theme-foggy`: Ethereal pearl-smoke gray
 
-### 📊 Accurate Weather Metrics Grid
-* **Current Temperature:** Formatted to the nearest whole integer with accessible degree symbol labels.
-* **Apparent ("Feels Like") Temperature:** Combines wind chill and humidity heat indices.
-* **Relative Humidity:** Measured at 2 meters (`relative_humidity_2m`).
-* **Wind Speed:** Surface wind velocity measured at 10 meters in km/h (`wind_speed_10m`).
-* **Surface Air Pressure:** Mean sea-level pressure in hectopascals (`pressure_msl`).
-* **Today's Maximum UV Index:** Correctly displays the daily peak ultraviolet radiation (`uv_index_max`) alongside a dynamic severity classification badge:
-  * `0.0 - 2.9`: **Low** (Green)
-  * `3.0 - 5.9`: **Moderate** (Amber)
-  * `6.0 - 7.9`: **High** (Orange)
-  * `8.0 - 10.9`: **Very High** (Crimson)
-  * `11.0+`: **Extreme** (Purple)
-  * Live UV Readout: Displays current solar ultraviolet intensity when supported by the observation station.
+### 📊 Detailed Weather Overview & Ephemeris (15 Required Parameters)
+Every displayed value is traceable to verified Open-Meteo REST API observation data or mathematically sound astronomical calculations, presented via reusable metric card components:
+1. **Current Temperature:** Formatted whole integer with degree unit (`°C` / `°F`).
+2. **Apparent ("Feels Like") Temperature:** Combines wind-chill and humidity indices.
+3. **Weather Condition & Icon:** Decoded WMO weather code with day/night adaptive glyphs.
+4. **Relative Humidity:** 2m surface moisture level in `%` with qualitative comfort status.
+5. **Wind Speed:** Surface velocity measured at 10m altitude in `km/h` (metric) or `mph` (imperial).
+6. **Wind Direction:** 16-point cardinal compass string (e.g., `NW • 304°`) paired with a rotating vector arrow icon.
+7. **Atmospheric Pressure:** Mean sea-level pressure in `hPa` (metric) or `inHg` (imperial).
+8. **Atmospheric Visibility:** Surface transparency in `km` (or `m` for fog) in metric, and `mi` in imperial.
+9. **Cloud Coverage:** Total celestial coverage fraction in `%` with astronomical tiers (`Clear Sky`, `Few Clouds`, `Scattered`, `Broken`, `Overcast`).
+10. **UV Radiation Index:** Peak daily UV index (`uv_index_max`) alongside live station readout and WHO severity classification badges (`Low`, `Moderate`, `High`, `Very High`, `Extreme`).
+11. **Sunrise Time:** Solar morning dawn threshold formatted in localized 12-hour format (`e.g., 6:35 AM`).
+12. **Sunset Time:** Solar evening twilight threshold formatted in localized 12-hour format (`e.g., 5:33 PM`).
+13. **Moonrise Time:** Lunar horizon ascension time from Open-Meteo API or computed via astronomical synodic retardation (~50.47 min/day).
+14. **Moonset Time:** Lunar horizon descension time from Open-Meteo API or computed via astronomical synodic retardation.
+15. **Moon Phase & Illumination:** Evaluates lunar cycle progression into 8 astronomical phases (`New Moon`, `Waxing Crescent`, `First Quarter`, `Waxing Gibbous`, `Full Moon`, `Waning Gibbous`, `Last Quarter`, `Waning Crescent`) with phase glyphs, cycle age in days, and illumination percentage.
+* **Reusable Metric Component Architecture:** Standardized `renderMetricCardComponent()` manages element text updates, skeleton loading classes (`is-loading`), unit conversions, and data source attribution tags (`[Open-Meteo API]` vs `[Source: Astronomical Calculation]`).
+* **Non-Blocking Fault Isolation & Missing Data Resilience:** Any missing or station-unavailable variable displays a graceful `--` state with descriptive status notes without breaking the interface.
 
-### 🕒 Timezone-Aware 24-Hour Hourly Forecast
-* Resolves target location's local reference hour from API `current.time` (preventing browser UTC offset drift).
-* Finds the first valid hourly entry corresponding to the current hour or next upcoming hour and extracts the subsequent 24 hourly periods.
-* The leading card is designated as **"Now"**, followed by 12-hour formatted local timestamps (e.g., `4 PM`, `5 PM`).
-* Horizontal scroll track supports fluid momentum scrolling and keyboard arrow navigation (`ArrowLeft` / `ArrowRight`).
+### ⏱️ Interactive Hourly Weather Timeline (10 Features)
+The timeline provides a fluid, horizontal scrollable 24-hour meteorological track with seamless keyboard navigation, interactive click inspection, dynamic celestial markers, and bidirectional synchronization with the temperature analytics chart:
+1. **Today's 24-Hour Progression:** Resolves the target location's local reference hour from API `current.time` without browser UTC offset drift, extracting the 24 upcoming hourly intervals.
+2. **Hourly Temperature:** Formatted temperature display (`°C` / `°F`) updated in real-time on every card.
+3. **Apparent ("Feels Like") Temperature:** Combines hourly wind-chill and moisture factors into an apparent temperature indicator (`Feels 21°`).
+4. **Weather Condition Icons & Descriptions:** WMO weather code mapping with day/night adaptive glyphs (e.g., `☀️`, `🌙`, `⛅`, `🌧️`).
+5. **Precipitation Probability:** Hourly rain/snow likelihood percentage (`💧 35%`) with risk status descriptions.
+6. **Precipitation Amount:** Expected hourly accumulation in millimeters (`mm`) or inches (`in`).
+7. **Relative Humidity:** Hourly 2m surface moisture content (`48%`) with qualitative atmospheric comfort evaluation.
+8. **Wind Speed:** Surface velocity measured at 10m altitude formatted in `km/h` (metric) or `mph` (imperial).
+9. **Wind Direction:** 16-point cardinal compass string (e.g., `NW (310°)`) paired with a rotating vector SVG arrow.
+10. **Cloud Coverage:** Total celestial coverage percentage (`☁ 40%`) alongside astronomical tier labels (`Clear Sky`, `Scattered`, `Overcast`).
+
+* **Interactive Features & UI Enhancements:**
+  * **Current Hour Indicator:** The leading hour card is highlighted with a prominent `.is-current` border and `Now` badge.
+  * **Selected Hour Highlight:** Clicking or keyboard-activating any hour card applies the `.is-selected` focus style with glowing cyan borders.
+  * **Interactive Tooltips & Screen Reader Support:** Every card includes a comprehensive `title` and `aria-label` describing all 10 meteorological parameters.
+  * **Celestial Markers:** Automatically identifies exact sunrise and sunset intervals across the 24-hour window, embedding dedicated `.sunrise-pill` (e.g. `🌅 6:35 AM Sunrise`) and `.sunset-pill` (e.g. `🌇 5:34 PM Sunset`) markers inside the matching hour cards.
+  * **Detailed Hourly Weather Inspector Card (`#hourly-detail-card`):** Displays a glassmorphic summary of the selected hour featuring a time badge, condition description, hero temperature, feels-like temperature, and a 6-metric grid.
+  * **Bidirectional Chart.js Synchronization:** Selecting an hour card immediately highlights the corresponding data point on the 24-hour temperature chart via `setActiveElements` and opens the tooltip; clicking a point on the chart selects the hour in the timeline and scrolls it into view.
+  * **Accessible Keyboard Scrolling:** Users can smoothly scroll the timeline using the `ArrowLeft` and `ArrowRight` keys, or navigate directly to cards using `Tab` and select with `Enter` or `Space`.
 
 ### 📅 7-Day Extended Forecast Grid
 * Renders a 7-day forecast grid displaying localized day names (`Today`, `Mon`, `Tue`), weather condition descriptions, condition icons, and daily maximum/minimum temperatures.
@@ -121,6 +152,48 @@ The interface evaluates World Meteorological Organization (WMO) codes and day/ni
   * **Reduced Motion Compliance:** Automatically disables chart animation transitions when `prefers-reduced-motion: reduce` is detected.
   * **Clean Teardown:** Centralized `destroyAllCharts()` safely disposes of instances on cache clearing or component lifecycle reset.
   * **Local Offline Bundle:** Shipped with a vendor-bundled Chart.js UMD distribution (`vendor/chart.umd.min.js`), preserving 100% offline functionality.
+
+### 📊 9-Chart Data Visualization Suite (Chart.js Integration)
+The dedicated **Analytics View** (`#view-analytics`) integrates a complete 9-chart meteorological intelligence suite powered by the bundled Chart.js UMD engine:
+1. **Temperature Line Chart (`#chart-temp-canvas`):**
+   * Cubic Bézier line chart (`tension: 0.35`) visualizing ambient 2m temperature progression in sky blue (`#38bdf8`) with translucent gradient fill.
+   * Auto-adjusts Y-axis bounds with dynamic °C/°F scaling and custom tooltip formatters.
+2. **Feels-Like Temperature Line Chart (`#chart-feels-canvas`):**
+   * Smooth line chart in solar amber (`#f59e0b`) plotting apparent thermal comfort.
+   * Directly incorporates wind-chill and humidity effects across selected horizons.
+3. **Precipitation Bar Chart (`#chart-precip-canvas`):**
+   * Bar chart in vibrant cobalt (`#3b82f6`) tracking liquid volume and water equivalence.
+   * Automatically scales units dynamically: `mm` (metric) or `in` (imperial).
+4. **Rain Probability Line Chart (`#chart-rain-prob-canvas`):**
+   * Bounded 0% to 100% line chart in royal indigo (`#6366f1`) displaying measurable precipitation probability.
+5. **Relative Humidity Area Chart (`#chart-humidity-canvas`):**
+   * Translucent area line chart (`fill: true`) in teal (`#14b8a6`) with 0% to 100% saturation limits.
+6. **Wind Speed Line Chart (`#chart-wind-canvas`):**
+   * Velocity line chart in modern purple (`#a855f7`) plotting 10m surface velocity in `km/h` or `mph`.
+7. **Atmospheric Pressure Line Chart (`#chart-pressure-canvas`):**
+   * High-precision barometric line chart in emerald (`#10b981`) tracking mean sea-level pressure (`pressure_msl`) in `hPa`.
+8. **UV Index Bar Chart (`#chart-uv-canvas`):**
+   * Categorical bar chart in radiant yellow (`#eab308`) with color-coded safety tiers (Green <3, Yellow 3-5, Orange 6-7, Red 8-10, Violet 11+).
+9. **Weather Condition Distribution Doughnut Chart (`#chart-condition-dist-canvas`):**
+   * Discrete categorical doughnut chart in vivid cyan (`#06b6d4`) quantifying the breakdown of WMO weather conditions across the active horizon, featuring percentage tooltips and bottom legend navigation. Note: strictly reserved for discrete categorical distributions; never applied to continuous time-series data.
+
+#### Interactive Filters & Time Horizons
+* **Selectable Time Ranges:**
+  * `Today`: Filters upcoming intervals through the end of the active day.
+  * `Next 24 Hours`: Slices exactly 24 upcoming hourly forecasts.
+  * `Next 7 Days`: Aggregates 7-day daily maximums, minimums, accumulated precipitation, and condition counts.
+  * `Custom Period`: Displays the full available forecast series (up to 168 hours).
+* **Metric Category Filters:**
+  * `All Metrics`: Displays all 9 charts simultaneously.
+  * `Thermal`: Filters exclusively to Temperature and Feels-Like charts.
+  * `Precipitation`: Filters exclusively to Precipitation Amount and Rain Probability charts.
+  * `Atmosphere & Wind`: Isolates Humidity, Wind Speed, and Atmospheric Pressure.
+  * `Solar UV`: Displays the UV Index chart.
+  * `Conditions`: Displays the Condition Breakdown doughnut chart.
+* **Zero Canvas Duplication & Memory Safety:**
+  * In-place buffer updating via `chart.update()` prevents memory leaks and canvas recreation when toggling units, time ranges, or category filters.
+  * Full accessibility with explicit `role="img"` and descriptive `aria-label` attributes on every canvas.
+  * Respects `prefers-reduced-motion` by disabling animation transitions.
 
 ### 📱 Progressive Web Application (PWA) Implementation (Phase 21)
 The application is converted into an installable, standards-compliant Progressive Web App with full offline application shell capabilities and mobile standalone support:
@@ -175,6 +248,197 @@ The application is converted into an installable, standards-compliant Progressiv
 * **Bounded Transient Retry:** Automatically retries transient `5xx` server errors once with a 600ms backoff interval; never loops infinitely or retries client (4xx) errors.
 * **HTTP 429 Rate Limiting:** Displays a clear rate-limit advisory banner and exposes a **Retry** button.
 * **Actionable Retry Action:** State-aware `#retry-btn` allows users to re-trigger failed requests with one click.
+
+### 🧭 Professional Sidebar Navigation & Multi-View Architecture
+* **6 Specialized Meteorological Views:** Accessible single-page view routing seamlessly toggles between:
+  1. **Overview (`#view-overview`):** Primary weather hero, atmospheric metric grid, 24-hour hourly timeline, 7-day extended forecast, and dual air quality index cards.
+  2. **Weather Map (`#view-map`):** Interactive slippy map preview with RainViewer precipitation radar, satellite cloud overlays, zoom controls, and coordinates HUD.
+  3. **Forecast (`#view-forecast`):** Extended 7-day deep-dive cards with visual temperature spectrum range bars and a comprehensive 24-hour meteorological tabular matrix.
+  4. **Analytics (`#view-analytics`):** Hardware-accelerated interactive canvas analytics charts with expanded viewing dimensions.
+  5. **Calendar (`#view-calendar`):** Monthly calendar grid with overlaid 7-day forecast projections and an interactive Day Inspector card.
+  6. **Climate Reports (`#view-climate`):** Environmental comfort index delta, barometric stability, WHO particulate safety guidelines, solar photoperiod, and Köppen seasonal trends.
+* **Accessible Tab Semantics:** Implements ARIA `tablist` and `tab` controls with keyboard activation and `tabpanel` association.
+* **URL Hash Synchronization:** Preserves view state across reloads via hash navigation (`#overview`, `#map`, `#forecast`, `#analytics`, `#calendar`, `#climate`).
+* **Responsive Off-Canvas Drawer:** On tablet and mobile viewports ($\le 1024$px), navigation transitions into a sleek off-canvas drawer with backdrop overlay, accessible close button, and auto-dismiss upon view selection.
+
+### 🗺️ Interactive Leaflet & OpenStreetMap Weather Map (12 Core Features)
+The weather intelligence dashboard integrates a full-featured, hardware-accelerated GIS interactive weather map built with **Leaflet.js** and **OpenStreetMap** base cartography, delivering real-time precipitation radar, satellite cloud coverage, interactive location inspection, and strict data honesty:
+
+1. **Interactive Zoom & Pan:** Smooth, fluid panning and multi-level zooming with touch gestures, mouse wheel drag, and accessible keyboard controls (`#map-zoom-in`, `#map-zoom-out`, `#map-recenter`).
+2. **Current Location Marker:** Custom pulsing cyan pin (`.leaflet-weather-marker`) dynamically displays the active location name, temperature badge, and current condition icon at exact coordinates.
+3. **In-Map City Search (`#map-search-form`):** Integrated search input and submit button inside the map container allowing users to look up and fly directly to any city globally without leaving the map view.
+4. **Precipitation Radar Layer (`#map-layer-radar`):** Verified live precipitation radar tiles from RainViewer API (`tilecache.rainviewer.com`), dynamically querying latest timestamps via `/public/weather-maps.json`.
+5. **Satellite Cloud Coverage Layer (`#map-layer-clouds`):** Real-time global infrared cloud imagery overlay provided by RainViewer's satellite API.
+6. **Temperature Layer (`#map-layer-temp`):** Color-coded temperature analysis layer. Includes verified OpenWeatherMap raster tile template support (`API_CONFIG.OWM_TILE_URL`) and an honest, transparent status banner when an API key is not configured, informing users that real-time point temperature telemetry remains active worldwide upon click.
+7. **Wind Layer (`#map-layer-wind`):** Global surface wind velocity layer with OpenWeatherMap vector tile template support and honest status notification when unkeyed.
+8. **Street Map Base Layer (`#map-layer-osm`):** High-contrast OpenStreetMap cartography base tiles for street and terrain orientation.
+9. **Layer Selection Controls:** 5 accessible toggle buttons (`Precipitation Radar`, `Temperature`, `Satellite Clouds`, `Wind`, `Street Map`) with `aria-pressed` states and dynamic active styling.
+10. **Separate Colour Legends:**
+    * **Precipitation Radar Legend (`#radar-legend`):** 4-tier precipitation intensity spectrum (`Light: 0.1–2.5 mm/h`, `Mod: 2.5–10 mm/h`, `Heavy: 10–50 mm/h`, `Hail/Storm: >50 mm/h`).
+    * **Temperature Legend (`#temp-legend`):** 7-tier thermal spectrum with dynamic unit awareness (`<-10°C / <14°F`, `-10–0°C / 14–32°F`, `0–10°C / 32–50°F`, `10–20°C / 50–68°F`, `20–30°C / 68–86°F`, `30–40°C / 86–104°F`, `>40°C / >104°F`), dynamically converting labels when switching between °C and °F.
+11. **Full-Screen Map View (`#map-fullscreen-btn`):** Expands the entire map container card into an immersive full-screen overlay with `position: fixed; inset: 0; z-index: 99999;`, preserving interactive toolbar controls and legends.
+12. **Selected-Location Weather Popup:** Clicking anywhere on the map triggers `handleMapClick(lat, lng)`, which queries Open-Meteo REST APIs for the exact latitude and longitude, opening a glassmorphic Leaflet popup displaying real-time temperature, condition icon, feels-like temperature, humidity, wind velocity, and surface pressure, along with a "Set as Active Location" button to set it as the dashboard's active city.
+* **On-Demand Geolocation Permission (`#map-locate-btn`):** Conforms strictly to privacy best practices — geolocation permission is requested *only* when the user clicks "Locate Me", never on page load or map open.
+* **Open Map Action Button (`#open-map-btn`):** Dedicated quick-access button in top navigation header actions and dashboard highlight cards for 1-click navigation to the weather map view.
+* **Headless DOM Fallback Support:** In environments without Leaflet (such as headless unit tests), automatically falls back to an exact 3×3 Web Mercator mathematical slippy-tile grid (`lon2tile` and `lat2tile`) without crashing or throwing errors.
+
+### 📅 Interactive Monthly Weather Calendar & Dual Heatmaps (13 Core Features)
+The monthly calendar provides a responsive 7-column calendar grid with interactive month/year selectors, dual heatmap visualization modes, and deep-dive daily meteorological inspection:
+1. **Previous Month Navigation (`#cal-prev-btn`):** Navigates backwards month-by-month with wrap-around across year boundaries.
+2. **Next Month Navigation (`#cal-next-btn`):** Navigates forwards month-by-month with wrap-around across year boundaries.
+3. **Month Selector Dropdown (`#cal-month-select`):** Direct navigation dropdown covering all 12 Gregorian months (January through December), automatically synchronized on traversal.
+4. **Year Selector Dropdown (`#cal-year-select`):** Direct multi-decade year selector covering 1970–2100 with dynamic centering around the current year.
+5. **Daily Mean Temperature:** Displays average daily temperature computed as \((T_{\text{max}} + T_{\text{min}}) / 2\) with degree units.
+6. **Maximum Temperature ($T_{\text{max}}$):** Formatted peak daytime temperature with dynamic °C/°F conversion.
+7. **Minimum Temperature ($T_{\text{min}}$):** Formatted minimum overnight temperature with dynamic °C/°F conversion.
+8. **Precipitation Amount:** Daily rainfall / water equivalent sum formatted in millimeters (`mm`) or inches (`in`).
+9. **Precipitation Probability (PoP):** Maximum daily likelihood of rain or snowfall in percent (`%`).
+10. **Weather Condition Icon:** Real-time decoded WMO weather glyph (e.g. `☀️`, `⛅`, `🌧️`, `⛈️`, `❄️`).
+11. **Comprehensive Day Inspector Panel (`#cal-day-detail-card`):** Clicking any date cell opens the inspector displaying:
+    * Formatted localized date header (`#cal-inspector-date`).
+    * Active Forecast / Outside Window coverage badge (`#cal-inspector-coverage`).
+    * Condition glyph and descriptive text (`#cal-inspector-icon`, `#cal-inspector-cond`).
+    * High/Low temperature range (`#cal-inspector-temp`).
+    * Daily mean temperature badge (`#cal-inspector-mean-temp`).
+    * Daily precipitation volume (`#cal-inspector-precip`).
+    * Daily rain probability (`#cal-inspector-pop`).
+    * Peak UV Index (`#cal-inspector-uv`).
+    * Meteorological health and activity advisory note (`#cal-inspector-guide`).
+12. **Thermal Heatmap Mode (`#cal-mode-temp`):** Dynamically applies 5-tier thermal color scaling across day cells based on mean daily temperature:
+    * `< 0°C / < 32°F`: Freezing (Frosted Blue)
+    * `0–10°C / 32–50°F`: Cold (Cyan Teal)
+    * `10–20°C / 50–68°F`: Mild (Emerald Green)
+    * `20–28°C / 68–82°F`: Warm (Amber Orange)
+    * `> 28°C / > 82°F`: Hot (Crimson Coral)
+13. **Precipitation Heatmap Mode (`#cal-mode-precip`):** Dynamically applies 5-tier rainfall accumulation color scaling across day cells:
+    * `0 mm / 0% PoP`: Dry (Deep Slate)
+    * `0.1–2.5 mm`: Light Rain (Soft Sky Blue)
+    * `2.5–7.5 mm`: Moderate Rain (Indigo Ocean)
+    * `7.5–15 mm`: Heavy Rain (Deep Violet)
+    * `> 15 mm`: Torrential Rain (Electric Purple)
+* **Dynamic Legend Bar (`#cal-legend-bar`):** Renders interactive color swatches with temperature-unit-sensitive (°C / °F) labels whenever Thermal or Precipitation mode is engaged, hiding cleanly in Standard mode.
+* **Strict Leap Year & Month Length Math:** Implements Gregorian leap year rules (`isLeapYear(year)`) to calculate 29 days in February for leap years (e.g. 2024, 2028) vs 28 days for common years (e.g. 2023, 2025), handling all 30/31-day months with weekday alignment padding.
+* **City-Local Date Synchronization:** Resolves target city local dates using Open-Meteo's `current.time` / `timezone` without browser UTC offset drift.
+* **Honest Missing Data / Outside Window Resilience:** Dates outside the active 7-day forecast window display `--` placeholders and clear "Outside 7-Day Forecast Window" badges, never fabricating historical or future numbers.
+
+### 🔬 Climate Intelligence & Environmental Assessment
+* **Thermal Comfort & Heat Stress Index:** Analyzes the differential between apparent temperature and dry-bulb temperature ($\Delta T = T_{\text{apparent}} - T_{\text{actual}}$) to classify heat stress and wind chill into standardized advisory tiers (Extreme Heat Danger, High Thermal Stress, Moderate Heat Index, Comfortable / Thermal Equilibrium, Mild Wind-Chill, Significant Wind-Chill).
+* **Barometric Pressure & Air Mass Stability:** Compares observed mean sea-level pressure against standard atmospheric pressure (1013.25 hPa) to classify air masses into High Pressure / Fair Stable, Normal Barometric Field, Low Pressure / Dynamic Unstable, or Storm Depression.
+* **WHO Particulate Matter Guidelines:** Evaluates PM2.5 and PM10 concentrations against World Health Organization annual and 24-hour health safety thresholds ($15\,\mu\text{g/m}^3$ and $45\,\mu\text{g/m}^3$).
+* **Astronomical Solar Photoperiod:** Computes total daylight hours and photoperiod percentage from geographical latitude and solar declination formulas.
+
+### 🌍 Seasonal & Yearly Trends
+* **Empirical Köppen Climate Classification:** Evaluates geographical latitude, mean temperature, and diurnal range to determine Köppen climate zones (Group A: Tropical, Group B: Arid, Group C: Temperate, Group D: Continental, Group E: Polar).
+* **Hemisphere-Aware Season Breakdown:** Automatically shifts four-season cycle by 6 months for Southern Hemisphere coordinates ($\text{lat} < 0$) and identifies Equatorial wet/dry season regimes for tropical latitudes ($\pm 10^\circ$).
+
+### 📜 Open-Meteo Historical Weather Archive & Multi-Year Climate Comparison (10 Required Metrics)
+Integrated with the **Open-Meteo Historical Weather API** (`https://archive-api.open-meteo.com/v1/archive`) powered by ERA5 / ERA5-Land reanalysis models (dating from 1940 to present). Reanalysis data and numerical weather predictions are strictly separated into independent data categories with dedicated caching, distinct visual badges, and transparent data source attributions:
+1. **Daily Maximum Temperature:** Extreme daytime peak surface temperature ($T_{\text{max}}$) for every day of the selected month with date-of-occurrence tracking and dynamic °C/°F conversion.
+2. **Daily Minimum Temperature:** Lowest overnight surface temperature ($T_{\text{min}}$) with date tracking.
+3. **Monthly Mean Temperature:** Climatological mean temperature computed across all non-null daily records:
+   $$\bar{T} = \frac{1}{N}\sum_{i=1}^{N} T_{\text{mean}, i}$$
+4. **Total Precipitation:** Cumulative daily precipitation accumulation ($\sum P_{\text{sum}}$) in millimeters (`mm`) or inches (`in`), paired with rainy-day counters ($P > 0.1\text{ mm}$).
+5. **Total Rainfall:** Cumulative liquid rainfall amount ($\sum R_{\text{sum}}$) paired with dry-day counters ($P \le 0.1\text{ mm}$).
+6. **Relative Humidity (where available):** Daily 24-hour mean relative humidity calculated from ERA5 hourly $2\text{m}$ moisture levels, or honest `[Missing]` pill if unavailable for that station/period.
+7. **Peak Wind Speed:** Maximum 10-meter wind velocity recorded across the month with metric/imperial conversion (`km/h` vs `mph`) and monthly average velocity.
+8. **Dominant Wind Direction:** Vector circular mean computed from daily dominant wind angles using vector trigonometry:
+   $$\theta_{\text{dom}} = \operatorname{atan2}\left(\sum \sin\theta_i, \sum \cos\theta_i\right) \pmod{360^\circ}$$
+   paired with 16-point cardinal compass directions (e.g. `ESE • 110°`).
+9. **Atmospheric Pressure:** Mean sea-level pressure ($P_{\text{MSL}}$) aggregated from hourly reanalysis observations formatted in `hPa` (metric) or `inHg` (imperial).
+10. **Average Cloud Coverage (where available):** Total celestial cloud layer coverage percentage aggregated across the month, or honest `[Missing]` pill if omitted from the reanalysis dataset.
+
+* **Interactive Functionality & Analytical Workflow:**
+  * **City Selection & Synchronization:** Synchronizes automatically with the dashboard's active station (`#hist-city-name`), with fallback to global coordinates.
+  * **Year Selection (1950–Present):** Dynamically populates historical observation years from 1950 up to the most recent complete calendar year.
+  * **Month Selection:** Full 12-month Gregorian navigation (January through December).
+  * **Seasonal Climatology & Hemisphere-Aware Classification:** Calculates seasonal mean temperature, precipitation volume, and thermal diurnal spread, automatically inverting seasons for Southern Hemisphere coordinates ($\text{lat} < 0$) and identifying Monsoonal Wet/Dry regimes for equatorial zones ($\pm 10^\circ$).
+  * **Multi-Year Climate Comparison:** Side-by-side comparison between Target Year (e.g. 2023) and Baseline Year (e.g. 2013), computing temperature anomaly delta ($\Delta T$), precipitation variance ($\Delta P$), percentage deviation, and automated descriptive climate shift conclusions.
+  * **Dual-Axis Daily Progression Chart (`#chart-hist-daily-canvas`):** Hardware-accelerated Chart.js chart displaying daily Max, Min, and Mean temperature curves on the primary Y-axis alongside daily precipitation volume bars on the secondary Y-axis.
+  * **Multi-Year Comparison Chart (`#chart-hist-compare-canvas`):** Overlaid line chart comparing daily mean temperature trajectories between the target and baseline comparison years across the month.
+  * **Daily Observations Log Table (`#hist-daily-table`):** Comprehensive scrollable data table displaying all days and all 10 metrics with zebra striping and sticky headers.
+  * **Honest Missing-Data Indicators:** Any missing or omitted reanalysis variable displays a prominent `.missing-data-pill` (`[Missing]`), ensuring total transparency without fabricated numbers.
+  * **Strict Data Categorization:** Historical observations and weather forecasts are stored and displayed in distinct data categories (`historicalWeatherCache` vs `weatherCache`), labeled with vibrant green `.data-category-badge.historical` (`[Historical Observation • ERA5 Reanalysis]`).
+  * **24-Hour In-Memory Performance Caching:** Historical reanalysis datasets are immutable and cached with 24-hour TTL (`historicalWeatherCache`), providing instant 0-ms retrieval and eliminating redundant API requests.
+  * **Cross-View Calendar Integration (`#cal-open-hist-btn`):** Selecting any unobserved date in the Monthly Calendar exposes a direct 1-click action button to load and inspect that month's historical reanalysis observations in Climate Reports.
+
+### 🍂 Seasonal & Yearly Weather Analytics & Climate Projections
+Section 4 delivers a multi-year climatological analysis framework covering 4 defined seasonal categories, 6 core metrics, 12-month trends, historical baseline anomalies ($\Delta T, \Delta P\%$), and honest future year handling utilizing high-resolution decadal climate simulations:
+
+* **4 Required Seasonal Categories (Exhaustive Calendar Partition):**
+  1. ❄️ **Winter (December, January, February):** Cooler dry quadrant characterized by lower solar insolation and diurnal temperature inversion.
+  2. ☀️ **Summer (March, April, May):** Pre-monsoon thermal peak with elevated surface heating and convective instability.
+  3. 🌧️ **Monsoon (June, July, August, September):** High precipitation quadrant driven by southwesterly oceanic moisture influx and elevated humidity.
+  4. 🍂 **Post-Monsoon (October, November):** Transitional autumn quadrant with retreating monsoon and moderating temperatures.
+  * *Mathematical Partition Guarantee:* Every single day of the year (365 days, 366 in leap years) is uniquely mapped to exactly one of the 4 seasons with zero gaps or overlaps ($90 + 92 + 122 + 61 = 365$).
+
+* **6 Core Meteorological Metrics (Computed for Annual Total & Each Season):**
+  1. **Average Temperature:** Mean surface temperature across the period ($\bar{T} = \frac{1}{N}\sum T_{\text{mean}}$).
+  2. **Maximum Temperature:** Extreme peak temperature ($\max T_{\text{max}}$) paired with its recorded date.
+  3. **Minimum Temperature:** Lowest recorded temperature ($\min T_{\text{min}}$) paired with its recorded date.
+  4. **Total Precipitation:** Cumulative precipitation accumulation ($\sum P_{\text{sum}}$) in millimeters or inches.
+  5. **Average Humidity:** Mean relative humidity fraction ($\%$) with qualitative atmospheric comfort evaluation.
+  6. **Average Wind Speed:** Mean 10-meter wind velocity paired with peak gust velocity ($\max W$).
+
+* **Yearly Analysis & Baseline Anomalies:**
+  * **Year Selection (1950 through 2050):** Explore 100+ years of meteorological history and future climate projections.
+  * **Standard WMO 30-Year Climatological Baseline Normal (1991–2020):** Evaluates long-term shifts against the international World Meteorological Organization standard reference period.
+  * **Temperature Anomaly ($\Delta T$):** $\Delta T = \bar{T}_{\text{year}} - \bar{T}_{\text{baseline}}$, color-coded red for warm anomalies and cyan for cool anomalies.
+  * **Precipitation Variance ($\Delta P\%$):** $\Delta P\% = \frac{P_{\text{year}} - P_{\text{baseline}}}{P_{\text{baseline}}} \times 100\%$, indicating wet or dry shifts.
+  * **12-Month Trends Progression Table (`#yearly-monthly-table`):** Complete tabular monthly log with seasonal classifications, all 6 metrics, and baseline shifts.
+
+* **Honest Future Year Handling ($\ge 2027$ up to 2050):**
+  * **Strictly Prohibits Fabricated Daily Forecasts:** Numerical Weather Prediction (NWP) models cannot deterministically predict daily weather years in advance due to atmospheric chaos.
+  * **IPCC CMIP6 Climate Model Integration:** Uses the Open-Meteo Climate API (`https://climate-api.open-meteo.com/v1/climate`) running the **EC-Earth3P-HR** high-resolution climate model under the HighResMIP / SSP5-8.5 decadal greenhouse gas concentration scenario.
+  * **Prominent Advisory Banner (`#yearly-future-banner`):** Features an amber/purple glassmorphism banner clearly labeling data as a climate simulation rather than an operational forecast, displaying an uncertainty spread of $\pm 1.4^\circ\text{C}$ alongside the 1991–2020 WMO historical reference baseline.
+  * **Distinct Badge Attribution:** Color-coded `.data-category-badge.projection` (`Climate Projection • IPCC CMIP6 (HighResMIP)`).
+
+* **3 Hardware-Accelerated Comparison Charts (Chart.js):**
+  1. **Monthly Trends vs Baseline Overlay Chart (`#chart-yearly-monthly-canvas`):** Overlays target year monthly mean temperature against the 1991–2020 baseline curve with dual-axis monthly precipitation accumulation bars.
+  2. **4-Season Comparative Climatology Chart (`#chart-yearly-seasonal-canvas`):** Grouped bar comparison directly juxtaposing Winter, Summer, Monsoon, and Post-Monsoon against baseline normals.
+  3. **Historical Anomaly Variance Chart (`#chart-yearly-anomaly-canvas`):** Monthly $\Delta T$ temperature anomaly bars with direction-dependent red/blue fills.
+
+### ⚠️ Severe Weather Warnings & Atmospheric Hazards Alert System (WMO CAP-v1.2)
+Engineered an automated atmospheric hazard detection engine conforming to World Meteorological Organization (WMO) Common Alerting Protocol (CAP-v1.2) specifications, delivering persistent warning indicators, 4-tier hazard categorization, actionable protective safety instructions, and Web Audio API audio synthesis:
+
+* **8 Meteorological Hazard Detection Rules & Operational Thresholds:**
+  1. 🌡️ **Extreme Heat & Thermal Overload (`evaluateAtmosphericHazards`):**
+     * **Emergency:** Air temperature $\ge 45^\circ\text{C}$ ($113^\circ\text{F}$) or Apparent temperature $\ge 48^\circ\text{C}$ ($118^\circ\text{F}$). Life-threatening extreme thermal crisis.
+     * **Warning:** Air temperature $\ge 40^\circ\text{C}$ ($104^\circ\text{F}$) or Apparent temperature $\ge 43^\circ\text{C}$ ($109^\circ\text{F}$). Severe risk of heat exhaustion and heatstroke.
+     * **Advisory:** Air temperature $\ge 35^\circ\text{C}$ ($95^\circ\text{F}$) or Apparent temperature $\ge 38^\circ\text{C}$ ($100^\circ\text{F}$). Caution advised for strenuous outdoor activities.
+  2. ❄️ **Severe Cold & Frost Freeze Hazard:**
+     * **Warning:** Temperature $\le 0^\circ\text{C}$ ($32^\circ\text{F}$) or Apparent temperature $\le -5^\circ\text{C}$ ($23^\circ\text{F}$). Frostbite and hypothermia danger; freezing ground conditions.
+     * **Advisory:** Temperature $\le 2^\circ\text{C}$ ($36^\circ\text{F}$) or Apparent temperature $\le 0^\circ\text{C}$ ($32^\circ\text{F}$). Frost warning for sensitive flora, pipes, and vulnerable individuals.
+  3. 💨 **High Wind & Gale Threat:**
+     * **Warning:** Sustained wind speed $\ge 65\text{ km/h}$ ($40\text{ mph}$) or peak gusts $\ge 85\text{ km/h}$ ($53\text{ mph}$). Structural damage, flying debris, and fallen trees.
+     * **Advisory:** Sustained wind speed $\ge 42\text{ km/h}$ ($26\text{ mph}$) or peak gusts $\ge 60\text{ km/h}$ ($37\text{ mph}$). Hazardous for high-profile vehicles and lightweight structures.
+  4. ⛈️ **Severe Thunderstorm & Hail:**
+     * **Warning:** Active severe thunderstorm accompanied by moderate/heavy hail (WMO codes 96, 99). Dangerous convective cell with damaging lightning and ice projectiles.
+     * **Watch:** Thunderstorm with slight hail or lightning activity (WMO code 95). Atmospheric instability conducive to storm escalation.
+  5. 🌊 **Flash Flood & Torrential Downpour:**
+     * **Warning:** Hourly precipitation rate $\ge 25\text{ mm}$ ($1.0\text{ in}$), daily rainfall accumulation $\ge 60\text{ mm}$ ($2.4\text{ in}$), or violent rain shower (WMO code 82). Rapid surface runoff and flash flood risk.
+     * **Advisory:** Hourly precipitation rate $\ge 10\text{ mm}$ ($0.4\text{ in}$), daily accumulation $\ge 30\text{ mm}$ ($1.2\text{ in}$), or heavy rainfall (WMO codes 65, 81). Localized ponding and hydroplaning hazard.
+  6. 🌫️ **Toxic Smog & Hazardous Air Quality:**
+     * **Warning:** US AQI $\ge 200$ (Very Unhealthy / Hazardous). Severe respiratory hazard for general public.
+     * **Advisory:** US AQI $\ge 150$ (Unhealthy). Sensitive groups and outdoor exercisers at risk.
+  7. 🌁 **Dense Fog & Zero Visibility:**
+     * **Advisory:** Surface visibility $\le 1.0\text{ km}$ ($0.62\text{ mi}$) or dense depositing rime fog (WMO codes 45, 48). Critical transit and navigational disruption.
+  8. ☀️ **Extreme Solar UV Radiation:**
+     * **Warning:** Solar UV index $\ge 11$ (Extreme). Extreme unprotected epidermal and ocular damage risk within minutes.
+     * **Advisory:** Solar UV index $\ge 8$ (Very High). Unprotected skin burns rapidly.
+
+* **WMO CAP-v1.2 4-Tier Severity Hierarchy & Multi-Hazard Prioritization:**
+  * **Emergency (Rank 4):** Catastrophic danger requiring immediate defensive sheltering.
+  * **Warning (Rank 3):** High-confidence imminent life/property hazard requiring urgent protective action.
+  * **Watch (Rank 2):** Elevated meteorological risk; hazardous conditions possible or developing.
+  * **Advisory (Rank 1):** Inconvenient or moderately hazardous weather requiring awareness and caution.
+  * *Automated Escalation:* Multi-hazard environments are ranked dynamically to lead with the highest severity threat while preserving access to all concurrent risks.
+
+* **Persistent User Interface Architecture:**
+  * **Persistent Severe Weather Banner (`#severe-weather-banner`):** Displayed immediately below the search inputs. Features tier badge (`#banner-alert-severity`), event headline (`#banner-alert-title`), atmospheric trigger readout (`#banner-alert-summary`), "Safety Precautions" button, audio toggle button, and "Dismiss" button.
+  * **Sidebar Alert Attention Pill (`#sidebar-alert-pill`):** Permanently mounted in the sidebar navigation with tier styling (`.pill-emergency`, `.pill-warning`, `.pill-watch`, `.pill-advisory`) and non-shifting box-shadow / opacity pulsing attention animation (`@keyframes alertPulse`), ensuring access even when the top banner is dismissed.
+  * **Safety Precautions Modal (`#severe-alert-modal`):** Full glassmorphism modal providing comprehensive WMO CAP metadata (Severity, Category, Onset, Expiry, Triggering Metrics), dynamic checklist of tailored safety rules (`#modal-safety-list`), and official protocol attribution notice. Implements full keyboard navigation (`Escape` closing, focus management) and backdrop dismissal.
+  * **Dual-Tone Web Audio API Chime (`playSevereAlertTone`):** Synthesizes an emergency chime (587.33 Hz [D5] for 120ms followed by 880.00 Hz [A5] for 220ms) directly via Web Audio API oscillators without external audio assets. Mute state persists across sessions via `localStorage` (`weather_dashboard_alert_sound`).
+  * **Full Unit Conversion Synchronization:** All atmospheric triggers and threshold criteria automatically adapt between Metric (°C, km/h, mm) and Imperial (°F, mph, in) upon unit toggling.
 
 ---
 
@@ -369,7 +633,8 @@ weather_dashboard/
 ├── service-worker.js                   # Service Worker: App shell precaching, stale-while-revalidate, API bypass
 ├── style.css                           # Glassmorphic stylesheet, responsive layouts, standalone & themes
 ├── vendor/
-│   └── chart.umd.min.js                # Local Chart.js v4.4.8 UMD distribution (100% offline-ready)
+│   ├── chart.umd.min.js                # Local Chart.js v4.4.8 UMD distribution (100% offline-ready)
+│   └── leaflet/                        # Local Leaflet.js v1.9.4 distribution (leaflet.js & leaflet.css)
 ├── vitest.config.mjs                   # Vitest unit & integration test configuration
 └── tests/
     ├── server.js                       # Lightweight local static server for E2E automation
@@ -378,7 +643,15 @@ weather_dashboard/
     ├── unit/
     │   ├── air-quality.test.js         # 19 air quality unit tests (EAQI, US AQI, timestamps, cache)
     │   ├── analytics.test.js           # 17 interactive chart unit tests (configs, units, missing data, lifecycle)
+    │   ├── historical-weather.test.js  # 18 historical weather unit tests (10 metrics, stats, seasons, comparison, cache)
+    │   ├── hourly-timeline.test.js     # 16 hourly timeline unit tests (10 params, celestial markers, sync, fallback)
     │   ├── pwa.test.js                 # 14 PWA unit tests (manifest schema, SW source audit, API bypass, lifecycle)
+    │   ├── redesign.test.js            # 19 redesign unit tests (routing, math, Koppen, photoperiod)
+    │   ├── seasonal-yearly-analytics.test.js # 16 seasonal & yearly unit tests (4 seasons, 6 metrics, anomalies, CMIP6)
+    │   ├── visualization-suite.test.js # 25 9-chart visualization suite tests (configs, ranges, categories, metrics)
+    │   ├── weather-calendar.test.js    # 24 monthly calendar unit tests (13 features, leap year, heatmaps, inspector)
+    │   ├── weather-map.test.js         # 19 weather GIS map tests (Mercator math, layer toggles, popups, legends)
+    │   ├── weather-overview.test.js    # 28 overview unit tests (15 variables, ephemeris, moon phase, conversions)
     │   └── weather.test.js             # 35 weather unit tests (conversions, WMO decoding, cache, UV)
     ├── integration/
     │   ├── air-quality-api.test.js     # 7 air quality API integration & fault-isolation tests
@@ -389,9 +662,17 @@ weather_dashboard/
         ├── air-quality.spec.js               # 6 air quality E2E tests (metrics, badges, disclaimer, fault tolerance)
         ├── analytics.spec.js                 # 5 interactive chart E2E tests (cards, dimensions, toggle, overflow)
         ├── dashboard.spec.js                 # 16 complete user experience & system flow tests
+        ├── dashboard-redesign.spec.js        # 8 redesign E2E tests (sidebar, topbar, maps, calendar, views)
+        ├── historical-weather.spec.js        # 6 historical weather archive E2E tests (metrics, stats, compare, cache)
+        ├── hourly-timeline.spec.js           # 6 interactive hourly timeline E2E tests (cards, celestial, inspector, units)
         ├── network-resilience.spec.js        # 8 network resilience & offline experience tests
         ├── pwa.spec.js                       # 7 PWA E2E tests (manifest, SW registration, caching, install, update)
-        └── responsive-audit.spec.js          # 9 responsive viewport layout tests
+        ├── responsive-audit.spec.js          # 9 responsive viewport layout tests
+        ├── seasonal-yearly-analytics.spec.js # 7 seasonal & yearly analytics E2E tests (metrics, 4 seasons, future banner, charts)
+        ├── visualization-suite.spec.js       # 5 9-chart visualization E2E tests (filters, horizons, mobile responsiveness)
+        ├── weather-calendar.spec.js          # 6 monthly calendar E2E tests (selectors, heatmaps, inspector, conversions)
+        ├── weather-map.spec.js               # 7 Leaflet weather map E2E tests (layers, search, locate, fullscreen, popups)
+        └── weather-overview.spec.js          # 5 overview E2E tests (15 metrics, conversions, astro fallback, responsive)
 ```
 
 ---
@@ -445,7 +726,16 @@ Test Suites:
   ✓ tests/unit/weather.test.js (35 tests) ............................ PASSED
   ✓ tests/unit/air-quality.test.js (19 tests) ........................ PASSED
   ✓ tests/unit/analytics.test.js (17 tests) .......................... PASSED
+  ✓ tests/unit/hourly-timeline.test.js (16 tests) .................... PASSED
   ✓ tests/unit/pwa.test.js (14 tests) ................................ PASSED
+  ✓ tests/unit/redesign.test.js (19 tests) ........................... PASSED
+  ✓ tests/unit/weather-overview.test.js (28 tests) ................... PASSED
+  ✓ tests/unit/weather-map.test.js (19 tests) ........................ PASSED
+  ✓ tests/unit/weather-calendar.test.js (24 tests) ................... PASSED
+  ✓ tests/unit/historical-weather.test.js (18 tests) ................. PASSED
+  ✓ tests/unit/seasonal-yearly-analytics.test.js (16 tests) .......... PASSED
+  ✓ tests/unit/visualization-suite.test.js (25 tests) ................ PASSED
+  ✓ tests/unit/severe-weather-alerts.test.js (20 tests) .............. PASSED
   ✓ tests/integration/api.test.js (15 tests) ......................... PASSED
   ✓ tests/integration/air-quality-api.test.js (7 tests) .............. PASSED
   ✓ tests/integration/dom.test.js (9 tests) .......................... PASSED
@@ -453,11 +743,20 @@ Test Suites:
   ✓ tests/e2e/air-quality.spec.js (6 tests) .......................... PASSED
   ✓ tests/e2e/analytics.spec.js (5 tests) ............................ PASSED
   ✓ tests/e2e/dashboard.spec.js (16 tests) ........................... PASSED
+  ✓ tests/e2e/dashboard-redesign.spec.js (8 tests) ................... PASSED
+  ✓ tests/e2e/hourly-timeline.spec.js (6 tests) ...................... PASSED
+  ✓ tests/e2e/weather-overview.spec.js (5 tests) ..................... PASSED
+  ✓ tests/e2e/weather-map.spec.js (7 tests) .......................... PASSED
+  ✓ tests/e2e/weather-calendar.spec.js (7 tests) ..................... PASSED
+  ✓ tests/e2e/historical-weather.spec.js (6 tests) ................... PASSED
+  ✓ tests/e2e/seasonal-yearly-analytics.spec.js (6 tests) ............ PASSED
+  ✓ tests/e2e/visualization-suite.spec.js (8 tests) .................. PASSED
+  ✓ tests/e2e/severe-weather-alerts.spec.js (7 tests) ................ PASSED
   ✓ tests/e2e/network-resilience.spec.js (8 tests) ................... PASSED
   ✓ tests/e2e/pwa.spec.js (7 tests) .................................. PASSED
   ✓ tests/e2e/responsive-audit.spec.js (9 viewports) ................. PASSED
 --------------------------------------------------------------------------------
-Total: 173 passed, 0 failed, 0 skipped (100% passing across 14 test suites)
+Total: 415 passed, 0 failed, 0 skipped (100% passing across 32 test suites)
 ```
 
 ---
@@ -466,50 +765,36 @@ Total: 173 passed, 0 failed, 0 skipped (100% passing across 14 test suites)
 
 ### Desktop Application Layout
 ```
-+---------------------------------------------------------------------------------------+
-|  🌤️ Weather Dashboard  [Live/Cached]  [⬇️ Install]  [🔄 Refresh]  [°C | °F]           |
-+---------------------------------------------------------------------------------------+
-|  [ 🔍 Search city name...           [X] ]  [ Search ]  [ 📍 Use My Location ]         |
-|  Recent Searches: [ Tokyo ] [ London ] [ New York ] [ Delhi ] [ Clear ]               |
-+---------------------------------------------------------------------------------------+
-|  [ PWA UPDATE BANNER ] 🚀 An updated version is available.    [ Update Now ] [ ✕ ]    |
-+---------------------------------------------------------------------------------------+
-|  [ OFFLINE BANNER ] ⚠️ You are currently offline. Showing cached weather data.        |
-+---------------------------------------------------------------------------------------+
-|  [ PRIMARY WEATHER CARD ]                                                             |
-|    Tokyo, Japan • 35.69°N, 139.69°E                                                   |
-|    [ ☀️ Mainly Clear ]    [ 24°C ]  Feels like 23°C                                   |
-|    Last updated: 02:45:10 PM                                                          |
-+---------------------------------------------------------------------------------------+
-|  [ METRICS GRID ]                                                                     |
-|    [ 💧 Humidity: 58% ]     [ 💨 Wind: 9.2 km/h ]                                    |
-|    [ ⏱️ Pressure: 1012 hPa ] [ ☀️ Today's Max UV: 6.8 (High) - Live: 4.2 ]           |
-+---------------------------------------------------------------------------------------+
-|  [ 24-HOUR HOURLY FORECAST ]                                                          |
-|    [ Now: 24° ] -> [ 3 PM: 23° ] -> [ 4 PM: 22° ] -> [ 5 PM: 20° ] -> [ 6 PM: 18° ]...|
-+---------------------------------------------------------------------------------------+
-|  [ 7-DAY EXTENDED FORECAST ]                                                          |
-|    [ Today: 26°/17° ] [ Tue: 25°/16° ] [ Wed: 24°/15° ] [ Thu: 27°/18° ] ...          |
-+---------------------------------------------------------------------------------------+
-|  [ AIR QUALITY INDEX ]                             Observed: 6:30 PM • Nov 4          |
-|    +------------------------------------+------------------------------------+        |
-|    | European AQI: 97 [ VERY POOR ]     | United States AQI: 211 [ V.UNHEALTHY]|      |
-|    +------------------------------------+------------------------------------+        |
-|    | PM2.5: 133.2 μg/m³ | PM10: 194.2 μg/m³ | NO2: 84.3 μg/m³ | O3: 62.0 μg/m³|       |
-|    +-------------------------------------------------------------------------+        |
-|    | ℹ️ Notice: AQI metrics are informational and not medical diagnoses.      |        |
-+---------------------------------------------------------------------------------------+
-|  [ WEATHER ANALYTICS CHARTS ]                                                         |
-|    +------------------------------------+------------------------------------+        |
-|    | 24-Hour Temperature Line Chart     | 7-Day High & Low Temperature Chart |        |
-|    +------------------------------------+------------------------------------+        |
-|    | 24-Hour Relative Humidity Chart    | 24-Hour Wind Speed Chart           |        |
-|    +------------------------------------+------------------------------------+        |
-+---------------------------------------------------------------------------------------+
-|  [ ERROR BANNER ] ⚠️ Network connection error.                 [ Retry ] [ Dismiss ]   |
-+---------------------------------------------------------------------------------------+
-|  Footer: Meteorological & Air Quality data provided by Open-Meteo REST API (CC BY 4.0) |
-+---------------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------------------------+
+|  [SIDEBAR]                    |  [TOPBAR]                                                                         |
+|  🌤️ Weather Intelligence      |  ☰ | Dashboard Overview | [🔍 Search city...  [X] ] [Search] [📍 GPS] [°C|°F] [⬇ App] |
+|  ---------------------------- |  Recent Searches: [ Tokyo ] [ London ] [ New York ] [ Delhi ] [ Clear ]           |
+|  📊 Overview        [ACTIVE]  +-----------------------------------------------------------------------------------+
+|  🗺️ Weather Map               |  [BANNER REGION: PWA Updates / Offline Detection / Error Advisories]              |
+|  📅 Forecast                  +-----------------------------------------------------------------------------------+
+|  📈 Analytics                 |  [ACTIVE VIEW CONTAINER: e.g. #view-overview]                                     |
+|  🗓️ Calendar                  |  +-----------------------------------------------------------------------------+  |
+|  🌿 Climate Reports           |  | Primary Weather Card: Tokyo, Japan • 35.69°N, 139.69°E                      |  |
+|                               |  | [☀️ Mainly Clear] [24°C] Feels like 23°C | Last updated: 02:45 PM           |  |
+|                               |  +-----------------------------------------------------------------------------+  |
+|                               |  | 12-Card Metrics Grid:                                                       |  |
+|                               |  | [💧 Humidity 58%]  [💨 Wind 9.2 km/h]  [🧭 Wind Dir NW 304°] [⏱️ Press 1012]   |  |
+|                               |  | [👁️ Vis 9.0 km]    [☁️ Clouds 0%]      [☀️ UV Max 6.8 High]  [🌅 Rise 6:35 AM]|  |
+|                               |  | [🌇 Set 5:33 PM]   [🌙 Moonrise 1:45] [🌘 Moonset 2:35]     [🌑 Moon 🌘 20%]  |  |
+|                               |  +-----------------------------------------------------------------------------+  |
+|                               |  | 24-Hour Timeline: [Now: 24° Feels 23°] -> [3 PM: 23°] [🌅 6:35 Sunrise]...   |  |
+|                               |  | [Hourly Inspector: Selected Hour +3 | 22°C Feels 21°C | Pop 35% | Wind 14 km/h] |  |
+|                               |  +-----------------------------------------------------------------------------+  |
+|                               |  | 7-Day Extended Forecast: [Today: 26°/17°] [Tue: 25°/16°] [Wed: 24°/15°]...   |  |
+|                               |  +-----------------------------------------------------------------------------+  |
+|                               |  | Air Quality Module: European AQI: 97 [POOR] | US AQI: 211 [VERY UNHEALTHY]   |  |
+|                               |  | PM2.5: 133.2 μg/m³ | PM10: 194.2 μg/m³ | NO2: 84.3 μg/m³ | O3: 62.0 μg/m³    |  |
+|                               |  +-----------------------------------------------------------------------------+  |
+|                               |  | Interactive Charts: 24h Temperature | 7-Day High/Low | Humidity | Wind Speed |  |
+|                               |  +-----------------------------------------------------------------------------+  |
+|  ---------------------------- +-----------------------------------------------------------------------------------+
+|  v2.0 PWA • Vanilla ES6+      |  Footer: Meteorological & Air Quality data provided by Open-Meteo REST API (CC BY) |
++-------------------------------------------------------------------------------------------------------------------+
 ```
 
 ---
@@ -519,9 +804,18 @@ Total: 173 passed, 0 failed, 0 skipped (100% passing across 14 test suites)
 * [x] **Progressive Web App (PWA):** Registered Service Worker and `manifest.json` for full offline application shell precaching, responsive standalone display, and native mobile installability.
 * [x] **Air Quality Index (AQI):** Integrated Open-Meteo Air Quality API with European AQI, US AQI, PM2.5, PM10, NO2, and Ozone.
 * [x] **Interactive Weather Analytics Charts:** Integrated hardware-accelerated 24h temperature, 7-day high/low, hourly humidity, and hourly wind speed line charts with Chart.js.
-* [ ] **Interactive Precipitation Radar:** Embed a Leaflet.js interactive map powered by RainViewer precipitation radar tile overlays.
+* [x] **Professional Sidebar Navigation & Multi-View Architecture:** 6 dedicated views (`Overview`, `Weather Map`, `Forecast`, `Analytics`, `Calendar`, `Climate Reports`) with URL hash routing and responsive off-canvas drawer.
+* [x] **Leaflet & OpenStreetMap Interactive Weather Map (12 Core Features):** Hardware-accelerated interactive GIS map with Leaflet.js, RainViewer radar, infrared satellite clouds, in-map search, on-demand geolocation, full-screen mode, separate °C/°F colour legends, and live point inspection popups querying Open-Meteo REST APIs.
+* [x] **Interactive Monthly Weather Calendar & Dual Heatmaps (13 Core Features):** Full 7-column calendar grid with previous/next month traversal, month and year selectors, daily mean/min/max temperatures, precipitation amount, rain probability, WMO condition glyphs, Day Inspector card, dynamic Thermal and Precipitation heatmap modes with gradient legend bars, and Gregorian leap-year handling.
+* [x] **Climate Intelligence & Environmental Health Safety:** Thermal comfort delta, barometric stability, WHO particulate health guidelines, and astronomical photoperiod.
+* [x] **Seasonal & Yearly Trends:** Empirical Köppen climate classification and hemisphere-aware 4-season breakdown.
+* [x] **Detailed Weather Overview & Ephemeris:** 15 required meteorological and astronomical parameters (wind direction, pressure, visibility, cloud cover, sunrise/sunset, and synodic moonrise/moonset/moon phase with astronomical calculation fallback).
+* [x] **Interactive Hourly Weather Timeline:** 24-hour horizontal scrollable timeline with 10 meteorological parameters, celestial sunrise/sunset markers, interactive hour selection, glassmorphic detailed inspector card, and bidirectional Chart.js synchronization.
+* [x] **9-Chart Meteorological Visualization Suite:** Integrated 9 specialized charts (Temperature, Feels-Like, Precipitation, Rain Probability, Humidity area, Wind Speed, Atmospheric Pressure, UV Index, Condition Distribution) with 4 time horizons and 6 category filters.
+* [x] **Open-Meteo Historical Weather Archive & Multi-Year Climate Comparison:** Full reanalysis integration (ERA5 / ERA5-Land, 1940–present) across 10 meteorological metrics, monthly statistical calculations, seasonal climatological benchmarks, year-over-year climate anomaly shifts ($\Delta T$ and $\Delta P$ variance), dual-axis charts, missing-data indicators, and dedicated in-memory caching.
+* [x] **Seasonal & Yearly Weather Analytics & Climate Projections:** Comprehensive multi-year climatological analysis partitioning the year into 4 defined seasons (Winter, Summer, Monsoon, Post-Monsoon) and tracking 6 core metrics (mean, max, min temperatures, precipitation, humidity, wind velocity), 12-month trends, historical baseline anomalies ($\Delta T, \Delta P\%$), honest future year handling ($\ge 2027$) utilizing the Open-Meteo Climate Projections API with IPCC CMIP6 EC-Earth3P-HR HighResMIP models and uncertainty banners, and 3 Chart.js comparison charts.
+* [x] **Severe Weather Warnings & Atmospheric Hazards Alert System (WMO CAP-v1.2):** Full meteorological hazard detection engine following WMO CAP-v1.2 specifications across 8 hazard rules (extreme heat, sub-zero cold, gale wind, severe thunderstorms/hail, flash flood, toxic smog/AQI, dense fog, extreme UV), 4-tier severity hierarchy, persistent warning banner, attention indicator pill in sidebar, safety modal with actionable precautions, and synthesized Web Audio API chime.
 * [ ] **Multi-Language Support (i18n):** Provide seamless runtime language toggles for Spanish, French, German, Japanese, and Hindi.
-* [ ] **Severe Weather Warnings:** Connect to national meteorological CAP (Common Alerting Protocol) feeds to surface severe weather bulletins.
 
 ---
 
@@ -530,3 +824,5 @@ Total: 173 passed, 0 failed, 0 skipped (100% passing across 14 test suites)
 * **Software License:** [MIT License](LICENSE) — free for educational, personal, and commercial use.
 * **Weather & Air Quality Data:** Provided by [Open-Meteo](https://open-meteo.com/) under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license.
 * **Geocoding Data:** Provided by [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) and [BigDataCloud](https://www.bigdatacloud.net/).
+* **Mapping Engine & Base Tiles:** [Leaflet.js](https://leafletjs.com/) under BSD 2-Clause License and [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL).
+* **Precipitation Radar & Satellite Clouds:** Provided by [RainViewer](https://www.rainviewer.com/api.html).
