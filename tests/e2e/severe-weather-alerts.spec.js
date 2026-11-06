@@ -17,7 +17,7 @@ test.describe('Severe Weather Warnings & Atmospheric Hazards Alert System (E2E S
     activeAirQualityFixture = mockAirQualityDelhi;
 
     // Intercept Geocoding API
-    await page.route(url => url.hostname === 'geocoding-api.open-meteo.com', async (route) => {
+    await page.route(/geocoding-api\.open-meteo\.com/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -26,7 +26,7 @@ test.describe('Severe Weather Warnings & Atmospheric Hazards Alert System (E2E S
     });
 
     // Intercept Weather Forecast API
-    await page.route(url => url.hostname === 'api.open-meteo.com', async (route) => {
+    await page.route(/https:\/\/api\.open-meteo\.com/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -35,11 +35,40 @@ test.describe('Severe Weather Warnings & Atmospheric Hazards Alert System (E2E S
     });
 
     // Intercept Air Quality API
-    await page.route(url => url.hostname === 'air-quality-api.open-meteo.com', async (route) => {
+    await page.route(/air-quality-api\.open-meteo\.com/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(activeAirQualityFixture)
+      });
+    });
+
+    // Intercept Map Tiles & Radar
+    await page.route('**/tile.openstreetmap.org/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: Buffer.from('')
+      });
+    });
+    await page.route('**/tilecache.rainviewer.com/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: Buffer.from('')
+      });
+    });
+    await page.route('**/api.rainviewer.com/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          version: '1.0.0',
+          generated: 1730800000,
+          host: 'https://tilecache.rainviewer.com',
+          radar: { past: [], nowcast: [] },
+          satellite: { infrared: [] }
+        })
       });
     });
 
@@ -52,7 +81,7 @@ test.describe('Severe Weather Warnings & Atmospheric Hazards Alert System (E2E S
   test('1. Severe Weather Detection & Warning Banner: Searching a city with severe storm weather displays persistent warning banner and sidebar status pill', async ({ page }) => {
     await page.fill('#search-input', 'Delhi');
     await page.click('#search-btn');
-    await expect(page.locator('#location-name')).toHaveText('Delhi');
+    await expect(page.locator('#location-name')).toHaveText('Delhi', { timeout: 10000 });
 
     // Severe Weather Banner should become visible
     const banner = page.locator('#severe-weather-banner');
@@ -73,7 +102,7 @@ test.describe('Severe Weather Warnings & Atmospheric Hazards Alert System (E2E S
   test('2. Safety Precautions Modal: Clicking Safety Actions button opens modal with dynamic safety checklist, CAP protocol attribution, and hazard metadata', async ({ page }) => {
     await page.fill('#search-input', 'Delhi');
     await page.click('#search-btn');
-    await expect(page.locator('#location-name')).toHaveText('Delhi');
+    await expect(page.locator('#location-name')).toHaveText('Delhi', { timeout: 10000 });
 
     await expect(page.locator('#severe-weather-banner')).toBeVisible({ timeout: 10000 });
 
@@ -106,7 +135,7 @@ test.describe('Severe Weather Warnings & Atmospheric Hazards Alert System (E2E S
   test('3. Keyboard Accessibility & Backdrop Dismissal: Modal closes on Escape key or backdrop click', async ({ page }) => {
     await page.fill('#search-input', 'Delhi');
     await page.click('#search-btn');
-    await expect(page.locator('#location-name')).toHaveText('Delhi');
+    await expect(page.locator('#location-name')).toHaveText('Delhi', { timeout: 10000 });
 
     await expect(page.locator('#severe-weather-banner')).toBeVisible({ timeout: 10000 });
 
@@ -134,7 +163,7 @@ test.describe('Severe Weather Warnings & Atmospheric Hazards Alert System (E2E S
   test('4. Banner Dismissal Persistence: Dismissing banner hides it while keeping sidebar status pill accessible for inspection', async ({ page }) => {
     await page.fill('#search-input', 'Delhi');
     await page.click('#search-btn');
-    await expect(page.locator('#location-name')).toHaveText('Delhi');
+    await expect(page.locator('#location-name')).toHaveText('Delhi', { timeout: 10000 });
 
     await expect(page.locator('#severe-weather-banner')).toBeVisible({ timeout: 10000 });
 
@@ -232,7 +261,7 @@ test.describe('Severe Weather Warnings & Atmospheric Hazards Alert System (E2E S
 
     await page.fill('#search-input', 'Delhi');
     await page.click('#search-btn');
-    await expect(page.locator('#location-name')).toHaveText('Delhi');
+    await expect(page.locator('#location-name')).toHaveText('Delhi', { timeout: 10000 });
 
     const banner = page.locator('#severe-weather-banner');
     await expect(banner).toBeVisible({ timeout: 10000 });

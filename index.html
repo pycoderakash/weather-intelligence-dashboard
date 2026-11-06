@@ -56,8 +56,8 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h1 class="app-title" id="app-title">Weather Dashboard</h1>
-            <span class="brand-subtitle">Intelligence Suite</span>
+            <h1 class="app-title" id="app-title" data-i18n="brand_title">Weather Dashboard</h1>
+            <span class="brand-subtitle" data-i18n="brand_subtitle">Intelligence Suite</span>
           </div>
         </div>
         <button type="button" class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close navigation menu">
@@ -76,7 +76,7 @@
                 <rect width="7" height="9" x="14" y="12" rx="1"/>
                 <rect width="7" height="5" x="3" y="16" rx="1"/>
               </svg>
-              <span class="nav-text">Overview</span>
+              <span class="nav-text" data-i18n="nav_overview">Overview</span>
             </button>
           </li>
           <li class="nav-item" role="none">
@@ -86,7 +86,7 @@
                 <line x1="9" y1="3" x2="9" y2="18"/>
                 <line x1="15" y1="6" x2="15" y2="21"/>
               </svg>
-              <span class="nav-text">Weather Map</span>
+              <span class="nav-text" data-i18n="nav_map">Weather Map</span>
               <span class="nav-pill">Radar</span>
             </button>
           </li>
@@ -100,7 +100,7 @@
                 <path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/>
                 <path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>
               </svg>
-              <span class="nav-text">Forecast</span>
+              <span class="nav-text" data-i18n="nav_forecast">Forecast</span>
             </button>
           </li>
           <li class="nav-item" role="none">
@@ -110,7 +110,7 @@
                 <line x1="12" y1="20" x2="12" y2="4"/>
                 <line x1="6" y1="20" x2="6" y2="14"/>
               </svg>
-              <span class="nav-text">Analytics</span>
+              <span class="nav-text" data-i18n="nav_analytics">Analytics</span>
             </button>
           </li>
           <li class="nav-item" role="none">
@@ -121,7 +121,7 @@
                 <line x1="8" y1="2" x2="8" y2="6"/>
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
-              <span class="nav-text">Calendar</span>
+              <span class="nav-text" data-i18n="nav_calendar">Calendar</span>
             </button>
           </li>
           <li class="nav-item" role="none">
@@ -131,7 +131,7 @@
                 <line x1="2" y1="12" x2="22" y2="12"/>
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
               </svg>
-              <span class="nav-text">Climate Reports</span>
+              <span class="nav-text" data-i18n="nav_climate">Climate Reports</span>
             </button>
           </li>
         </ul>
@@ -140,18 +140,18 @@
       <!-- Sidebar Active Location Card -->
       <div class="sidebar-location-card" id="sidebar-location-card">
         <div class="sidebar-loc-header">
-          <span class="sidebar-loc-label">Active City</span>
+          <span class="sidebar-loc-label" data-i18n="active_city">Active City</span>
           <span class="sidebar-loc-pulse" aria-hidden="true"></span>
         </div>
         <div class="sidebar-loc-name" id="sidebar-loc-name">--</div>
         <div class="sidebar-loc-meta">
           <span class="sidebar-loc-temp" id="sidebar-loc-temp">--&deg;C</span>
-          <span class="sidebar-loc-cond" id="sidebar-loc-cond">Awaiting Search</span>
+          <span class="sidebar-loc-cond" id="sidebar-loc-cond" data-i18n="awaiting_search">Awaiting Search</span>
         </div>
         <!-- Severe Weather Status Pill in Sidebar -->
         <div class="sidebar-alert-pill" id="sidebar-alert-pill" hidden>
           <span class="sap-icon" aria-hidden="true">⚠️</span>
-          <span class="sap-text" id="sap-text">No Hazards</span>
+          <span class="sap-text" id="sap-text" data-i18n="no_hazards">No Hazards</span>
         </div>
       </div>
 
@@ -172,7 +172,7 @@
       <!-- Top Navigation Bar -->
       <header class="app-header dashboard-topbar" id="app-header">
         <div class="topbar-left">
-          <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Toggle navigation sidebar" title="Toggle Navigation Sidebar">
+          <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Toggle navigation sidebar" title="Toggle Navigation Sidebar" aria-expanded="false" aria-controls="dashboard-sidebar">
             <svg class="hamburger-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true">
               <line x1="3" y1="12" x2="21" y2="12"/>
               <line x1="3" y1="6" x2="21" y2="6"/>
@@ -200,7 +200,7 @@
                   id="search-input" 
                   class="search-input" 
                   name="city" 
-                  placeholder="Search global city (e.g., London, Tokyo, New York)..." 
+                  placeholder="Search global city (e.g., London, Tokyo, New York)..." data-i18n-placeholder="search_placeholder" 
                   autocomplete="off" 
                   spellcheck="false" 
                   required 
@@ -212,33 +212,46 @@
                 </button>
               </div>
               <button type="submit" id="search-btn" class="search-btn" aria-label="Search weather for entered city">
-                <span class="btn-text">Search</span>
+                <span class="btn-text" data-i18n="search">Search</span>
               </button>
               <button type="button" id="geo-btn" class="geo-btn" aria-label="Use my current location" title="Use my current location (Reverse geocoding by BigDataCloud)">
                 <svg class="geo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18">
                   <circle cx="12" cy="12" r="10"/>
                   <polygon points="12 2 15 8 12 14 9 8 12 2"/>
                 </svg>
-                <span class="geo-btn-text">My Location</span>
+                <span class="geo-btn-text" data-i18n="my_location">My Location</span>
               </button>
             </form>
             <p id="search-hint" class="search-hint visually-hidden">Enter a city name and press Enter or click Search</p>
             
             <!-- Search History / Recent Cities Chips -->
             <div class="recent-searches-container" id="recent-searches-container" aria-label="Recent Searches" hidden>
-              <span class="recent-searches-label">Recent:</span>
+              <span class="recent-searches-label" data-i18n="recent_searches">Recent:</span>
               <div class="recent-chips" id="recent-chips" role="list"></div>
-              <button type="button" class="clear-history-btn" id="clear-history-btn" aria-label="Clear recent search history">Clear</button>
+              <button type="button" class="clear-history-btn" id="clear-history-btn" aria-label="Clear recent search history" data-i18n="clear">Clear</button>
             </div>
           </section>
         </div>
 
         <!-- Header Actions: Unit Toggle, PWA Install & Actions -->
         <div class="topbar-right header-actions">
+          <!-- Language Selector (Phase 27 - i18n) -->
+          <div class="language-select-wrapper" id="language-select-wrapper">
+            <label for="language-select" class="visually-hidden" data-i18n="select_language">Select Language</label>
+            <select id="language-select" class="language-select" aria-label="Select application language">
+              <option value="en">🇺🇸 English</option>
+              <option value="es">🇪🇸 Español</option>
+              <option value="fr">🇫🇷 Français</option>
+              <option value="de">🇩🇪 Deutsch</option>
+              <option value="ja">🇯🇵 日本語</option>
+              <option value="hi">🇮🇳 हिन्दी</option>
+            </select>
+          </div>
+
           <!-- Open Map Button -->
           <button type="button" class="header-action-btn" id="open-map-btn" aria-label="Open Interactive Weather Map" title="Open Interactive Weather Map">
             <span aria-hidden="true">🗺️</span>
-            <span class="btn-text">Open Map</span>
+            <span class="btn-text" data-i18n="open_map">Open Map</span>
           </button>
 
           <!-- PWA Install Button (Phase 21) -->
@@ -248,7 +261,7 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <span class="install-text">Install</span>
+            <span class="install-text" data-i18n="install">Install</span>
           </button>
 
           <!-- Temperature Unit Toggle -->
@@ -302,6 +315,32 @@
         <div id="loading-indicator" class="loading-indicator" role="status" aria-live="polite" aria-label="Loading weather data" hidden>
           <div class="spinner" aria-hidden="true"></div>
           <p class="loading-text" id="loading-text">Fetching current weather data...</p>
+          <div class="loading-skeleton-preview" aria-hidden="true">
+            <div class="skeleton-hero-card">
+              <div class="skeleton-shimmer skeleton-pill-small"></div>
+              <div class="skeleton-shimmer skeleton-title-large"></div>
+              <div class="skeleton-shimmer skeleton-temp-large"></div>
+              <div class="skeleton-shimmer skeleton-text-medium"></div>
+            </div>
+            <div class="skeleton-metrics-grid">
+              <div class="skeleton-metric-card">
+                <div class="skeleton-shimmer skeleton-metric-label"></div>
+                <div class="skeleton-shimmer skeleton-metric-val"></div>
+              </div>
+              <div class="skeleton-metric-card">
+                <div class="skeleton-shimmer skeleton-metric-label"></div>
+                <div class="skeleton-shimmer skeleton-metric-val"></div>
+              </div>
+              <div class="skeleton-metric-card">
+                <div class="skeleton-shimmer skeleton-metric-label"></div>
+                <div class="skeleton-shimmer skeleton-metric-val"></div>
+              </div>
+              <div class="skeleton-metric-card">
+                <div class="skeleton-shimmer skeleton-metric-label"></div>
+                <div class="skeleton-shimmer skeleton-metric-val"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Error Message Container -->
@@ -401,7 +440,7 @@
                       <span class="temp-unit" aria-label="degrees Celsius">&deg;C</span>
                     </div>
                     <p class="feels-like-text" id="feels-like-container">
-                      Feels like <span id="feels-like-temp">--</span><span id="feels-like-unit">&deg;C</span>
+                      <span class="fl-label" data-i18n="feels_like">Feels like</span> <span id="feels-like-temp">--</span><span id="feels-like-unit">&deg;C</span>
                     </p>
                   </div>
 
@@ -661,7 +700,7 @@
               <section class="forecast-section hourly-section" id="hourly-forecast-section" aria-label="Hourly Weather Forecast" hidden>
                 <div class="section-header">
                   <div class="section-title-wrap">
-                    <h3 class="section-title">Hourly Forecast</h3>
+                    <h3 class="section-title" data-i18n="hourly_forecast_title">Hourly Forecast</h3>
                     <span class="section-subtitle">Upcoming 24-hour meteorological progression</span>
                   </div>
                 </div>
@@ -1126,6 +1165,11 @@
             </div>
           </section>
 
+            <!-- -------------------------------------------------------------
+                 SECTION 5: COMPREHENSIVE MONTHLY WEATHER REPORT GENERATOR
+                 ------------------------------------------------------------------ -->
+            
+
           <!-- ------------------------------------------------------------------
                VIEW 4: WEATHER ANALYTICS (Expanded Analytical View)
                ------------------------------------------------------------------ -->
@@ -1454,6 +1498,12 @@
               <div class="view-header-text">
                 <h3 class="view-title">Climate Report &amp; Seasonal Trends</h3>
                 <span class="view-subtitle">Atmospheric stability analysis, thermal comfort index, and hemisphere-aware seasonal climatological models</span>
+              </div>
+              <div class="climate-quick-nav" id="climate-quick-nav">
+                <a href="#trends-section" class="climate-nav-pill">🍂 Seasonal Trends</a>
+                <a href="#historical-section" class="climate-nav-pill">📜 Historical Archive</a>
+                <a href="#seasonal-yearly-section" class="climate-nav-pill">📈 Yearly Analytics</a>
+                <a href="#monthly-report-section" class="climate-nav-pill highlight" id="jump-to-monthly-report-btn">📑 Monthly Report Generator</a>
               </div>
             </div>
 
@@ -1869,7 +1919,7 @@
                   </div>
                   <span class="data-category-badge historical">ERA5 Reanalysis</span>
                 </div>
-                <div class="hist-table-scroll-wrapper" id="hist-table-scroll-wrapper">
+                <div class="hist-table-scroll-wrapper" id="hist-table-scroll-wrapper" tabindex="0" role="region" aria-label="Daily Historical Observations Table Scroll Region">
                   <table class="hist-table" id="hist-daily-table" aria-label="Daily Historical Observations Table">
                     <thead>
                       <tr>
@@ -2272,7 +2322,7 @@
                   </div>
                   <span class="data-category-badge historical" id="yearly-table-badge">Monthly Series</span>
                 </div>
-                <div class="hist-table-scroll-wrapper" id="yearly-table-scroll-wrapper">
+                <div class="hist-table-scroll-wrapper" id="yearly-table-scroll-wrapper" tabindex="0" role="region" aria-label="12-Month Climatological Trends Table Scroll Region">
                   <table class="hist-table" id="yearly-monthly-table" aria-label="12-Month Climatological Trends Table">
                     <thead>
                       <tr>
@@ -2297,6 +2347,405 @@
                 </div>
               </div>
 
+            </section>
+
+            <!-- -------------------------------------------------------------
+                 SECTION 5: COMPREHENSIVE MONTHLY WEATHER REPORT GENERATOR
+                 ------------------------------------------------------------------ -->
+            <section class="monthly-report-section" id="monthly-report-section" aria-label="Monthly Weather Report Generator">
+              <div class="section-header monthly-report-header">
+                <div class="section-title-wrap">
+                  <div class="historical-title-row">
+                    <h4 class="section-title">Comprehensive Monthly Weather Report Generator</h4>
+                    <span class="data-category-badge historical" id="rep-header-badge">
+                      Empirical Observation &bull; ERA5 Reanalysis
+                    </span>
+                  </div>
+                  <span class="section-subtitle">
+                    Generate detailed meteorological audit reports, trend interpretations, daily observation tables, multi-metric charts, and publication-ready PDF exports for any city, month, and year.
+                  </span>
+                </div>
+                <div class="historical-city-pill" id="rep-city-pill">
+                  <span class="hist-city-label">Station City:</span>
+                  <strong class="hist-city-name" id="rep-city-display">--</strong>
+                </div>
+              </div>
+
+              <!-- Report Controls Card -->
+              <div class="historical-controls-card report-controls-card">
+                <form class="historical-controls-form report-controls-form" id="monthly-report-form" onsubmit="return false;">
+                  <div class="hist-control-group report-control-city">
+                    <label for="report-city-input" class="hist-label">Target City</label>
+                    <div class="report-input-wrapper">
+                      <input type="text" id="report-city-input" class="search-input report-city-input" placeholder="Enter city (e.g. Delhi, Tokyo, London)..." aria-label="Report Target City">
+                      <button type="button" class="btn btn-secondary btn-use-active-city" id="report-use-active-city-btn" title="Use currently loaded city">📍 Use Active City</button>
+                    </div>
+                  </div>
+
+                  <div class="hist-control-group">
+                    <label for="report-month-select" class="hist-label">Report Month</label>
+                    <select id="report-month-select" class="hist-select" aria-label="Select Report Month">
+                      <option value="1">January</option>
+                      <option value="2">February</option>
+                      <option value="3">March</option>
+                      <option value="4">April</option>
+                      <option value="5">May</option>
+                      <option value="6">June</option>
+                      <option value="7" selected>July</option>
+                      <option value="8">August</option>
+                      <option value="9">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+
+                  <div class="hist-control-group">
+                    <label for="report-year-select" class="hist-label">Report Year</label>
+                    <select id="report-year-select" class="hist-select" aria-label="Select Report Year">
+                      <!-- Populated dynamically (1950 - 2050) -->
+                    </select>
+                  </div>
+
+                  <div class="hist-action-group report-actions">
+                    <button type="button" class="btn btn-primary report-generate-btn" id="report-generate-btn">
+                      <span class="btn-icon">📑</span>
+                      <span>Generate Report</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary report-export-btn" id="report-export-pdf-btn" disabled>
+                      <span class="btn-icon">🖨️</span>
+                      <span>Export to PDF</span>
+                    </button>
+                  </div>
+                </form>
+
+                <!-- Report Status Bar -->
+                <div class="hist-status-bar" id="report-status-bar">
+                  <span class="hist-status-text" id="report-status-text">Select city, month, and year above to compile a comprehensive meteorological report.</span>
+                  <span class="hist-cache-badge" id="report-cache-badge" hidden>Cached Memory</span>
+                </div>
+              </div>
+
+              <!-- Report Empty / Placeholder State -->
+              <div class="report-empty-state" id="report-empty-state">
+                <div class="res-icon">📑</div>
+                <h5 class="res-title">No Weather Report Generated Yet</h5>
+                <p class="res-desc">
+                  Choose a city, year, and month in the controls above and click <strong>Generate Report</strong> to compile statistical metrics, trend interpretations, multi-metric charts, and exportable PDF summaries.
+                </p>
+              </div>
+
+              <!-- Generated Report Document Container -->
+              <article class="monthly-report-document" id="monthly-report-document" hidden>
+                
+                <!-- Document Header & Metadata Bar -->
+                <header class="report-doc-header">
+                  <div class="rdh-top">
+                    <div class="rdh-brand">
+                      <span class="rdh-logo">🌤️</span>
+                      <div>
+                        <h3 class="rdh-title">Comprehensive Monthly Weather Report</h3>
+                        <span class="rdh-subtitle">Meteorological Observation &amp; Climatological Analysis</span>
+                      </div>
+                    </div>
+                    <div class="rdh-badges">
+                      <span class="data-category-badge historical" id="rep-category-badge">Historical Reanalysis (ERA5)</span>
+                      <span class="rep-coverage-badge" id="rep-coverage-badge">Complete Coverage (31/31 Days)</span>
+                    </div>
+                  </div>
+
+                  <div class="report-metadata-grid">
+                    <div class="rm-item">
+                      <span class="rm-label">Location:</span>
+                      <strong class="rm-val" id="rep-meta-location">Delhi, India (28.65°N, 77.23°E)</strong>
+                    </div>
+                    <div class="rm-item">
+                      <span class="rm-label">Timezone:</span>
+                      <strong class="rm-val" id="rep-meta-timezone">Asia/Kolkata (IST)</strong>
+                    </div>
+                    <div class="rm-item">
+                      <span class="rm-label">Reporting Period:</span>
+                      <strong class="rm-val" id="rep-meta-period">July 1, 2023 – July 31, 2023</strong>
+                    </div>
+                    <div class="rm-item">
+                      <span class="rm-label">Data Source:</span>
+                      <strong class="rm-val" id="rep-meta-source">Open-Meteo ERA5 Historical Archive</strong>
+                    </div>
+                  </div>
+                </header>
+
+                <!-- SECTION 1: Monthly Overview & 11 Core Metrics -->
+                <section class="report-section" id="rep-section-overview">
+                  <h4 class="report-section-title">1. Monthly Overview &amp; Executive Summary</h4>
+                  <div class="report-narrative" id="rep-overview-text">
+                    <!-- Generated narrative overview -->
+                  </div>
+
+                  <!-- 11 Metrics Cards Grid -->
+                  <div class="report-metrics-grid">
+                    <!-- 1. Average Temperature -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">🌡️</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Average Temperature</span>
+                        <strong class="rmc-val" id="rep-stat-avg-temp">--</strong>
+                        <span class="rmc-sub" id="rep-sub-avg-temp">Mean surface 2m</span>
+                      </div>
+                    </div>
+
+                    <!-- 2. Maximum Temperature -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">🔥</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Maximum Temperature</span>
+                        <strong class="rmc-val" id="rep-stat-max-temp">--</strong>
+                        <span class="rmc-sub" id="rep-sub-max-temp">Peak on --</span>
+                      </div>
+                    </div>
+
+                    <!-- 3. Minimum Temperature -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">❄️</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Minimum Temperature</span>
+                        <strong class="rmc-val" id="rep-stat-min-temp">--</strong>
+                        <span class="rmc-sub" id="rep-sub-min-temp">Lowest on --</span>
+                      </div>
+                    </div>
+
+                    <!-- 4. Total Precipitation -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">🌧️</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Total Precipitation</span>
+                        <strong class="rmc-val" id="rep-stat-total-precip">--</strong>
+                        <span class="rmc-sub" id="rep-sub-total-precip">-- valid days</span>
+                      </div>
+                    </div>
+
+                    <!-- 5. Rainy Days -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">💧</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Rainy Days</span>
+                        <strong class="rmc-val" id="rep-stat-rainy-days">--</strong>
+                        <span class="rmc-sub" id="rep-sub-rainy-days">≥ 0.1 mm/day</span>
+                      </div>
+                    </div>
+
+                    <!-- 6. Average Humidity -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">💦</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Average Humidity</span>
+                        <strong class="rmc-val" id="rep-stat-avg-humidity">--</strong>
+                        <span class="rmc-sub" id="rep-sub-avg-humidity">Relative humidity</span>
+                      </div>
+                    </div>
+
+                    <!-- 7. Average Wind Speed -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">💨</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Average Wind Speed</span>
+                        <strong class="rmc-val" id="rep-stat-avg-wind">--</strong>
+                        <span class="rmc-sub" id="rep-sub-avg-wind">10m velocity</span>
+                      </div>
+                    </div>
+
+                    <!-- 8. Maximum Wind Speed -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">🌪️</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Maximum Wind Speed</span>
+                        <strong class="rmc-val" id="rep-stat-max-wind">--</strong>
+                        <span class="rmc-sub" id="rep-sub-max-wind">Peak gust on --</span>
+                      </div>
+                    </div>
+
+                    <!-- 9. Weather Condition Distribution -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">🌤️</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Dominant Weather</span>
+                        <strong class="rmc-val" id="rep-stat-dominant-weather">--</strong>
+                        <span class="rmc-sub" id="rep-sub-dominant-weather">--% of observed days</span>
+                      </div>
+                    </div>
+
+                    <!-- 10. Temperature Trend -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">📈</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Temperature Trend</span>
+                        <strong class="rmc-val" id="rep-stat-temp-trend">--</strong>
+                        <span class="rmc-sub" id="rep-sub-temp-trend">Rate of change</span>
+                      </div>
+                    </div>
+
+                    <!-- 11. Rainfall Trend -->
+                    <div class="report-metric-card">
+                      <div class="rmc-icon">☔</div>
+                      <div class="rmc-body">
+                        <span class="rmc-label">Rainfall Trend</span>
+                        <strong class="rmc-val" id="rep-stat-rain-trend">--</strong>
+                        <span class="rmc-sub" id="rep-sub-rain-trend">Temporal pacing</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 2: Temperature Analysis -->
+                <section class="report-section" id="rep-section-temp">
+                  <h4 class="report-section-title">2. Temperature Analysis &amp; Thermal Progression</h4>
+                  <div class="report-narrative" id="rep-temp-analysis-text">
+                    <!-- Narrative temperature analysis -->
+                  </div>
+                  <div class="report-chart-card">
+                    <div class="rcc-header">
+                      <span class="rcc-title">Daily Temperature Trajectory (Max, Mean, Min)</span>
+                      <span class="rcc-badge">Line Series</span>
+                    </div>
+                    <div class="report-chart-canvas-wrap">
+                      <canvas id="chart-report-temp-canvas" height="260" aria-label="Monthly Temperature Line Chart" role="img"></canvas>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 3: Rainfall Analysis -->
+                <section class="report-section" id="rep-section-rainfall">
+                  <h4 class="report-section-title">3. Rainfall Analysis &amp; Hydrological Patterns</h4>
+                  <div class="report-narrative" id="rep-rain-analysis-text">
+                    <!-- Narrative rainfall analysis -->
+                  </div>
+                  <div class="report-chart-card">
+                    <div class="rcc-header">
+                      <span class="rcc-title">Daily Precipitation Volume</span>
+                      <span class="rcc-badge">Bar Series</span>
+                    </div>
+                    <div class="report-chart-canvas-wrap">
+                      <canvas id="chart-report-rain-canvas" height="260" aria-label="Monthly Rainfall Bar Chart" role="img"></canvas>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 4: Humidity Analysis -->
+                <section class="report-section" id="rep-section-humidity">
+                  <h4 class="report-section-title">4. Humidity Analysis &amp; Atmospheric Moisture</h4>
+                  <div class="report-narrative" id="rep-humidity-analysis-text">
+                    <!-- Narrative humidity analysis -->
+                  </div>
+                  <div class="report-chart-card">
+                    <div class="rcc-header">
+                      <span class="rcc-title">Daily Average Relative Humidity (%)</span>
+                      <span class="rcc-badge">Area Series</span>
+                    </div>
+                    <div class="report-chart-canvas-wrap">
+                      <canvas id="chart-report-humidity-canvas" height="260" aria-label="Monthly Humidity Area Chart" role="img"></canvas>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 5: Wind Analysis -->
+                <section class="report-section" id="rep-section-wind">
+                  <h4 class="report-section-title">5. Wind Velocity Analysis &amp; Aerodynamic Dynamics</h4>
+                  <div class="report-narrative" id="rep-wind-analysis-text">
+                    <!-- Narrative wind analysis -->
+                  </div>
+                  <div class="report-chart-card">
+                    <div class="rcc-header">
+                      <span class="rcc-title">Daily Peak Wind Speed &amp; Gust Progression</span>
+                      <span class="rcc-badge">Speed Series</span>
+                    </div>
+                    <div class="report-chart-canvas-wrap">
+                      <canvas id="chart-report-wind-canvas" height="260" aria-label="Monthly Wind Speed Chart" role="img"></canvas>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 6: Weather Condition Distribution -->
+                <section class="report-section" id="rep-section-distribution">
+                  <h4 class="report-section-title">6. Weather Condition Distribution &amp; Categorization</h4>
+                  <div class="report-narrative" id="rep-distribution-text">
+                    <!-- Narrative condition distribution -->
+                  </div>
+                  <div class="report-chart-card distribution-chart-card">
+                    <div class="rcc-header">
+                      <span class="rcc-title">Weather Condition Breakdown</span>
+                      <span class="rcc-badge">Doughnut Distribution</span>
+                    </div>
+                    <div class="report-chart-canvas-wrap doughnut-wrap">
+                      <canvas id="chart-report-distribution-canvas" height="260" aria-label="Weather Condition Distribution Doughnut Chart" role="img"></canvas>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 7: Daily Weather Summary Table -->
+                <section class="report-section" id="rep-section-daily">
+                  <h4 class="report-section-title">7. Daily Meteorological Ledger</h4>
+                  <div class="historical-table-card report-table-card">
+                    <div class="hist-table-scroll-wrapper" id="rep-daily-table-scroll-wrapper" tabindex="0" role="region" aria-label="Daily Meteorological Summary Table Scroll Region">
+                      <table class="hist-table report-daily-table" id="report-daily-table" aria-label="Daily Meteorological Summary Table">
+                        <thead>
+                          <tr>
+                            <th scope="col">Date</th>
+                            <th scope="col">Condition</th>
+                            <th scope="col">Max Temp</th>
+                            <th scope="col">Min Temp</th>
+                            <th scope="col">Mean Temp</th>
+                            <th scope="col">Precip</th>
+                            <th scope="col">Humidity</th>
+                            <th scope="col">Wind Speed</th>
+                            <th scope="col">Wind Dir</th>
+                            <th scope="col">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody id="report-daily-tbody">
+                          <!-- Populated dynamically -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 8: Weather Trend Interpretation -->
+                <section class="report-section" id="rep-section-trends">
+                  <h4 class="report-section-title">8. Weather Trend Interpretation &amp; Climatological Synthesis</h4>
+                  <div class="report-narrative" id="rep-trend-interpretation-text">
+                    <!-- Narrative synoptic and trend synthesis -->
+                  </div>
+                </section>
+
+                <!-- SECTION 9: Data Coverage and Limitations -->
+                <section class="report-section" id="rep-section-limitations">
+                  <h4 class="report-section-title">9. Data Coverage, Station Metadata &amp; Limitations</h4>
+                  <div class="report-narrative" id="rep-limitations-text">
+                    <!-- Data coverage and audit breakdown -->
+                  </div>
+                  <div class="report-coverage-table-wrap">
+                    <table class="hist-table report-audit-table" id="report-audit-table" aria-label="Data Audit and Coverage Breakdown">
+                      <thead>
+                        <tr>
+                          <th scope="col">Metric Variable</th>
+                          <th scope="col">Observed Days</th>
+                          <th scope="col">Missing Days</th>
+                          <th scope="col">Coverage %</th>
+                          <th scope="col">Data Quality Status</th>
+                        </tr>
+                      </thead>
+                      <tbody id="report-audit-tbody">
+                        <!-- Populated dynamically -->
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                <!-- Document Print Footer -->
+                <footer class="report-doc-footer">
+                  <p>Report compiled by Weather Dashboard Intelligence Suite &bull; Official Meteorological Data Source: Open-Meteo REST APIs &bull; Standard: WMO Observation Protocol</p>
+                </footer>
+
+              </article>
             </section>
 
           </section>

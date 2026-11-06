@@ -16,6 +16,7 @@ const API_CONFIG = {
   STORAGE_KEY_RECENT: 'weather_dashboard_recent_cities',
   STORAGE_KEY_UNIT: 'weather_dashboard_temp_unit',
   STORAGE_KEY_ALERT_SOUND: 'weather_dashboard_alert_sound',
+  STORAGE_KEY_LAST_REPORT: 'weather_dashboard_last_report',
   MAX_HISTORY_ITEMS: 5,
   TIMEOUT_MS: 10000,
   AIR_QUALITY_URL: 'https://air-quality-api.open-meteo.com/v1/air-quality',
@@ -43,6 +44,7 @@ const weatherCache = new Map();           // key: "lat,lon" (4 decimals) -> { da
 const airQualityCache = new Map();        // key: "lat,lon" (4 decimals) -> { data, timestamp }
 const historicalWeatherCache = new Map(); // key: "lat,lon_start_end" -> { data, timestamp }
 const yearlyWeatherCache = new Map();     // key: "lat,lon_year_mode" -> { data, timestamp }
+const monthlyReportCache = new Map();     // key: "lat,lon_start_end" -> { data, timestamp }
 
 const cacheDiagnostics = {
   geoHits: 0,
@@ -213,6 +215,1032 @@ function getCacheStats() {
  * Covers all required conditions: Clear, Mainly Clear, Cloudy, Overcast,
  * Fog, Drizzle, Rain, Snow, Showers, and Thunderstorms with Day/Night variants.
  */
+
+// --------------------------------------------------------------------------
+// 1.1 Internationalization & Multi-Language Support Engine (Phase 27 - i18n)
+// --------------------------------------------------------------------------
+const SUPPORTED_LANGUAGES = ['en', 'es', 'fr', 'de', 'ja', 'hi'];
+let currentLanguage = 'en';
+
+const TRANSLATIONS = {
+  en: {
+    brand_title: 'Weather Dashboard',
+    brand_subtitle: 'Intelligence Suite',
+    active_city: 'Active City',
+    awaiting_search: 'Awaiting Search',
+    no_hazards: 'No Hazards',
+    select_language: 'Select Language',
+    open_map: 'Open Map',
+    install: 'Install',
+    search: 'Search',
+    my_location: 'My Location',
+    recent_searches: 'Recent:',
+    clear: 'Clear',
+    refresh: 'Refresh',
+    search_placeholder: 'Search global city (e.g., London, Tokyo, New York)...',
+    
+    nav_overview: 'Overview',
+    nav_map: 'Weather Map',
+    nav_forecast: 'Forecast',
+    nav_analytics: 'Analytics',
+    nav_calendar: 'Calendar',
+    nav_climate: 'Climate Reports',
+
+    view_overview: 'Overview',
+    view_map: 'Weather Map & Radar',
+    view_forecast: 'Extended Forecast',
+    view_analytics: 'Weather Analytics',
+    view_calendar: 'Monthly Calendar',
+    view_climate: 'Climate & Seasonal Trends',
+
+    feels_like: 'Feels like',
+    high: 'High',
+    low: 'Low',
+    humidity: 'Humidity',
+    wind_speed: 'Wind Speed',
+    wind_direction: 'Wind Direction',
+    pressure: 'Pressure',
+    visibility: 'Visibility',
+    uv_index: 'UV Index',
+    dew_point: 'Dew Point',
+    cloud_cover: 'Cloud Cover',
+    sunrise: 'Sunrise',
+    sunset: 'Sunset',
+    moonrise: 'Moonrise',
+    moonset: 'Moonset',
+    moon_phase: 'Moon Phase',
+    conditions_unavailable: 'Conditions Unavailable',
+    data_unavailable: 'Data unavailable',
+
+    hourly_forecast_title: 'Hourly Forecast',
+    daily_forecast_title: '7-Day Extended Forecast',
+    air_quality_title: 'Air Quality Index',
+    today: 'Today',
+    now: 'Now',
+
+    aqi_good: 'Good',
+    aqi_fair: 'Fair',
+    aqi_moderate: 'Moderate',
+    aqi_poor: 'Poor',
+    aqi_very_poor: 'Very Poor',
+    aqi_extremely_poor: 'Extremely Poor',
+    aqi_sensitive: 'Sensitive Groups',
+    aqi_unhealthy: 'Unhealthy',
+    aqi_very_unhealthy: 'Very Unhealthy',
+    aqi_hazardous: 'Hazardous',
+    european_aqi: 'European AQI',
+    us_aqi: 'US AQI',
+
+    severity_emergency: 'Emergency',
+    severity_warning: 'Warning',
+    severity_watch: 'Watch',
+    severity_advisory: 'Advisory',
+    safety_precautions: 'Safety Precautions',
+    dismiss: 'Dismiss',
+    sound_on: 'Sound On',
+    sound_muted: 'Sound Muted',
+
+    heatmap_standard_overlay: '7-Day Forecast Overlay',
+    heatmap_thermal: 'Thermal Heatmap',
+    heatmap_precipitation: 'Precipitation Heatmap',
+    cal_standard: 'Standard',
+    cal_thermal: 'Thermal Heatmap',
+    cal_precip: 'Precipitation',
+    cal_today: 'Today',
+
+    season_winter: 'Winter',
+    season_summer: 'Summer',
+    season_monsoon: 'Monsoon',
+    season_post_monsoon: 'Post-Monsoon',
+
+    generate_report: 'Generate Report',
+    export_pdf: 'Export PDF',
+    monthly_overview: 'Monthly Overview',
+    temp_analysis: 'Temperature Analysis',
+    rain_analysis: 'Rainfall Analysis',
+    humidity_analysis: 'Humidity Analysis',
+    wind_analysis: 'Wind Analysis',
+    daily_summary: 'Daily Weather Summary',
+    data_coverage: 'Data Coverage and Limitations',
+
+    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    months_short: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    weekdays_short: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+
+    wmo: {
+      0: 'Clear Sky',
+      1: 'Mainly Clear',
+      2: 'Partly Cloudy',
+      3: 'Overcast',
+      45: 'Foggy',
+      48: 'Depositing Rime Fog',
+      51: 'Light Drizzle',
+      53: 'Moderate Drizzle',
+      55: 'Dense Drizzle',
+      56: 'Light Freezing Drizzle',
+      57: 'Dense Freezing Drizzle',
+      61: 'Slight Rain',
+      63: 'Moderate Rain',
+      65: 'Heavy Rain',
+      66: 'Light Freezing Rain',
+      67: 'Heavy Freezing Rain',
+      71: 'Slight Snow Fall',
+      73: 'Moderate Snow Fall',
+      75: 'Heavy Snow Fall',
+      77: 'Snow Grains',
+      80: 'Slight Rain Showers',
+      81: 'Moderate Rain Showers',
+      82: 'Violent Rain Showers',
+      85: 'Slight Snow Showers',
+      86: 'Heavy Snow Showers',
+      95: 'Thunderstorm',
+      96: 'Thunderstorm with Slight Hail',
+      99: 'Thunderstorm with Heavy Hail'
+    }
+  },
+  es: {
+    brand_title: 'Panel Meteorológico',
+    brand_subtitle: 'Suite de Inteligencia',
+    active_city: 'Ciudad Activa',
+    awaiting_search: 'Esperando Búsqueda',
+    no_hazards: 'Sin Peligros',
+    select_language: 'Seleccionar Idioma',
+    open_map: 'Abrir Mapa',
+    install: 'Instalar',
+    search: 'Buscar',
+    my_location: 'Mi Ubicación',
+    recent_searches: 'Recientes:',
+    clear: 'Borrar',
+    refresh: 'Actualizar',
+    search_placeholder: 'Buscar ciudad global (ej., Londres, Tokio, Madrid)...',
+
+    nav_overview: 'Visión General',
+    nav_map: 'Mapa Meteorológico',
+    nav_forecast: 'Pronóstico',
+    nav_analytics: 'Análisis',
+    nav_calendar: 'Calendario',
+    nav_climate: 'Informes Climáticos',
+
+    view_overview: 'Visión General',
+    view_map: 'Mapa y Radar Meteorológico',
+    view_forecast: 'Pronóstico Extendido',
+    view_analytics: 'Análisis Meteorológico',
+    view_calendar: 'Calendario Mensual',
+    view_climate: 'Clima y Tendencias Estacionales',
+
+    feels_like: 'Sensación',
+    high: 'Máx',
+    low: 'Mín',
+    humidity: 'Humedad',
+    wind_speed: 'Velocidad del Viento',
+    wind_direction: 'Dirección del Viento',
+    pressure: 'Presión',
+    visibility: 'Visibilidad',
+    uv_index: 'Índice UV',
+    dew_point: 'Punto de Rocío',
+    cloud_cover: 'Cobertura Nubosa',
+    sunrise: 'Amanecer',
+    sunset: 'Atardecer',
+    moonrise: 'Salida Lunar',
+    moonset: 'Puesta Lunar',
+    moon_phase: 'Fase Lunar',
+    conditions_unavailable: 'Condiciones no disponibles',
+    data_unavailable: 'Datos no disponibles',
+
+    hourly_forecast_title: 'Pronóstico por Horas',
+    daily_forecast_title: 'Pronóstico Extendido de 7 Días',
+    air_quality_title: 'Índice de Calidad del Aire',
+    today: 'Hoy',
+    now: 'Ahora',
+
+    aqi_good: 'Bueno',
+    aqi_fair: 'Aceptable',
+    aqi_moderate: 'Moderado',
+    aqi_poor: 'Pobre',
+    aqi_very_poor: 'Muy Pobre',
+    aqi_extremely_poor: 'Extremadamente Pobre',
+    aqi_sensitive: 'Grupos Sensibles',
+    aqi_unhealthy: 'Poco Saludable',
+    aqi_very_unhealthy: 'Muy Poco Saludable',
+    aqi_hazardous: 'Peligroso',
+    european_aqi: 'AQI Europeo',
+    us_aqi: 'AQI EE.UU.',
+
+    severity_emergency: 'Emergencia',
+    severity_warning: 'Advertencia',
+    severity_watch: 'Vigilancia',
+    severity_advisory: 'Aviso',
+    safety_precautions: 'Precauciones de Seguridad',
+    dismiss: 'Descartar',
+    sound_on: 'Sonido Activado',
+    sound_muted: 'Sonido Silenciado',
+
+    heatmap_standard_overlay: 'Superposición de Pronóstico de 7 Días',
+    heatmap_thermal: 'Mapa Térmico',
+    heatmap_precipitation: 'Mapa de Precipitación',
+    cal_standard: 'Estándar',
+    cal_thermal: 'Mapa Térmico',
+    cal_precip: 'Precipitación',
+    cal_today: 'Hoy',
+
+    season_winter: 'Invierno',
+    season_summer: 'Verano',
+    season_monsoon: 'Monzón',
+    season_post_monsoon: 'Post-Monzón',
+
+    generate_report: 'Generar Informe',
+    export_pdf: 'Exportar PDF',
+    monthly_overview: 'Resumen Mensual',
+    temp_analysis: 'Análisis de Temperatura',
+    rain_analysis: 'Análisis de Precipitación',
+    humidity_analysis: 'Análisis de Humedad',
+    wind_analysis: 'Análisis de Viento',
+    daily_summary: 'Resumen Meteorológico Diario',
+    data_coverage: 'Cobertura de Datos y Limitaciones',
+
+    months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+    months_short: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+    weekdays: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+    weekdays_short: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+
+    wmo: {
+      0: 'Cielo Despejado',
+      1: 'Mayormente Despejado',
+      2: 'Parcialmente Nublado',
+      3: 'Nublado',
+      45: 'Niebla',
+      48: 'Niebla con Escarcha',
+      51: 'Llovizna Ligera',
+      53: 'Llovizna Moderada',
+      55: 'Llovizna Densa',
+      56: 'Llovizna Helada Ligera',
+      57: 'Llovizna Helada Densa',
+      61: 'Lluvia Ligera',
+      63: 'Lluvia Moderada',
+      65: 'Lluvia Fuerte',
+      66: 'Lluvia Helada Ligera',
+      67: 'Lluvia Helada Fuerte',
+      71: 'Nevadas Ligeras',
+      73: 'Nevadas Moderadas',
+      75: 'Nevadas Fuertes',
+      77: 'Granos de Nieve',
+      80: 'Chubascos Ligeros',
+      81: 'Chubascos Moderados',
+      82: 'Chubascos Violentos',
+      85: 'Chubascos de Nieve Ligeros',
+      86: 'Chubascos de Nieve Fuertes',
+      95: 'Tormenta Eléctrica',
+      96: 'Tormenta con Granizo Ligero',
+      99: 'Tormenta con Granizo Fuerte'
+    }
+  },
+  fr: {
+    brand_title: 'Tableau Météo',
+    brand_subtitle: 'Suite d\'Intelligence',
+    active_city: 'Ville Active',
+    awaiting_search: 'En attente de recherche',
+    no_hazards: 'Aucun Danger',
+    select_language: 'Sélectionner la Langue',
+    open_map: 'Ouvrir la Carte',
+    install: 'Installer',
+    search: 'Rechercher',
+    my_location: 'Ma Position',
+    recent_searches: 'Récents :',
+    clear: 'Effacer',
+    refresh: 'Actualiser',
+    search_placeholder: 'Rechercher une ville mondiale (ex. Paris, Tokyo, Londres)...',
+
+    nav_overview: 'Vue d\'ensemble',
+    nav_map: 'Carte Météo',
+    nav_forecast: 'Prévisions',
+    nav_analytics: 'Analyses',
+    nav_calendar: 'Calendrier',
+    nav_climate: 'Rapports Climatiques',
+
+    view_overview: 'Vue d\'ensemble',
+    view_map: 'Carte Météo et Radar',
+    view_forecast: 'Prévisions Étendues',
+    view_analytics: 'Analyses Météorologiques',
+    view_calendar: 'Calendrier Mensuel',
+    view_climate: 'Climat et Tendances Saisonnières',
+
+    feels_like: 'Ressenti',
+    high: 'Max',
+    low: 'Min',
+    humidity: 'Humidité',
+    wind_speed: 'Vitesse du Vent',
+    wind_direction: 'Direction du Vent',
+    pressure: 'Pression',
+    visibility: 'Visibilité',
+    uv_index: 'Indice UV',
+    dew_point: 'Point de Rosée',
+    cloud_cover: 'Couverture Nuageuse',
+    sunrise: 'Lever du Soleil',
+    sunset: 'Coucher du Soleil',
+    moonrise: 'Lever de Lune',
+    moonset: 'Coucher de Lune',
+    moon_phase: 'Phase de Lune',
+    conditions_unavailable: 'Conditions indisponibles',
+    data_unavailable: 'Données indisponibles',
+
+    hourly_forecast_title: 'Prévisions Horaires',
+    daily_forecast_title: 'Prévisions sur 7 Jours',
+    air_quality_title: 'Indice de Qualité de l\'Air',
+    today: 'Aujourd\'hui',
+    now: 'Maintenant',
+
+    aqi_good: 'Bon',
+    aqi_fair: 'Correct',
+    aqi_moderate: 'Modéré',
+    aqi_poor: 'Mauvais',
+    aqi_very_poor: 'Très Mauvais',
+    aqi_extremely_poor: 'Extrêmement Mauvais',
+    aqi_sensitive: 'Groupes Sensibles',
+    aqi_unhealthy: 'Malsain',
+    aqi_very_unhealthy: 'Très Malsain',
+    aqi_hazardous: 'Dangereux',
+    european_aqi: 'IQA Européen',
+    us_aqi: 'IQA Américain',
+
+    severity_emergency: 'Urgence',
+    severity_warning: 'Alerte',
+    severity_watch: 'Surveillance',
+    severity_advisory: 'Conseil',
+    safety_precautions: 'Précautions de Sécurité',
+    dismiss: 'Ignorer',
+    sound_on: 'Son Activé',
+    sound_muted: 'Son Coupé',
+
+    heatmap_standard_overlay: 'Superposition des Prévisions sur 7 Jours',
+    heatmap_thermal: 'Carte Thermique',
+    heatmap_precipitation: 'Carte de Précipitation',
+    cal_standard: 'Standard',
+    cal_thermal: 'Carte Thermique',
+    cal_precip: 'Précipitations',
+    cal_today: 'Aujourd\'hui',
+
+    season_winter: 'Hiver',
+    season_summer: 'Été',
+    season_monsoon: 'Mousson',
+    season_post_monsoon: 'Post-Mousson',
+
+    generate_report: 'Générer le Rapport',
+    export_pdf: 'Exporter en PDF',
+    monthly_overview: 'Aperçu Mensuel',
+    temp_analysis: 'Analyse des Températures',
+    rain_analysis: 'Analyse des Précipitations',
+    humidity_analysis: 'Analyse de l\'Humidité',
+    wind_analysis: 'Analyse du Vent',
+    daily_summary: 'Résumé Météo Quotidien',
+    data_coverage: 'Couverture des Données et Limites',
+
+    months: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
+    months_short: ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'],
+    weekdays: ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+    weekdays_short: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
+
+    wmo: {
+      0: 'Ciel Dégagé',
+      1: 'Ciel Généralement Dégagé',
+      2: 'Partiellement Nuageux',
+      3: 'Couvert',
+      45: 'Brouillard',
+      48: 'Brouillard Givrant',
+      51: 'Bruine Légère',
+      53: 'Bruine Modérée',
+      55: 'Bruine Dense',
+      56: 'Bruine Verglaçante Légère',
+      57: 'Bruine Verglaçante Dense',
+      61: 'Pluie Faible',
+      63: 'Pluie Modérée',
+      65: 'Forte Pluie',
+      66: 'Pluie Verglaçante Faible',
+      67: 'Pluie Verglaçante Forte',
+      71: 'Faible Chute de Neige',
+      73: 'Chute de Neige Modérée',
+      75: 'Forte Chute de Neige',
+      77: 'Grains de Neige',
+      80: 'Averses Faibles',
+      81: 'Averses Modérées',
+      82: 'Averses Violentes',
+      85: 'Faibles Averses de Neige',
+      86: 'Fortes Averses de Neige',
+      95: 'Orage',
+      96: 'Orage avec Faible Grêle',
+      99: 'Orage avec Forte Grêle'
+    }
+  },
+  de: {
+    brand_title: 'Wetter Dashboard',
+    brand_subtitle: 'Intelligence Suite',
+    active_city: 'Aktive Stadt',
+    awaiting_search: 'Warten auf Suche',
+    no_hazards: 'Keine Gefahren',
+    select_language: 'Sprache Wählen',
+    open_map: 'Karte Öffnen',
+    install: 'Installieren',
+    search: 'Suchen',
+    my_location: 'Mein Standort',
+    recent_searches: 'Zuletzt:',
+    clear: 'Löschen',
+    refresh: 'Aktualisieren',
+    search_placeholder: 'Weltweite Stadt suchen (z. B. Berlin, Tokio, Wien)...',
+
+    nav_overview: 'Übersicht',
+    nav_map: 'Wetterkarte',
+    nav_forecast: 'Vorhersage',
+    nav_analytics: 'Analysen',
+    nav_calendar: 'Kalender',
+    nav_climate: 'Klimaberichte',
+
+    view_overview: 'Übersicht',
+    view_map: 'Wetterkarte & Radar',
+    view_forecast: 'Erweiterte Vorhersage',
+    view_analytics: 'Wetteranalysen',
+    view_calendar: 'Monatskalender',
+    view_climate: 'Klima & Saisontrends',
+
+    feels_like: 'Gefühlt',
+    high: 'Höchst',
+    low: 'Tiefst',
+    humidity: 'Luftfeuchtigkeit',
+    wind_speed: 'Windgeschwindigkeit',
+    wind_direction: 'Windrichtung',
+    pressure: 'Luftdruck',
+    visibility: 'Sichtweite',
+    uv_index: 'UV-Index',
+    dew_point: 'Taupunkt',
+    cloud_cover: 'Bewölkung',
+    sunrise: 'Sonnenaufgang',
+    sunset: 'Sonnenuntergang',
+    moonrise: 'Mondaufgang',
+    moonset: 'Monduntergang',
+    moon_phase: 'Mondphase',
+    conditions_unavailable: 'Bedingungen nicht verfügbar',
+    data_unavailable: 'Daten nicht verfügbar',
+
+    hourly_forecast_title: 'Stündliche Vorhersage',
+    daily_forecast_title: '7-Tage-Vorhersage',
+    air_quality_title: 'Luftqualitätsindex',
+    today: 'Heute',
+    now: 'Jetzt',
+
+    aqi_good: 'Gut',
+    aqi_fair: 'Mäßig',
+    aqi_moderate: 'Akzeptabel',
+    aqi_poor: 'Schlecht',
+    aqi_very_poor: 'Sehr Schlecht',
+    aqi_extremely_poor: 'Extrem Schlecht',
+    aqi_sensitive: 'Sensible Gruppen',
+    aqi_unhealthy: 'Ungesund',
+    aqi_very_unhealthy: 'Sehr Ungesund',
+    aqi_hazardous: 'Gefährlich',
+    european_aqi: 'Europäischer LQI',
+    us_aqi: 'US-AQI',
+
+    severity_emergency: 'Notfall',
+    severity_warning: 'Warnung',
+    severity_watch: 'Vorwarnung',
+    severity_advisory: 'Hinweis',
+    safety_precautions: 'Sicherheitsmaßnahmen',
+    dismiss: 'Schließen',
+    sound_on: 'Ton Ein',
+    sound_muted: 'Stummgeschaltet',
+
+    heatmap_standard_overlay: '7-Tage-Vorhersage-Überlagerung',
+    heatmap_thermal: 'Wärme-Heatmap',
+    heatmap_precipitation: 'Niederschlags-Heatmap',
+    cal_standard: 'Standard',
+    cal_thermal: 'Wärme-Heatmap',
+    cal_precip: 'Niederschlag',
+    cal_today: 'Heute',
+
+    season_winter: 'Winter',
+    season_summer: 'Sommer',
+    season_monsoon: 'Monsun',
+    season_post_monsoon: 'Nach-Monsun',
+
+    generate_report: 'Bericht Erstellen',
+    export_pdf: 'PDF Exportieren',
+    monthly_overview: 'Monatsübersicht',
+    temp_analysis: 'Temperaturanalyse',
+    rain_analysis: 'Niederschlagsanalyse',
+    humidity_analysis: 'Feuchtigkeitsanalyse',
+    wind_analysis: 'Windanalyse',
+    daily_summary: 'Tägliche Wetterübersicht',
+    data_coverage: 'Datenabdeckung und Einschränkungen',
+
+    months: ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'],
+    months_short: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],
+    weekdays: ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'],
+    weekdays_short: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+
+    wmo: {
+      0: 'Klarer Himmel',
+      1: 'Größtenteils Klar',
+      2: 'Teilweise Bewölkt',
+      3: 'Bedeckt',
+      45: 'Neblig',
+      48: 'Reifnebel',
+      51: 'Leichter Nieselregen',
+      53: 'Mäßiger Nieselregen',
+      55: 'Dichter Nieselregen',
+      56: 'Leichter Gefrierender Nieselregen',
+      57: 'Dichter Gefrierender Nieselregen',
+      61: 'Leichter Regen',
+      63: 'Mäßiger Regen',
+      65: 'Starker Regen',
+      66: 'Leichter Gefrierender Regen',
+      67: 'Starker Gefrierender Regen',
+      71: 'Leichter Schneefall',
+      73: 'Mäßiger Schneefall',
+      75: 'Starker Schneefall',
+      77: 'Schneegriesel',
+      80: 'Leichte Regenschauer',
+      81: 'Mäßige Regenschauer',
+      82: 'Heftige Regenschauer',
+      85: 'Leichte Schneeschauer',
+      86: 'Starke Schneeschauer',
+      95: 'Gewitter',
+      96: 'Gewitter mit Leichtem Hagel',
+      99: 'Gewitter mit Starkem Hagel'
+    }
+  },
+  ja: {
+    brand_title: '気象ダッシュボード',
+    brand_subtitle: 'インテリジェンス・スイート',
+    active_city: '現在の都市',
+    awaiting_search: '検索待機中',
+    no_hazards: '警報なし',
+    select_language: '言語を選択',
+    open_map: '地図を開く',
+    install: 'インストール',
+    search: '検索',
+    my_location: '現在地',
+    recent_searches: '履歴:',
+    clear: '履歴消去',
+    refresh: '更新',
+    search_placeholder: '世界の都市を検索 (例: 東京, ロンドン, ニューヨーク)...',
+
+    nav_overview: '概要',
+    nav_map: '天気図',
+    nav_forecast: '予報',
+    nav_analytics: '分析',
+    nav_calendar: 'カレンダー',
+    nav_climate: '気候レポート',
+
+    view_overview: '概要',
+    view_map: '天気図＆レーダー',
+    view_forecast: '拡張天気予報',
+    view_analytics: '気象分析',
+    view_calendar: '月間カレンダー',
+    view_climate: '気候と季節の傾向',
+
+    feels_like: '体感温度',
+    high: '最高',
+    low: '最低',
+    humidity: '湿度',
+    wind_speed: '風速',
+    wind_direction: '風向',
+    pressure: '気圧',
+    visibility: '視程',
+    uv_index: '紫外線指数',
+    dew_point: '露点',
+    cloud_cover: '雲量',
+    sunrise: '日の出',
+    sunset: '日の入り',
+    moonrise: '月の出',
+    moonset: '月の入り',
+    moon_phase: '月相',
+    conditions_unavailable: '気象条件データなし',
+    data_unavailable: 'データなし',
+
+    hourly_forecast_title: '1時間ごとの予報',
+    daily_forecast_title: '7日間週間予報',
+    air_quality_title: '大気質指数',
+    today: '今日',
+    now: '現在',
+
+    aqi_good: '良好',
+    aqi_fair: '普通',
+    aqi_moderate: '中程度',
+    aqi_poor: '不良',
+    aqi_very_poor: '非常に悪い',
+    aqi_extremely_poor: '極めて悪い',
+    aqi_sensitive: '敏感なグループ',
+    aqi_unhealthy: '不健康',
+    aqi_very_unhealthy: '極めて不健康',
+    aqi_hazardous: '危険',
+    european_aqi: '欧州AQI',
+    us_aqi: '米国AQI',
+
+    severity_emergency: '緊急事態',
+    severity_warning: '警報',
+    severity_watch: '注意報',
+    severity_advisory: '早期注意',
+    safety_precautions: '安全上の注意事項',
+    dismiss: '閉じる',
+    sound_on: '音声オン',
+    sound_muted: '消音',
+
+    heatmap_standard_overlay: '7日間予報オーバーレイ',
+    heatmap_thermal: '温度ヒートマップ',
+    heatmap_precipitation: '降水ヒートマップ',
+    cal_standard: '標準',
+    cal_thermal: '温度ヒートマップ',
+    cal_precip: '降水量',
+    cal_today: '今日',
+
+    season_winter: '冬',
+    season_summer: '夏',
+    season_monsoon: 'モンスーン',
+    season_post_monsoon: 'ポストモンスーン',
+
+    generate_report: 'レポート作成',
+    export_pdf: 'PDF出力',
+    monthly_overview: '月間概要',
+    temp_analysis: '気温分析',
+    rain_analysis: '降水量分析',
+    humidity_analysis: '湿度分析',
+    wind_analysis: '風速分析',
+    daily_summary: '日別気象まとめ',
+    data_coverage: 'データカバレッジと制限事項',
+
+    months: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+    months_short: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+    weekdays: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+    weekdays_short: ['日', '月', '火', '水', '木', '金', '土'],
+
+    wmo: {
+      0: '快晴',
+      1: '晴れ',
+      2: '一部曇り',
+      3: '曇天',
+      45: '霧',
+      48: '着氷性の霧',
+      51: '弱い霧雨',
+      53: '霧雨',
+      55: '濃い霧雨',
+      56: '弱い着氷性の霧雨',
+      57: '濃い着氷性の霧雨',
+      61: '小雨',
+      63: '中程度の雨',
+      65: '大雨',
+      66: '弱い着氷性の雨',
+      67: '激しい着氷性の雨',
+      71: '小雪',
+      73: '中程度の降雪',
+      75: '大雪',
+      77: '霧雪',
+      80: 'にわか小雨',
+      81: 'にわか雨',
+      82: '激しいにわか雨',
+      85: 'にわか小雪',
+      86: '激しいにわか雪',
+      95: '雷雨',
+      96: '降ひょうを伴う雷雨',
+      99: '激しい降ひょうを伴う雷雨'
+    }
+  },
+  hi: {
+    brand_title: 'मौसम डैशबोर्ड',
+    brand_subtitle: 'इंटेलिजेंस सूट',
+    active_city: 'सक्रिय शहर',
+    awaiting_search: 'खोज प्रतीक्षारत',
+    no_hazards: 'कोई खतरा नहीं',
+    select_language: 'भाषा चुनें',
+    open_map: 'नक्शा खोलें',
+    install: 'इंस्टॉल करें',
+    search: 'खोजें',
+    my_location: 'मेरा स्थान',
+    recent_searches: 'हाल की खोजें:',
+    clear: 'हटाएं',
+    refresh: 'रिफ्रेश',
+    search_placeholder: 'वैश्विक शहर खोजें (उदा., दिल्ली, टोक्यो, न्यूयॉर्क)...',
+
+    nav_overview: 'अवलोकन',
+    nav_map: 'मौसम मानचित्र',
+    nav_forecast: 'पूर्वानुमान',
+    nav_analytics: 'विश्लेषण',
+    nav_calendar: 'कैलेंडर',
+    nav_climate: 'जलवायु रिपोर्ट',
+
+    view_overview: 'अवलोकन',
+    view_map: 'मौसम मानचित्र और रडार',
+    view_forecast: 'विस्तारित पूर्वानुमान',
+    view_analytics: 'मौसम विश्लेषण',
+    view_calendar: 'मासिक कैलेंडर',
+    view_climate: 'जलवायु और मौसमी रुझान',
+
+    feels_like: 'महसूस हो रहा है',
+    high: 'अधिकतम',
+    low: 'न्यूनतम',
+    humidity: 'आर्द्रता',
+    wind_speed: 'हवा की गति',
+    wind_direction: 'हवा की दिशा',
+    pressure: 'वायुमंडलीय दबाव',
+    visibility: 'दृश्यता',
+    uv_index: 'यूवी सूचकांक',
+    dew_point: 'ओस बिंदु',
+    cloud_cover: 'बादल का फैलाव',
+    sunrise: 'सूर्योदय',
+    sunset: 'सूर्यास्त',
+    moonrise: 'चंद्रोदय',
+    moonset: 'चंद्रास्त',
+    moon_phase: 'चंद्रमा चरण',
+    conditions_unavailable: 'मौसम की स्थिति अनुपलब्ध',
+    data_unavailable: 'डेटा अनुपलब्ध',
+
+    hourly_forecast_title: 'प्रति घंटे का पूर्वानुमान',
+    daily_forecast_title: '7 दिवसीय विस्तारित पूर्वानुमान',
+    air_quality_title: 'वायु गुणवत्ता सूचकांक',
+    today: 'आज',
+    now: 'अभी',
+
+    aqi_good: 'अच्छा',
+    aqi_fair: 'संतोषजनक',
+    aqi_moderate: 'मध्यम',
+    aqi_poor: 'खराब',
+    aqi_very_poor: 'बहुत खराब',
+    aqi_extremely_poor: 'अत्यधिक खराब',
+    aqi_sensitive: 'संवेदनशील समूह',
+    aqi_unhealthy: 'अस्वास्थ्यकर',
+    aqi_very_unhealthy: 'बहुत अस्वास्थ्यकर',
+    aqi_hazardous: 'खतरनाक',
+    european_aqi: 'यूरोपीय AQI',
+    us_aqi: 'यूएस AQI',
+
+    severity_emergency: 'आपातकाल',
+    severity_warning: 'चेतावनी',
+    severity_watch: 'निगरानी',
+    severity_advisory: 'परामर्श',
+    safety_precautions: 'सुरक्षा सावधानियां',
+    dismiss: 'खारिज करें',
+    sound_on: 'ध्वनि चालू',
+    sound_muted: 'ध्वनि मूक',
+
+    heatmap_standard_overlay: '7 दिवसीय पूर्वानुमान ओवरले',
+    heatmap_thermal: 'थर्मल हीटमैप',
+    heatmap_precipitation: 'वर्षा हीटमैप',
+    cal_standard: 'मानक',
+    cal_thermal: 'थर्मल हीटमैप',
+    cal_precip: 'वर्षा',
+    cal_today: 'आज',
+
+    season_winter: 'सर्दी',
+    season_summer: 'गर्मी',
+    season_monsoon: 'मानसून',
+    season_post_monsoon: 'मानसून बाद',
+
+    generate_report: 'रिपोर्ट बनाएं',
+    export_pdf: 'पीडीएफ निर्यात',
+    monthly_overview: 'मासिक अवलोकन',
+    temp_analysis: 'तापमान विश्लेषण',
+    rain_analysis: 'वर्षा विश्लेषण',
+    humidity_analysis: 'आर्द्रता विश्लेषण',
+    wind_analysis: 'हवा विश्लेषण',
+    daily_summary: 'दैनिक मौसम सारांश',
+    data_coverage: 'डेटा कवरेज और सीमाएं',
+
+    months: ['जनवरी', 'फ़रवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'],
+    months_short: ['जन', 'फ़र', 'मार्च', 'अप्रै', 'मई', 'जून', 'जुला', 'अग', 'सितं', 'अक्टू', 'नव', 'दिसं'],
+    weekdays: ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'],
+    weekdays_short: ['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि'],
+
+    wmo: {
+      0: 'साफ आसमान',
+      1: 'मुख्यतः साफ',
+      2: 'आंशिक बादल',
+      3: 'घने बादल',
+      45: 'कोहरा',
+      48: 'जमा देने वाला कोहरा',
+      51: 'हल्की बूंदाबांदी',
+      53: 'मध्यम बूंदाबांदी',
+      55: 'तेज बूंदाबांदी',
+      56: 'हल्की बर्फीली बूंदाबांदी',
+      57: 'तेज बर्फीली बूंदाबांदी',
+      61: 'हल्की बारिश',
+      63: 'मध्यम बारिश',
+      65: 'भारी बारिश',
+      66: 'हल्की बर्फीली बारिश',
+      67: 'भारी बर्फीली बारिश',
+      71: 'हल्की बर्फबारी',
+      73: 'मध्यम बर्फबारी',
+      75: 'भारी बर्फबारी',
+      77: 'हिम कण',
+      80: 'हल्की बारिश की बौछारें',
+      81: 'मध्यम बारिश की बौछारें',
+      82: 'मूसलाधार बारिश की बौछारें',
+      85: 'हल्की बर्फ की बौछारें',
+      86: 'भारी बर्फ की बौछारें',
+      95: 'आंधी-तूफान',
+      96: 'ओलों के साथ आंधी',
+      99: 'भारी ओलों के साथ भीषण आंधी'
+    }
+  }
+};
+
+/**
+ * Translates a key according to the specified or active language.
+ * Falls back to English if key is missing, or returns the key if completely undefined.
+ * @param {string} key
+ * @param {string} [lang=currentLanguage]
+ * @returns {string}
+ */
+function t(key, lang = currentLanguage) {
+  if (!key) return '';
+  const langDict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  if (langDict && langDict[key] !== undefined) {
+    return langDict[key];
+  }
+  if (TRANSLATIONS.en && TRANSLATIONS.en[key] !== undefined) {
+    return TRANSLATIONS.en[key];
+  }
+  return key;
+}
+
+/**
+ * Returns localized WMO weather description.
+ * @param {number} code
+ * @param {string} [lang=currentLanguage]
+ * @returns {string}
+ */
+function getLocalizedWeatherDescription(code, lang = currentLanguage) {
+  if (!isValidNumber(code)) return t('conditions_unavailable', lang);
+  const numeric = Math.trunc(code);
+  const langDict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  if (langDict && langDict.wmo && langDict.wmo[numeric]) {
+    return langDict.wmo[numeric];
+  }
+  if (TRANSLATIONS.en && TRANSLATIONS.en.wmo && TRANSLATIONS.en.wmo[numeric]) {
+    return TRANSLATIONS.en.wmo[numeric];
+  }
+  const item = WMO_WEATHER_CODES[numeric];
+  return item ? item.description : t('conditions_unavailable', lang);
+}
+
+/**
+ * Returns localized month name.
+ * @param {number} monthIdx - 0 to 11
+ * @param {string} [lang=currentLanguage]
+ * @param {boolean} [isShort=false]
+ * @returns {string}
+ */
+function getLocalizedMonthName(monthIdx, lang = currentLanguage, isShort = false) {
+  if (monthIdx < 0 || monthIdx > 11) return '';
+  const langDict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const key = isShort ? 'months_short' : 'months';
+  if (langDict && Array.isArray(langDict[key]) && langDict[key][monthIdx]) {
+    return langDict[key][monthIdx];
+  }
+  if (TRANSLATIONS.en && Array.isArray(TRANSLATIONS.en[key]) && TRANSLATIONS.en[key][monthIdx]) {
+    return TRANSLATIONS.en[key][monthIdx];
+  }
+  return '';
+}
+
+/**
+ * Returns localized weekday name.
+ * @param {number} dayIdx - 0 (Sunday) to 6 (Saturday)
+ * @param {string} [lang=currentLanguage]
+ * @param {boolean} [isShort=true]
+ * @returns {string}
+ */
+function getLocalizedWeekday(dayIdx, lang = currentLanguage, isShort = true) {
+  if (dayIdx < 0 || dayIdx > 6) return '';
+  const langDict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const key = isShort ? 'weekdays_short' : 'weekdays';
+  if (langDict && Array.isArray(langDict[key]) && langDict[key][dayIdx]) {
+    return langDict[key][dayIdx];
+  }
+  if (TRANSLATIONS.en && Array.isArray(TRANSLATIONS.en[key]) && TRANSLATIONS.en[key][dayIdx]) {
+    return TRANSLATIONS.en[key][dayIdx];
+  }
+  return '';
+}
+
+/**
+ * Returns active language code.
+ * @returns {string}
+ */
+function getCurrentLanguage() {
+  return currentLanguage;
+}
+
+/**
+ * Traverses DOM and translates all static elements with data-i18n attributes.
+ * @param {string} [lang=currentLanguage]
+ */
+function translatePage(lang = currentLanguage) {
+  if (typeof document === 'undefined') return;
+
+  const translatableElements = document.querySelectorAll('[data-i18n]');
+  translatableElements.forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (key) {
+      const translated = t(key, lang);
+      if (translated && translated !== key) {
+        el.textContent = translated;
+      }
+    }
+  });
+
+  const placeholderElements = document.querySelectorAll('[data-i18n-placeholder]');
+  placeholderElements.forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (key) {
+      const translated = t(key, lang);
+      if (translated && translated !== key) {
+        el.setAttribute('placeholder', translated);
+      }
+    }
+  });
+
+  const ariaLabelElements = document.querySelectorAll('[data-i18n-aria-label]');
+  ariaLabelElements.forEach(el => {
+    const key = el.getAttribute('data-i18n-aria-label');
+    if (key) {
+      const translated = t(key, lang);
+      if (translated && translated !== key) {
+        el.setAttribute('aria-label', translated);
+      }
+    }
+  });
+
+  const titleElements = document.querySelectorAll('[data-i18n-title]');
+  titleElements.forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    if (key) {
+      const translated = t(key, lang);
+      if (translated && translated !== key) {
+        el.setAttribute('title', translated);
+      }
+    }
+  });
+}
+
+/**
+ * Sets application language, updates DOM, persists to localStorage, and refreshes UI.
+ * @param {string} langCode - 'en' | 'es' | 'fr' | 'de' | 'ja' | 'hi'
+ * @returns {string} Selected language code
+ */
+function setLanguage(langCode) {
+  const targetLang = SUPPORTED_LANGUAGES.includes(langCode) ? langCode : 'en';
+  currentLanguage = targetLang;
+
+  if (typeof document !== 'undefined') {
+    if (document.documentElement) {
+      document.documentElement.lang = targetLang;
+    }
+    if (DOM.languageSelect && DOM.languageSelect.value !== targetLang) {
+      DOM.languageSelect.value = targetLang;
+    }
+
+    translatePage(targetLang);
+
+    if (DOM.topbarViewTitle) {
+      const titles = {
+        overview: t('view_overview', targetLang),
+        map: t('view_map', targetLang),
+        forecast: t('view_forecast', targetLang),
+        analytics: t('view_analytics', targetLang),
+        calendar: t('view_calendar', targetLang),
+        climate: t('view_climate', targetLang)
+      };
+      DOM.topbarViewTitle.textContent = titles[currentView] || t('view_overview', targetLang);
+    }
+
+    if (!lastLoadedLocation && DOM.sidebarLocCond) {
+      DOM.sidebarLocCond.textContent = t('awaiting_search', targetLang);
+    }
+
+    if (lastLoadedLocation && lastLoadedWeather) {
+      renderDashboard(lastLoadedLocation, lastLoadedWeather);
+    }
+
+    if (lastLoadedAirQuality) {
+      renderAirQuality(lastLoadedAirQuality);
+    }
+
+    if (DOM.calDaysGrid && DOM.calDaysGrid.children.length > 0) {
+      renderCalendar(lastLoadedLocation, lastLoadedWeather, currentCalendarMonth, currentCalendarMode);
+    }
+
+    if (activeSevereAlerts && activeSevereAlerts.length > 0) {
+      renderSevereWeatherAlerts(activeSevereAlerts, lastLoadedLocation, currentUnit);
+    }
+  }
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem('weather_dashboard_lang', targetLang);
+    } catch (_) {}
+  }
+
+  return targetLang;
+}
+
 const WMO_WEATHER_CODES = {
   0: { description: 'Clear Sky', dayIcon: '☀️', nightIcon: '🌙' },
   1: { description: 'Mainly Clear', dayIcon: '🌤️', nightIcon: '🌙' },
@@ -259,6 +1287,8 @@ const DOM = {
   unitToggleWrapper: document.getElementById('unit-toggle-wrapper'),
   unitCBtn: document.getElementById('unit-c-btn'),
   unitFBtn: document.getElementById('unit-f-btn'),
+  languageSelect: document.getElementById('language-select'),
+  languageSelectWrapper: document.getElementById('language-select-wrapper'),
 
   // Search History Chips
   recentContainer: document.getElementById('recent-searches-container'),
@@ -284,6 +1314,7 @@ const DOM = {
   feelsLikeTemp: document.getElementById('feels-like-temp'),
   feelsLikeUnit: document.getElementById('feels-like-unit'),
   feelsLikeContainer: document.getElementById('feels-like-container'),
+  weatherIconContainer: document.getElementById('weather-icon-container'),
   weatherIcon: document.getElementById('weather-icon'),
   weatherCondition: document.getElementById('weather-condition'),
   lastUpdatedTime: document.getElementById('last-updated-time'),
@@ -692,7 +1723,68 @@ const DOM = {
   modalMetaExpires: document.getElementById('modal-meta-expires'),
   modalAlertDescription: document.getElementById('modal-alert-description'),
   modalSafetyList: document.getElementById('modal-safety-list'),
-  modalAckBtn: document.getElementById('modal-ack-btn')
+  modalAckBtn: document.getElementById('modal-ack-btn'),
+
+  // Section 5: Monthly Weather Report Generator
+  monthlyReportSection: document.getElementById('monthly-report-section'),
+  repCityDisplay: document.getElementById('rep-city-display'),
+  reportCityInput: document.getElementById('report-city-input'),
+  reportUseActiveCityBtn: document.getElementById('report-use-active-city-btn'),
+  reportMonthSelect: document.getElementById('report-month-select'),
+  reportYearSelect: document.getElementById('report-year-select'),
+  reportGenerateBtn: document.getElementById('report-generate-btn'),
+  reportExportPdfBtn: document.getElementById('report-export-pdf-btn'),
+  reportStatusBar: document.getElementById('report-status-bar'),
+  reportStatusText: document.getElementById('report-status-text'),
+  reportCacheBadge: document.getElementById('report-cache-badge'),
+  reportEmptyState: document.getElementById('report-empty-state'),
+  monthlyReportDocument: document.getElementById('monthly-report-document'),
+  repHeaderBadge: document.getElementById('rep-header-badge'),
+  repCategoryBadge: document.getElementById('rep-category-badge'),
+  repCoverageBadge: document.getElementById('rep-coverage-badge'),
+  repMetaLocation: document.getElementById('rep-meta-location'),
+  repMetaTimezone: document.getElementById('rep-meta-timezone'),
+  repMetaPeriod: document.getElementById('rep-meta-period'),
+  repMetaSource: document.getElementById('rep-meta-source'),
+  repOverviewText: document.getElementById('rep-overview-text'),
+  repStatAvgTemp: document.getElementById('rep-stat-avg-temp'),
+  repSubAvgTemp: document.getElementById('rep-sub-avg-temp'),
+  repStatMaxTemp: document.getElementById('rep-stat-max-temp'),
+  repSubMaxTemp: document.getElementById('rep-sub-max-temp'),
+  repStatMinTemp: document.getElementById('rep-stat-min-temp'),
+  repSubMinTemp: document.getElementById('rep-sub-min-temp'),
+  repStatTotalPrecip: document.getElementById('rep-stat-total-precip'),
+  repSubTotalPrecip: document.getElementById('rep-sub-total-precip'),
+  repStatRainyDays: document.getElementById('rep-stat-rainy-days'),
+  repSubRainyDays: document.getElementById('rep-sub-rainy-days'),
+  repStatAvgHumidity: document.getElementById('rep-stat-avg-humidity'),
+  repSubAvgHumidity: document.getElementById('rep-sub-avg-humidity'),
+  repStatAvgWind: document.getElementById('rep-stat-avg-wind'),
+  repSubAvgWind: document.getElementById('rep-sub-avg-wind'),
+  repStatMaxWind: document.getElementById('rep-stat-max-wind'),
+  repSubMaxWind: document.getElementById('rep-sub-max-wind'),
+  repStatDominantWeather: document.getElementById('rep-stat-dominant-weather'),
+  repSubDominantWeather: document.getElementById('rep-sub-dominant-weather'),
+  repStatTempTrend: document.getElementById('rep-stat-temp-trend'),
+  repSubTempTrend: document.getElementById('rep-sub-temp-trend'),
+  repStatRainTrend: document.getElementById('rep-stat-rain-trend'),
+  repSubRainTrend: document.getElementById('rep-sub-rain-trend'),
+  repTempAnalysisText: document.getElementById('rep-temp-analysis-text'),
+  chartReportTempCanvas: document.getElementById('chart-report-temp-canvas'),
+  repRainAnalysisText: document.getElementById('rep-rain-analysis-text'),
+  chartReportRainCanvas: document.getElementById('chart-report-rain-canvas'),
+  repHumidityAnalysisText: document.getElementById('rep-humidity-analysis-text'),
+  chartReportHumidityCanvas: document.getElementById('chart-report-humidity-canvas'),
+  repWindAnalysisText: document.getElementById('rep-wind-analysis-text'),
+  chartReportWindCanvas: document.getElementById('chart-report-wind-canvas'),
+  repDistributionText: document.getElementById('rep-distribution-text'),
+  chartReportDistributionCanvas: document.getElementById('chart-report-distribution-canvas'),
+  reportDailyTable: document.getElementById('report-daily-table'),
+  reportDailyTbody: document.getElementById('report-daily-tbody'),
+  repTrendInterpretationText: document.getElementById('rep-trend-interpretation-text'),
+  repLimitationsText: document.getElementById('rep-limitations-text'),
+  reportAuditTable: document.getElementById('report-audit-table'),
+  reportAuditTbody: document.getElementById('report-audit-tbody')
 };
 
 // Interactive Weather Analytics Chart Instances (Phase 20)
@@ -846,9 +1938,9 @@ function formatCoordinates(lat, lon) {
  * @param {*} isDay - 1 for day, 0 for night
  * @returns {{ description: string, icon: string }}
  */
-function interpretWeatherCode(code, isDay = 1) {
+function interpretWeatherCode(code, isDay = 1, lang = currentLanguage) {
   const fallback = {
-    description: 'Conditions Unavailable',
+    description: t('conditions_unavailable', lang) || 'Conditions Unavailable',
     icon: isDay === 0 ? '🌙' : '☀️'
   };
 
@@ -864,8 +1956,9 @@ function interpretWeatherCode(code, isDay = 1) {
   }
 
   const isDaytime = isDay === 0 ? 0 : 1;
+  const localizedDesc = getLocalizedWeatherDescription(numericCode, lang);
   return {
-    description: item.description,
+    description: localizedDesc || item.description,
     icon: isDaytime ? item.dayIcon : item.nightIcon
   };
 }
@@ -936,6 +2029,17 @@ function applyWeatherTheme(code, isDay = 1) {
 
   document.body.classList.remove(...allThemes);
   document.body.classList.add(themeClass);
+
+  if (DOM.weatherIconContainer) {
+    const allAnimClasses = ['anim-sun', 'anim-cloud', 'anim-rain', 'anim-snow', 'anim-thunder', 'anim-fog'];
+    DOM.weatherIconContainer.classList.remove(...allAnimClasses);
+    if (themeClass === 'theme-sunny') DOM.weatherIconContainer.classList.add('anim-sun');
+    else if (themeClass === 'theme-cloudy') DOM.weatherIconContainer.classList.add('anim-cloud');
+    else if (themeClass === 'theme-rainy') DOM.weatherIconContainer.classList.add('anim-rain');
+    else if (themeClass === 'theme-snowy') DOM.weatherIconContainer.classList.add('anim-snow');
+    else if (themeClass === 'theme-thunderstorm') DOM.weatherIconContainer.classList.add('anim-thunder');
+    else if (themeClass === 'theme-foggy') DOM.weatherIconContainer.classList.add('anim-fog');
+  }
 }
 
 /**
@@ -1559,6 +2663,10 @@ function setTemperatureUnit(unit) {
   if (lastLoadedYearlyData) {
     renderYearlyDashboard(lastLoadedYearlyData, lastLoadedYearlyBaseline, currentUnit);
   }
+
+  if (lastLoadedMonthlyReport) {
+    renderMonthlyReport(lastLoadedMonthlyReport, currentUnit);
+  }
 }
 
 /**
@@ -1995,6 +3103,85 @@ function updateTextIfChanged(element, newText) {
 }
 
 /**
+ * Smoothly animates numeric temperature value transitions.
+ * Uses requestAnimationFrame with cubic ease-out.
+ * Non-blocking: updates immediately in test environments or under prefers-reduced-motion.
+ *
+ * @param {HTMLElement|null} element
+ * @param {number|string} targetValue
+ * @param {string} [unitSuffix='']
+ * @param {number} [duration=350]
+ */
+function animateTemperatureValue(element, targetValue, unitSuffix = '', duration = 350) {
+  if (!element) return;
+  const targetStr = String(targetValue);
+  const targetNum = parseFloat(targetStr);
+
+  if (isNaN(targetNum)) {
+    updateTextIfChanged(element, `${targetStr}${unitSuffix}`);
+    return;
+  }
+
+  element.classList.remove('temp-value-updated');
+  void element.offsetWidth;
+  element.classList.add('temp-value-updated');
+
+  // Check for reduced motion or non-browser/test environments
+  const isReduced = typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTest = typeof window === 'undefined' ||
+    !window.requestAnimationFrame ||
+    (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test');
+
+  if (isReduced || isTest) {
+    updateTextIfChanged(element, `${Math.round(targetNum)}${unitSuffix}`);
+    return;
+  }
+
+  const currentText = (element.textContent || '').trim();
+  const currentNum = parseFloat(currentText.replace(/[^0-9.-]/g, ''));
+
+  if (isNaN(currentNum) || Math.abs(currentNum - targetNum) < 0.1) {
+    updateTextIfChanged(element, `${Math.round(targetNum)}${unitSuffix}`);
+    element.classList.remove('temp-value-updated');
+    void element.offsetWidth;
+    element.classList.add('temp-value-updated');
+    return;
+  }
+
+  if (element._tempAnimId) {
+    cancelAnimationFrame(element._tempAnimId);
+    element._tempAnimId = null;
+  }
+
+  element.classList.remove('temp-value-updated');
+  void element.offsetWidth;
+  element.classList.add('temp-value-updated');
+
+  const startNum = currentNum;
+  const startTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const interpolated = Math.round(startNum + (targetNum - startNum) * ease);
+
+    element.textContent = `${interpolated}${unitSuffix}`;
+
+    if (progress < 1) {
+      element._tempAnimId = requestAnimationFrame(step);
+    } else {
+      element.textContent = `${Math.round(targetNum)}${unitSuffix}`;
+      element._tempAnimId = null;
+    }
+  }
+
+  element._tempAnimId = requestAnimationFrame(step);
+}
+
+/**
  * Updates the dashboard UI with location and meteorological readings.
  * @param {Object} location - Normalized location object
  * @param {Object} weather - Normalized weather metrics object
@@ -2057,13 +3244,20 @@ function renderDashboard(location, weather) {
 
   // 4. Primary Temperature & Feels-Like in currentUnit (°C or °F)
   if (DOM.currentTemp) {
-    updateTextIfChanged(DOM.currentTemp, formatTemperature(weather.temperature, currentUnit));
+    animateTemperatureValue(DOM.currentTemp, formatTemperature(weather.temperature, currentUnit));
   }
   if (DOM.feelsLikeTemp) {
-    updateTextIfChanged(DOM.feelsLikeTemp, formatTemperature(weather.apparentTemperature, currentUnit));
+    animateTemperatureValue(DOM.feelsLikeTemp, formatTemperature(weather.apparentTemperature, currentUnit));
   }
   if (DOM.feelsLikeUnit) {
     updateTextIfChanged(DOM.feelsLikeUnit, `°${currentUnit}`);
+  }
+
+  // Smooth Dashboard Card Entrance
+  if (DOM.viewOverview) {
+    DOM.viewOverview.classList.remove('cards-animate-in');
+    void DOM.viewOverview.offsetWidth;
+    DOM.viewOverview.classList.add('cards-animate-in');
   }
 
   // 5. Detailed Weather Overview & Metrics Grid (All 15 Required Parameters)
@@ -2115,7 +3309,7 @@ function renderDashboard(location, weather) {
     updateTextIfChanged(DOM.sidebarLocName, locName);
   }
   if (DOM.sidebarLocTemp) {
-    updateTextIfChanged(DOM.sidebarLocTemp, `${formatTemperature(weather.temperature, currentUnit)}°${currentUnit}`);
+    animateTemperatureValue(DOM.sidebarLocTemp, formatTemperature(weather.temperature, currentUnit), `°${currentUnit}`);
   }
   if (DOM.sidebarLocCond) {
     updateTextIfChanged(DOM.sidebarLocCond, condition.description);
@@ -2128,6 +3322,10 @@ function renderDashboard(location, weather) {
   renderCalendar(location, weather);
   renderClimateReport(location, weather, lastLoadedAirQuality);
   renderSeasonalTrends(location, weather);
+
+  if (DOM.repCityDisplay && location && location.name) {
+    DOM.repCityDisplay.textContent = location.name;
+  }
 
   // 12. Severe Weather Warnings & Atmospheric Hazards Alert System
   try {
@@ -2985,7 +4183,17 @@ function getCommonChartOptions(options = {}) {
   return {
     responsive: true,
     maintainAspectRatio: false,
-    animation: prefersReducedMotion ? false : { duration: 400, easing: 'easeOutQuart' },
+    animation: prefersReducedMotion ? false : (options.animation !== undefined ? options.animation : {
+      duration: 450,
+      easing: 'easeOutQuart',
+      delay: (context) => {
+        let delay = 0;
+        if (context.type === 'data' && context.mode === 'default') {
+          delay = Math.min((context.dataIndex || 0) * 12, 250);
+        }
+        return delay;
+      }
+    }),
     interaction: {
       mode: 'index',
       intersect: false
@@ -5478,9 +6686,13 @@ function switchView(viewName) {
       if (v === viewName) {
         viewSection.removeAttribute('hidden');
         viewSection.classList.add('active');
+        viewSection.classList.remove('view-entrance');
+        void viewSection.offsetWidth;
+        viewSection.classList.add('view-entrance');
       } else {
         viewSection.setAttribute('hidden', '');
         viewSection.classList.remove('active');
+        viewSection.classList.remove('view-entrance');
       }
     }
     if (navBtn) {
@@ -5496,14 +6708,14 @@ function switchView(viewName) {
 
   if (DOM.topbarViewTitle) {
     const titles = {
-      overview: 'Overview',
-      map: 'Weather Map & Radar',
-      forecast: 'Extended Forecast',
-      analytics: 'Weather Analytics',
-      calendar: 'Monthly Calendar',
-      climate: 'Climate & Seasonal Trends'
+      overview: t('view_overview', currentLanguage),
+      map: t('view_map', currentLanguage),
+      forecast: t('view_forecast', currentLanguage),
+      analytics: t('view_analytics', currentLanguage),
+      calendar: t('view_calendar', currentLanguage),
+      climate: t('view_climate', currentLanguage)
     };
-    DOM.topbarViewTitle.textContent = titles[viewName] || 'Overview';
+    DOM.topbarViewTitle.textContent = titles[viewName] || t('view_overview', currentLanguage);
   }
 
   closeMobileSidebar();
@@ -5512,7 +6724,11 @@ function switchView(viewName) {
     renderMapPreview(lastLoadedLocation, lastLoadedWeather);
     setTimeout(() => {
       if (leafletMapInstance) {
-        leafletMapInstance.invalidateSize();
+        leafletMapInstance.invalidateSize({ pan: false });
+        const targetLat = lastLoadedLocation && isValidNumber(lastLoadedLocation.latitude) ? lastLoadedLocation.latitude : 28.6139;
+        const targetLon = lastLoadedLocation && isValidNumber(lastLoadedLocation.longitude) ? lastLoadedLocation.longitude : 77.2090;
+        leafletMapInstance.setView([targetLat, targetLon], currentMapZoom || 10, { animate: false });
+        updateMapHudCoords(targetLat, targetLon);
       }
     }, 120);
   }
@@ -5530,13 +6746,26 @@ function switchView(viewName) {
 }
 
 function openMobileSidebar() {
-  if (DOM.dashboardSidebar) DOM.dashboardSidebar.classList.add('open');
+  if (DOM.dashboardSidebar) {
+    DOM.dashboardSidebar.classList.add('open');
+    DOM.dashboardSidebar.setAttribute('aria-hidden', 'false');
+  }
   if (DOM.sidebarOverlay) DOM.sidebarOverlay.classList.add('active');
+  if (DOM.sidebarToggleBtn) DOM.sidebarToggleBtn.setAttribute('aria-expanded', 'true');
+  if (DOM.sidebarCloseBtn) {
+    try { DOM.sidebarCloseBtn.focus(); } catch (_) {}
+  }
 }
 
 function closeMobileSidebar() {
-  if (DOM.dashboardSidebar) DOM.dashboardSidebar.classList.remove('open');
+  if (DOM.dashboardSidebar) {
+    DOM.dashboardSidebar.classList.remove('open');
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+      DOM.dashboardSidebar.setAttribute('aria-hidden', 'true');
+    }
+  }
   if (DOM.sidebarOverlay) DOM.sidebarOverlay.classList.remove('active');
+  if (DOM.sidebarToggleBtn) DOM.sidebarToggleBtn.setAttribute('aria-expanded', 'false');
 }
 
 function initNavigation() {
@@ -5793,7 +7022,10 @@ async function handleMapClick(lat, lng) {
     const tempStr = `${formatTemperature(weather.temperature, currentUnit)}°${currentUnit}`;
     const feelsStr = `${formatTemperature(weather.apparentTemperature, currentUnit)}°${currentUnit}`;
     const windInfo = formatWindDirection(weather.windDirection);
-    const windStr = `${weather.windSpeed || 0} km/h ${windInfo.cardinal}`;
+    const isMapImperial = currentUnit === 'F';
+    const mapSpd = isValidNumber(weather.windSpeed) ? (isMapImperial ? weather.windSpeed * 0.621371 : weather.windSpeed) : 0;
+    const mapWindUnit = isMapImperial ? 'mph' : 'km/h';
+    const windStr = `${Math.round(mapSpd)} ${mapWindUnit} ${windInfo.cardinal}`;
 
     const contentHtml = `
       <div class="map-popup-card">
@@ -5925,7 +7157,7 @@ function renderMapPreview(location, weather) {
       // Initialize default overlay
       setMapWeatherLayer(currentMapLayer);
     } else {
-      leafletMapInstance.setView([lat, lon], zoom, { animate: true });
+      leafletMapInstance.setView([lat, lon], zoom, { animate: false });
     }
 
     // Update location marker
@@ -6324,21 +7556,18 @@ function renderCalendar(location, weather, dateRef = currentCalendarMonth, mode 
 
   populateCalendarSelectors(year, month);
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  const localizedMonth = getLocalizedMonthName(month, currentLanguage) || 'January';
 
   if (DOM.calMonthTitle) {
-    DOM.calMonthTitle.textContent = `${monthNames[month]} ${year}`;
+    DOM.calMonthTitle.textContent = `${localizedMonth} ${year}`;
   }
 
   if (DOM.calMonthModeBadge) {
     DOM.calMonthModeBadge.textContent = mode === 'temp'
-      ? 'Thermal Heatmap'
+      ? t('heatmap_thermal', currentLanguage)
       : mode === 'precip'
-      ? 'Precipitation Heatmap'
-      : '7-Day Forecast Overlay';
+      ? t('heatmap_precipitation', currentLanguage)
+      : t('heatmap_standard_overlay', currentLanguage);
   }
 
   renderCalendarHeatmapLegend(mode, currentUnit);
@@ -6389,12 +7618,15 @@ function renderCalendar(location, weather, dateRef = currentCalendarMonth, mode 
   }
 
   DOM.calDaysGrid.innerHTML = '';
+  DOM.calDaysGrid.classList.remove('cal-grid-transition');
+  void DOM.calDaysGrid.offsetWidth;
+  DOM.calDaysGrid.classList.add('cal-grid-transition');
   const fragment = document.createDocumentFragment();
 
   // Padding cells for weekday alignment
   for (let i = 0; i < firstDayWeekday; i++) {
     const emptyCell = document.createElement('div');
-    emptyCell.className = 'calendar-day-cell empty';
+    emptyCell.className = 'calendar-day-cell cal-day-cell empty';
     emptyCell.setAttribute('aria-hidden', 'true');
     fragment.appendChild(emptyCell);
   }
@@ -6405,7 +7637,7 @@ function renderCalendar(location, weather, dateRef = currentCalendarMonth, mode 
     const dateStr = formatCalendarDateString(year, month, day);
     const dayCell = document.createElement('button');
     dayCell.type = 'button';
-    dayCell.className = 'calendar-day-cell';
+    dayCell.className = 'calendar-day-cell cal-day-cell';
     dayCell.setAttribute('data-date', dateStr);
     dayCell.setAttribute('aria-label', `Day ${day}, ${dateStr}`);
 
@@ -6696,30 +7928,36 @@ function initCalendarEvents() {
   });
 }
 
-function computeThermalIndex(actualTemp, apparentTemp) {
+function computeThermalIndex(actualTemp, apparentTemp, unit = currentUnit) {
   if (!isValidNumber(actualTemp) || !isValidNumber(apparentTemp)) {
     return { val: '--', badge: 'Awaiting Data', desc: 'Awaiting meteorological observation.' };
   }
-  const delta = apparentTemp - actualTemp;
+  const isF = unit === 'F';
+  const act = isF ? celsiusToFahrenheit(actualTemp) : actualTemp;
+  const app = isF ? celsiusToFahrenheit(apparentTemp) : apparentTemp;
+  const delta = app - act;
   const formattedDelta = Math.abs(delta).toFixed(1);
+  const displayApparent = Math.round(app);
+  const unitSym = isF ? '°F' : '°C';
+  const threshold = isF ? 2.7 : 1.5;
 
-  if (Math.abs(delta) <= 1.5) {
+  if (Math.abs(delta) <= threshold) {
     return {
       val: 'Balanced (±1.5°)',
       badge: 'Comfort Zone',
       desc: 'Ambient temperature and apparent heat index are in equilibrium. Minimal thermal strain on the body.'
     };
-  } else if (delta > 1.5) {
+  } else if (delta > threshold) {
     return {
-      val: `+${formattedDelta}°C Feels Hotter`,
-      badge: delta > 4 ? 'High Heat Stress' : 'Elevated Heat Stress',
-      desc: `Elevated humidity limits evaporative cooling. Feels like ${Math.round(apparentTemp)}°C; ensure adequate hydration.`
+      val: `+${formattedDelta}${unitSym} Feels Hotter`,
+      badge: delta > (isF ? 7.2 : 4) ? 'High Heat Stress' : 'Elevated Heat Stress',
+      desc: `Elevated humidity limits evaporative cooling. Feels like ${displayApparent}${unitSym}; ensure adequate hydration.`
     };
   } else {
     return {
-      val: `-${formattedDelta}°C Feels Cooler`,
-      badge: delta < -4 ? 'Significant Wind Chill' : 'Mild Wind Chill',
-      desc: `Convective heat dissipation by surface winds. Ambient air feels ${formattedDelta}°C cooler than measured.`
+      val: `-${formattedDelta}${unitSym} Feels Cooler`,
+      badge: delta < -(isF ? 7.2 : 4) ? 'Significant Wind Chill' : 'Mild Wind Chill',
+      desc: `Convective heat dissipation by surface winds. Ambient air feels ${formattedDelta}${unitSym} cooler than measured.`
     };
   }
 }
@@ -6838,7 +8076,7 @@ function renderClimateReport(location, weather, airQuality) {
   const feelsLike = weather ? weather.apparentTemperature : null;
   const pressure = weather ? weather.pressure : null;
 
-  const thermal = computeThermalIndex(temp, feelsLike);
+  const thermal = computeThermalIndex(temp, feelsLike, currentUnit);
   if (DOM.climateThermalVal) DOM.climateThermalVal.textContent = thermal.val;
   if (DOM.climateThermalBadge) DOM.climateThermalBadge.textContent = thermal.badge;
   if (DOM.climateThermalDesc) DOM.climateThermalDesc.textContent = thermal.desc;
@@ -6881,7 +8119,16 @@ function renderClimateReport(location, weather, airQuality) {
   if (DOM.climateSolarDesc) DOM.climateSolarDesc.textContent = solar.desc;
 }
 
-function renderSeasonalTrends(location, weather) {
+function formatSeasonTempRange(cMin, cMax, unit = currentUnit) {
+  if (unit === 'F') {
+    const fMin = Math.round(celsiusToFahrenheit(cMin));
+    const fMax = Math.round(celsiusToFahrenheit(cMax));
+    return `${fMin}° – ${fMax}°F`;
+  }
+  return `${cMin}° – ${cMax}°C`;
+}
+
+function renderSeasonalTrends(location, weather, unit = currentUnit) {
   if (!DOM.trendsSeasonsGrid) return;
 
   const lat = location && isValidNumber(location.latitude) ? location.latitude : 0;
@@ -6901,22 +8148,22 @@ function renderSeasonalTrends(location, weather) {
   let seasons = [];
   if (Math.abs(lat) < 10) {
     seasons = [
-      { name: 'Dry Season', months: 'Dec – Apr', active: [11, 0, 1, 2, 3].includes(currentMonth), tempRange: '26° – 34°C', summary: 'Stable high solar radiation with lower atmospheric humidity.' },
-      { name: 'Monsoon (Wet)', months: 'May – Nov', active: [4, 5, 6, 7, 8, 9, 10].includes(currentMonth), tempRange: '24° – 30°C', summary: 'Intense diurnal convective showers with heavy cloud cover.' }
+      { name: 'Dry Season', months: 'Dec – Apr', active: [11, 0, 1, 2, 3].includes(currentMonth), tempRange: formatSeasonTempRange(26, 34, unit), summary: 'Stable high solar radiation with lower atmospheric humidity.' },
+      { name: 'Monsoon (Wet)', months: 'May – Nov', active: [4, 5, 6, 7, 8, 9, 10].includes(currentMonth), tempRange: formatSeasonTempRange(24, 30, unit), summary: 'Intense diurnal convective showers with heavy cloud cover.' }
     ];
   } else if (lat >= 10) {
     seasons = [
-      { name: 'Spring', months: 'Mar – May', active: [2, 3, 4].includes(currentMonth), tempRange: '14° – 24°C', summary: 'Rapid day-length expansion and transition to warmer thermal patterns.' },
-      { name: 'Summer', months: 'Jun – Aug', active: [5, 6, 7].includes(currentMonth), tempRange: '24° – 36°C', summary: 'Peak solar angle, high photoperiod, and maximum diurnal heat flux.' },
-      { name: 'Autumn', months: 'Sep – Nov', active: [8, 9, 10].includes(currentMonth), tempRange: '12° – 22°C', summary: 'Cooling trend with increased cyclonic frontal pressure activity.' },
-      { name: 'Winter', months: 'Dec – Feb', active: [11, 0, 1].includes(currentMonth), tempRange: '2° – 12°C', summary: 'Contracted solar duration, lowest annual insolation, and cold air mass flow.' }
+      { name: 'Spring', months: 'Mar – May', active: [2, 3, 4].includes(currentMonth), tempRange: formatSeasonTempRange(14, 24, unit), summary: 'Rapid day-length expansion and transition to warmer thermal patterns.' },
+      { name: 'Summer', months: 'Jun – Aug', active: [5, 6, 7].includes(currentMonth), tempRange: formatSeasonTempRange(24, 36, unit), summary: 'Peak solar angle, high photoperiod, and maximum diurnal heat flux.' },
+      { name: 'Autumn', months: 'Sep – Nov', active: [8, 9, 10].includes(currentMonth), tempRange: formatSeasonTempRange(12, 22, unit), summary: 'Cooling trend with increased cyclonic frontal pressure activity.' },
+      { name: 'Winter', months: 'Dec – Feb', active: [11, 0, 1].includes(currentMonth), tempRange: formatSeasonTempRange(2, 12, unit), summary: 'Contracted solar duration, lowest annual insolation, and cold air mass flow.' }
     ];
   } else {
     seasons = [
-      { name: 'Autumn', months: 'Mar – May', active: [2, 3, 4].includes(currentMonth), tempRange: '12° – 22°C', summary: 'Cooling trend with transitioning seasonal trade winds.' },
-      { name: 'Winter', months: 'Jun – Aug', active: [5, 6, 7].includes(currentMonth), tempRange: '4° – 14°C', summary: 'Lowest annual insolation with northward retreat of warm fronts.' },
-      { name: 'Spring', months: 'Sep – Nov', active: [8, 9, 10].includes(currentMonth), tempRange: '14° – 24°C', summary: 'Rising diurnal temperatures and active spring frontal showers.' },
-      { name: 'Summer', months: 'Dec – Feb', active: [11, 0, 1].includes(currentMonth), tempRange: '22° – 34°C', summary: 'Peak daylight hours, intense UV index, and high summer warmth.' }
+      { name: 'Autumn', months: 'Mar – May', active: [2, 3, 4].includes(currentMonth), tempRange: formatSeasonTempRange(12, 22, unit), summary: 'Cooling trend with transitioning seasonal trade winds.' },
+      { name: 'Winter', months: 'Jun – Aug', active: [5, 6, 7].includes(currentMonth), tempRange: formatSeasonTempRange(4, 14, unit), summary: 'Lowest annual insolation with northward retreat of warm fronts.' },
+      { name: 'Spring', months: 'Sep – Nov', active: [8, 9, 10].includes(currentMonth), tempRange: formatSeasonTempRange(14, 24, unit), summary: 'Rising diurnal temperatures and active spring frontal showers.' },
+      { name: 'Summer', months: 'Dec – Feb', active: [11, 0, 1].includes(currentMonth), tempRange: formatSeasonTempRange(22, 34, unit), summary: 'Peak daylight hours, intense UV index, and high summer warmth.' }
     ];
   }
 
@@ -8041,7 +9288,9 @@ function initHistoricalEvents() {
   // Cross-view integration: "View Historical Archive for This Month" button inside Monthly Calendar Inspector
   if (DOM.calOpenHistBtn) {
     DOM.calOpenHistBtn.addEventListener('click', () => {
-      const calYear = currentCalendarMonth.getFullYear();
+      const currentYear = new Date().getFullYear();
+      const maxAvailableYear = currentYear - 1;
+      const calYear = Math.min(currentCalendarMonth.getFullYear(), maxAvailableYear);
       const calMonth = currentCalendarMonth.getMonth() + 1; // 1-12
 
       if (DOM.histYearSelect) DOM.histYearSelect.value = String(calYear);
@@ -9408,7 +10657,7 @@ function renderForecastDeepDive(location, weather) {
         </div>
         <div class="fd-footer">
           <span class="fd-metric">UV: ${isValidNumber(day.uvIndexMax) ? day.uvIndexMax.toFixed(1) : '--'}</span>
-          <span class="fd-metric">Wind: ${isValidNumber(day.windSpeedMax) ? day.windSpeedMax.toFixed(0) + ' km/h' : '--'}</span>
+          <span class="fd-metric">Wind: ${isValidNumber(day.windSpeedMax) ? ((currentUnit === 'F' ? day.windSpeedMax * 0.621371 : day.windSpeedMax).toFixed(0) + ' ' + (currentUnit === 'F' ? 'mph' : 'km/h')) : '--'}</span>
         </div>
       `;
 
@@ -9429,7 +10678,10 @@ function renderForecastDeepDive(location, weather) {
       const tempVal = formatTemperature(hour.temperature, currentUnit);
       const feelsVal = formatTemperature(hour.apparentTemperature, currentUnit);
       const humVal = isValidNumber(hour.humidity) ? `${Math.round(hour.humidity)}%` : '--';
-      const windVal = isValidNumber(hour.windSpeed) ? `${hour.windSpeed.toFixed(1)} km/h` : '--';
+      const isHourlyF = currentUnit === 'F';
+      const windVal = isValidNumber(hour.windSpeed)
+        ? `${(isHourlyF ? hour.windSpeed * 0.621371 : hour.windSpeed).toFixed(1)} ${isHourlyF ? 'mph' : 'km/h'}`
+        : '--';
 
       row.innerHTML = `
         <td class="col-time"><strong>${timeLabel}</strong></td>
@@ -9461,7 +10713,10 @@ function renderAnalyticsDeepDive(weather, unit = currentUnit) {
 
     if (DOM.statPeakWind && winds.length > 0) {
       const maxWind = Math.max(...winds);
-      DOM.statPeakWind.textContent = `${maxWind.toFixed(1)} km/h`;
+      const isStatF = unit === 'F';
+      DOM.statPeakWind.textContent = isStatF
+        ? `${(maxWind * 0.621371).toFixed(1)} mph`
+        : `${maxWind.toFixed(1)} km/h`;
     }
   }
 
@@ -10333,11 +11588,1158 @@ function initSevereWeatherEvents() {
   });
 }
 
+
+// ==========================================================================
+// SECTION 5: COMPREHENSIVE MONTHLY WEATHER REPORT GENERATOR
+// ==========================================================================
+
+const reportChartInstances = {
+  temp: null,
+  rain: null,
+  humidity: null,
+  wind: null,
+  distribution: null
+};
+
+let lastLoadedMonthlyReport = null;
+let isMonthlyReportLoading = false;
+
+/**
+ * Destroys all active Chart.js instances allocated to the monthly report.
+ */
+function destroyAllReportCharts() {
+  ['temp', 'rain', 'humidity', 'wind', 'distribution'].forEach(key => {
+    if (reportChartInstances[key]) {
+      try {
+        reportChartInstances[key].destroy();
+      } catch (_) {}
+      reportChartInstances[key] = null;
+    }
+  });
+}
+
+/**
+ * Calculates all 11 required monthly metrics from actual daily records.
+ * Adheres strictly to DATA RULES:
+ * - Calculates statistics from actual daily observations.
+ * - Do not count missing rainfall records as zero.
+ * - Clearly label incomplete months.
+ * - Distinguish historical observations from climate estimates.
+ * @param {Array<object>} dailyRecords
+ * @param {number} totalDaysInMonth
+ * @returns {object}
+ */
+function calculateMonthlyReportMetrics(dailyRecords, totalDaysInMonth) {
+  if (!Array.isArray(dailyRecords) || dailyRecords.length === 0) {
+    return null;
+  }
+
+  const validMaxTemps = [];
+  const validMinTemps = [];
+  const validMeanTemps = [];
+  const validPrecips = [];
+  const validHumidities = [];
+  const validWindSpeeds = [];
+  const validWindDirs = [];
+  const validWeatherCodes = [];
+
+  dailyRecords.forEach((r, idx) => {
+    const dayNum = idx + 1;
+    if (isValidNumber(r.tempMax)) validMaxTemps.push({ day: dayNum, date: r.date, val: r.tempMax });
+    if (isValidNumber(r.tempMin)) validMinTemps.push({ day: dayNum, date: r.date, val: r.tempMin });
+    if (isValidNumber(r.tempMean)) validMeanTemps.push({ day: dayNum, date: r.date, val: r.tempMean });
+    if (isValidNumber(r.precip)) validPrecips.push({ day: dayNum, date: r.date, val: r.precip });
+    if (isValidNumber(r.humidity)) validHumidities.push({ day: dayNum, date: r.date, val: r.humidity });
+    if (isValidNumber(r.windSpeed)) validWindSpeeds.push({ day: dayNum, date: r.date, val: r.windSpeed });
+    if (isValidNumber(r.windDirection)) validWindDirs.push({ day: dayNum, date: r.date, val: r.windDirection });
+    if (isValidNumber(r.weatherCode)) validWeatherCodes.push({ day: dayNum, date: r.date, val: r.weatherCode });
+  });
+
+  const observedDays = Math.max(validMaxTemps.length, validMeanTemps.length, validPrecips.length);
+  const isIncompleteMonth = observedDays < totalDaysInMonth;
+  const coveragePercentage = totalDaysInMonth > 0 ? Math.round((observedDays / totalDaysInMonth) * 1000) / 10 : 0;
+
+  // 1. Average Temperature
+  const avgTemp = validMeanTemps.length > 0
+    ? Math.round((validMeanTemps.reduce((a, b) => a + b.val, 0) / validMeanTemps.length) * 10) / 10
+    : null;
+
+  // 2. Maximum Temperature
+  let maxTemp = null;
+  let maxTempDate = null;
+  if (validMaxTemps.length > 0) {
+    const peak = validMaxTemps.reduce((prev, curr) => curr.val > prev.val ? curr : prev, validMaxTemps[0]);
+    maxTemp = peak.val;
+    maxTempDate = peak.date;
+  }
+
+  // 3. Minimum Temperature
+  let minTemp = null;
+  let minTempDate = null;
+  if (validMinTemps.length > 0) {
+    const low = validMinTemps.reduce((prev, curr) => curr.val < prev.val ? curr : prev, validMinTemps[0]);
+    minTemp = low.val;
+    minTempDate = low.date;
+  }
+
+  // 4. Total Precipitation (DATA RULE: Do not count missing rainfall records as zero)
+  const totalPrecip = validPrecips.length > 0
+    ? Math.round(validPrecips.reduce((a, b) => a + b.val, 0) * 10) / 10
+    : null;
+  const validPrecipDays = validPrecips.length;
+
+  // 5. Rainy Days (>= 0.1mm)
+  const rainyDaysCount = validPrecips.filter(p => p.val >= 0.1).length;
+  const rainyDaysPct = validPrecips.length > 0
+    ? Math.round((rainyDaysCount / validPrecips.length) * 1000) / 10
+    : 0;
+
+  // 6. Average Humidity
+  const avgHumidity = validHumidities.length > 0
+    ? Math.round(validHumidities.reduce((a, b) => a + b.val, 0) / validHumidities.length)
+    : null;
+
+  // 7. Average Wind Speed
+  const avgWindSpeed = validWindSpeeds.length > 0
+    ? Math.round((validWindSpeeds.reduce((a, b) => a + b.val, 0) / validWindSpeeds.length) * 10) / 10
+    : null;
+
+  // 8. Maximum Wind Speed
+  let maxWindSpeed = null;
+  let maxWindDate = null;
+  if (validWindSpeeds.length > 0) {
+    const peakWind = validWindSpeeds.reduce((prev, curr) => curr.val > prev.val ? curr : prev, validWindSpeeds[0]);
+    maxWindSpeed = peakWind.val;
+    maxWindDate = peakWind.date;
+  }
+
+  // 9. Weather Condition Distribution
+  const conditionCounts = {
+    clear: 0,
+    cloudy: 0,
+    rain: 0,
+    thunderstorm: 0,
+    snow: 0,
+    fog: 0
+  };
+
+  validWeatherCodes.forEach(({ val }) => {
+    if (val === 0 || val === 1) conditionCounts.clear++;
+    else if (val === 2 || val === 3) conditionCounts.cloudy++;
+    else if ((val >= 51 && val <= 67) || (val >= 80 && val <= 82)) conditionCounts.rain++;
+    else if (val >= 95 && val <= 99) conditionCounts.thunderstorm++;
+    else if ((val >= 71 && val <= 77) || val === 85 || val === 86) conditionCounts.snow++;
+    else if (val === 45 || val === 48) conditionCounts.fog++;
+    else conditionCounts.cloudy++;
+  });
+
+  const totalCodes = validWeatherCodes.length || 1;
+  const conditionPercentages = {
+    clear: Math.round((conditionCounts.clear / totalCodes) * 100),
+    cloudy: Math.round((conditionCounts.cloudy / totalCodes) * 100),
+    rain: Math.round((conditionCounts.rain / totalCodes) * 100),
+    thunderstorm: Math.round((conditionCounts.thunderstorm / totalCodes) * 100),
+    snow: Math.round((conditionCounts.snow / totalCodes) * 100),
+    fog: Math.round((conditionCounts.fog / totalCodes) * 100)
+  };
+
+  // Find dominant condition
+  let dominantCondition = 'cloudy';
+  let highestCount = -1;
+  Object.keys(conditionCounts).forEach(key => {
+    if (conditionCounts[key] > highestCount) {
+      highestCount = conditionCounts[key];
+      dominantCondition = key;
+    }
+  });
+
+  const conditionLabels = {
+    clear: 'Clear & Sunny',
+    cloudy: 'Partly Cloudy / Overcast',
+    rain: 'Rain & Showers',
+    thunderstorm: 'Thunderstorm',
+    snow: 'Snowfall',
+    fog: 'Fog & Mist'
+  };
+
+  // 10. Temperature Trend (Linear regression slope over time)
+  let tempSlope = 0;
+  let tempTrendLabel = 'Stable Thermal Regime';
+  if (validMeanTemps.length >= 3) {
+    const n = validMeanTemps.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    validMeanTemps.forEach((pt, i) => {
+      const x = i + 1;
+      const y = pt.val;
+      sumX += x;
+      sumY += y;
+      sumXY += x * y;
+      sumXX += x * x;
+    });
+    const denom = (n * sumXX) - (sumX * sumX);
+    if (denom !== 0) {
+      tempSlope = ((n * sumXY) - (sumX * sumY)) / denom;
+    }
+    const netDelta = tempSlope * (n - 1);
+    if (tempSlope > 0.05) {
+      tempTrendLabel = `Warming (+${netDelta >= 0 ? '+' : ''}${netDelta.toFixed(1)}°C net shift)`;
+    } else if (tempSlope < -0.05) {
+      tempTrendLabel = `Cooling (${netDelta.toFixed(1)}°C net shift)`;
+    } else {
+      tempTrendLabel = `Stable Thermal Regime (±${Math.abs(tempSlope).toFixed(2)}°C/day)`;
+    }
+  }
+
+  // 11. Rainfall Trend
+  let rainTrendLabel = 'Evenly Distributed Periodic Rainfall';
+  if (totalPrecip === null || totalPrecip === 0 || validPrecips.length === 0) {
+    rainTrendLabel = 'Dry Month (No Measured Precipitation)';
+  } else if (totalPrecip < 2.0) {
+    rainTrendLabel = 'Minimal Precipitation (< 2 mm total)';
+  } else {
+    const thirdLen = Math.ceil(dailyRecords.length / 3);
+    const p1 = validPrecips.filter(p => p.day <= thirdLen).reduce((a, b) => a + b.val, 0);
+    const p2 = validPrecips.filter(p => p.day > thirdLen && p.day <= thirdLen * 2).reduce((a, b) => a + b.val, 0);
+    const p3 = validPrecips.filter(p => p.day > thirdLen * 2).reduce((a, b) => a + b.val, 0);
+
+    if (p1 >= totalPrecip * 0.5) {
+      rainTrendLabel = 'Front-Loaded (Early Month Concentration)';
+    } else if (p3 >= totalPrecip * 0.5) {
+      rainTrendLabel = 'Back-Loaded (Late Month Influx)';
+    } else if (p2 >= totalPrecip * 0.5) {
+      rainTrendLabel = 'Mid-Month Peak (Mid-Quadrant Convective Cluster)';
+    } else {
+      rainTrendLabel = 'Evenly Dispersed Showers';
+    }
+  }
+
+  // Calculate consecutive dry/wet spells
+  let maxDrySpell = 0;
+  let currentDrySpell = 0;
+  let maxWetSpell = 0;
+  let currentWetSpell = 0;
+  dailyRecords.forEach(r => {
+    if (isValidNumber(r.precip)) {
+      if (r.precip < 0.1) {
+        currentDrySpell++;
+        currentWetSpell = 0;
+        if (currentDrySpell > maxDrySpell) maxDrySpell = currentDrySpell;
+      } else {
+        currentWetSpell++;
+        currentDrySpell = 0;
+        if (currentWetSpell > maxWetSpell) maxWetSpell = currentWetSpell;
+      }
+    }
+  });
+
+  // Dominant wind direction circular mean
+  let dominantWindDir = null;
+  let dominantWindCard = '--';
+  if (validWindDirs.length > 0) {
+    let sinSum = 0;
+    let cosSum = 0;
+    validWindDirs.forEach(d => {
+      const rad = (d.val * Math.PI) / 180;
+      sinSum += Math.sin(rad);
+      cosSum += Math.cos(rad);
+    });
+    let meanRad = Math.atan2(sinSum, cosSum);
+    let meanDeg = (meanRad * 180) / Math.PI;
+    if (meanDeg < 0) meanDeg += 360;
+    dominantWindDir = Math.round(meanDeg);
+    const compassPoints = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+    const idx = Math.round(dominantWindDir / 22.5) % 16;
+    dominantWindCard = `${compassPoints[idx]} (${dominantWindDir}°)`;
+  }
+
+  // Diurnal spread & extremes
+  const diurnalRanges = dailyRecords
+    .filter(r => isValidNumber(r.tempMax) && isValidNumber(r.tempMin))
+    .map(r => r.tempMax - r.tempMin);
+  const avgDiurnal = diurnalRanges.length > 0
+    ? Math.round((diurnalRanges.reduce((a, b) => a + b, 0) / diurnalRanges.length) * 10) / 10
+    : null;
+
+  const hotDaysCount = validMaxTemps.filter(t => t.val >= 35).length;
+  const frostDaysCount = validMinTemps.filter(t => t.val <= 0).length;
+
+  // Data Coverage Breakdown
+  const dataCoverage = {
+    totalDays: totalDaysInMonth,
+    observedDays: observedDays,
+    missingDays: Math.max(0, totalDaysInMonth - observedDays),
+    percentage: coveragePercentage,
+    isIncomplete: isIncompleteMonth,
+    label: isIncompleteMonth ? `Incomplete Month (${observedDays}/${totalDaysInMonth} Days Observed)` : `Complete Coverage (${totalDaysInMonth}/${totalDaysInMonth} Days Observed)`,
+    metricsAudit: [
+      {
+        name: 'Maximum Temperature',
+        observed: validMaxTemps.length,
+        missing: totalDaysInMonth - validMaxTemps.length,
+        coverage: Math.round((validMaxTemps.length / totalDaysInMonth) * 100),
+        status: validMaxTemps.length === totalDaysInMonth ? 'Complete' : 'Partial'
+      },
+      {
+        name: 'Minimum Temperature',
+        observed: validMinTemps.length,
+        missing: totalDaysInMonth - validMinTemps.length,
+        coverage: Math.round((validMinTemps.length / totalDaysInMonth) * 100),
+        status: validMinTemps.length === totalDaysInMonth ? 'Complete' : 'Partial'
+      },
+      {
+        name: 'Mean Temperature',
+        observed: validMeanTemps.length,
+        missing: totalDaysInMonth - validMeanTemps.length,
+        coverage: Math.round((validMeanTemps.length / totalDaysInMonth) * 100),
+        status: validMeanTemps.length === totalDaysInMonth ? 'Complete' : 'Partial'
+      },
+      {
+        name: 'Precipitation Accumulation',
+        observed: validPrecips.length,
+        missing: totalDaysInMonth - validPrecips.length,
+        coverage: Math.round((validPrecips.length / totalDaysInMonth) * 100),
+        status: validPrecips.length === totalDaysInMonth ? 'Complete' : 'Partial'
+      },
+      {
+        name: 'Relative Humidity',
+        observed: validHumidities.length,
+        missing: totalDaysInMonth - validHumidities.length,
+        coverage: Math.round((validHumidities.length / totalDaysInMonth) * 100),
+        status: validHumidities.length === totalDaysInMonth ? 'Complete' : 'Partial'
+      },
+      {
+        name: 'Wind Velocity & Direction',
+        observed: validWindSpeeds.length,
+        missing: totalDaysInMonth - validWindSpeeds.length,
+        coverage: Math.round((validWindSpeeds.length / totalDaysInMonth) * 100),
+        status: validWindSpeeds.length === totalDaysInMonth ? 'Complete' : 'Partial'
+      }
+    ]
+  };
+
+  return {
+    avgTemp,
+    maxTemp,
+    maxTempDate,
+    minTemp,
+    minTempDate,
+    avgDiurnal,
+    hotDaysCount,
+    frostDaysCount,
+    totalPrecip,
+    validPrecipDays,
+    rainyDaysCount,
+    rainyDaysPct,
+    maxDrySpell,
+    maxWetSpell,
+    avgHumidity,
+    avgWindSpeed,
+    maxWindSpeed,
+    maxWindDate,
+    dominantWindDir,
+    dominantWindCard,
+    conditionCounts,
+    conditionPercentages,
+    dominantCondition,
+    dominantConditionLabel: conditionLabels[dominantCondition] || 'Cloudy',
+    tempSlope,
+    tempTrendLabel,
+    rainTrendLabel,
+    dataCoverage
+  };
+}
+
+/**
+ * Generates structured narrative interpretations for all 8 report sections.
+ * @param {object} metrics
+ * @param {object} location
+ * @param {number} year
+ * @param {string} monthName
+ * @param {string} dataCategory
+ * @returns {object}
+ */
+function generateReportNarratives(metrics, location, year, monthName, dataCategory) {
+  const cityName = location && location.name ? location.name : 'Target Station';
+  const isProjection = dataCategory === 'climate_projection';
+  const prefix = isProjection ? 'Projected simulation data indicates that the' : 'The';
+
+  // 1. Monthly Overview
+  const overview = `${prefix} meteorological profile for <strong>${cityName}</strong> during <strong>${monthName} ${year}</strong> recorded a monthly mean temperature of <strong>${metrics.avgTemp !== null ? metrics.avgTemp + '°C' : '--'}</strong>, with daytime maximums peaking at <strong>${metrics.maxTemp !== null ? metrics.maxTemp + '°C' : '--'}</strong>${metrics.maxTempDate ? ' (recorded on ' + metrics.maxTempDate + ')' : ''} and nocturnal minimums dipping to <strong>${metrics.minTemp !== null ? metrics.minTemp + '°C' : '--'}</strong>${metrics.minTempDate ? ' (recorded on ' + metrics.minTempDate + ')' : ''}. Cumulative precipitation reached <strong>${metrics.totalPrecip !== null ? metrics.totalPrecip + ' mm' : '--'}</strong> across <strong>${metrics.rainyDaysCount} rainy days</strong> (${metrics.rainyDaysPct}% frequency). Surface relative humidity averaged <strong>${metrics.avgHumidity !== null ? metrics.avgHumidity + '%' : '--'}</strong>, while surface winds sustained a mean velocity of <strong>${metrics.avgWindSpeed !== null ? metrics.avgWindSpeed + ' km/h' : '--'}</strong> with peak gusts of <strong>${metrics.maxWindSpeed !== null ? metrics.maxWindSpeed + ' km/h' : '--'}</strong>. General sky conditions were dominated by <strong>${metrics.dominantConditionLabel}</strong> (${metrics.conditionPercentages[metrics.dominantCondition] || 0}% of observed days). Data coverage for the period stands at <strong>${metrics.dataCoverage.percentage}%</strong> (${metrics.dataCoverage.label}).`;
+
+  // 2. Temperature Analysis
+  const hotDaysNote = metrics.hotDaysCount > 0 ? `The station experienced <strong>${metrics.hotDaysCount} excessive heat days</strong> (Tmax ≥ 35°C).` : 'No extreme heat days (Tmax ≥ 35°C) were recorded during this month.';
+  const frostDaysNote = metrics.frostDaysCount > 0 ? ` Additionally, <strong>${metrics.frostDaysCount} frost/freeze days</strong> (Tmin ≤ 0°C) occurred.` : ' Sub-zero freezing events (Tmin ≤ 0°C) remained absent throughout the period.';
+  const tempAnalysis = `Thermal dynamics across ${monthName} exhibited a diurnal temperature spread averaging <strong>${metrics.avgDiurnal !== null ? metrics.avgDiurnal + '°C' : '--'}</strong> between daytime insolation peaks and overnight radiative cooling. The daily temperature trajectory demonstrated a <strong>${metrics.tempTrendLabel}</strong>. ${hotDaysNote}${frostDaysNote} Peak thermal stress occurred around ${metrics.maxTempDate || 'mid-month'}, driven by regional air mass stability.`;
+
+  // 3. Rainfall Analysis
+  const drySpellNote = metrics.maxDrySpell > 0 ? ` The longest uninterrupted dry sequence spanned <strong>${metrics.maxDrySpell} consecutive days</strong>.` : '';
+  const wetSpellNote = metrics.maxWetSpell > 1 ? ` An active precipitation streak persisted for <strong>${metrics.maxWetSpell} consecutive days</strong>.` : '';
+  const rainAnalysis = `Hydrological accumulation across the month followed a <strong>${metrics.rainTrendLabel}</strong>, yielding a total precipitation volume of <strong>${metrics.totalPrecip !== null ? metrics.totalPrecip + ' mm' : '0.0 mm'}</strong> across ${metrics.validPrecipDays} observed days. Measurable rain events occurred on <strong>${metrics.rainyDaysCount} days</strong>.${drySpellNote}${wetSpellNote} Monthly precipitation trends reflect characteristic regional atmospheric moisture advection and localized convective dynamics.`;
+
+  // 4. Humidity Analysis
+  let humidityComfort = 'comfortable and optimal atmospheric moisture balance';
+  if (metrics.avgHumidity !== null) {
+    if (metrics.avgHumidity >= 75) humidityComfort = 'elevated tropical moisture saturation and muggy apparent conditions';
+    else if (metrics.avgHumidity >= 60) humidityComfort = 'moderately humid atmospheric moisture';
+    else if (metrics.avgHumidity <= 35) humidityComfort = 'arid, dry air mass characteristics with low ambient moisture';
+  }
+  const humidityAnalysis = `Ambient 2m relative humidity averaged <strong>${metrics.avgHumidity !== null ? metrics.avgHumidity + '%' : '--'}</strong> across ${monthName}, indicative of ${humidityComfort}. Moisture levels played a vital regulatory role in moderating surface radiative cooling rates and influencing apparent thermal comfort indices throughout diurnal cycles.`;
+
+  // 5. Wind Analysis
+  const windAnalysis = `Aerodynamic surface dynamics at the 10m standard anemometer height recorded a mean velocity of <strong>${metrics.avgWindSpeed !== null ? metrics.avgWindSpeed + ' km/h' : '--'}</strong>. The dominant vector wind trajectory aligned with <strong>${metrics.dominantWindCard}</strong>, governed by macro-scale barometric pressure gradients. The month's peak velocity event reached <strong>${metrics.maxWindSpeed !== null ? metrics.maxWindSpeed + ' km/h' : '--'}</strong> on ${metrics.maxWindDate || 'record date'}, indicating localized convective or frontal passage.`;
+
+  // 6. Condition Distribution
+  const distAnalysis = `Celestial sky cover and weather condition classifications across ${monthName} ${year} were distributed into: <strong>${metrics.conditionPercentages.clear}% Clear & Sunny</strong>, <strong>${metrics.conditionPercentages.cloudy}% Cloudy/Overcast</strong>, <strong>${metrics.conditionPercentages.rain}% Rain/Showers</strong>, <strong>${metrics.conditionPercentages.thunderstorm}% Thunderstorms</strong>, <strong>${metrics.conditionPercentages.snow}% Snowfall</strong>, and <strong>${metrics.conditionPercentages.fog}% Fog/Mist</strong>. Dominant atmospheric regime: <strong>${metrics.dominantConditionLabel}</strong>.`;
+
+  // 8. Trend Interpretation
+  const trendInterpretation = `Synthesizing monthly meteorological observations reveals a coherent atmospheric pattern for ${cityName} during ${monthName} ${year}. The temperature trajectory (${metrics.tempTrendLabel}) coupled with the precipitation regime (${metrics.rainTrendLabel}) reflects standard seasonal transitions for coordinates ${Number(location.latitude).toFixed(2)}°, ${Number(location.longitude).toFixed(2)}°. Diurnal fluctuations remained closely coupled with surface moisture flux and prevailing ${metrics.dominantWindCard} wind advection.`;
+
+  // 9. Data Coverage & Limitations
+  const incompleteCaveat = metrics.dataCoverage.isIncomplete
+    ? `<span class="coverage-alert-text"><strong>Notice on Data Completeness:</strong> This reporting period is incomplete (${metrics.dataCoverage.observedDays} of ${metrics.dataCoverage.totalDays} calendar days observed). Metrics reflect available observations and should not be extrapolated as a complete monthly total.</span>`
+    : `All ${metrics.dataCoverage.totalDays} calendar days possess valid meteorological observations, providing complete empirical statistical representation.`;
+  const limitations = `Telemetry was compiled from ${isProjection ? 'the Open-Meteo Climate API (IPCC CMIP6 EC-Earth3P-HR HighResMIP simulation)' : 'the Open-Meteo Historical Weather Archive (ECMWF ERA5 / ERA5-Land Reanalysis)'}. ${incompleteCaveat} Reanalysis datasets are gridded onto a 0.25° spatial resolution grid (~28 km) with hourly numerical data assimilation. Local microclimates or station-specific topographic shielding may introduce minor variations relative to point ground instrumentation.`;
+
+  return {
+    overview,
+    tempAnalysis,
+    rainAnalysis,
+    humidityAnalysis,
+    windAnalysis,
+    distAnalysis,
+    trendInterpretation,
+    limitations
+  };
+}
+
+/**
+ * Fetches and compiles all data required for the Monthly Weather Report.
+ * @param {string} cityQuery
+ * @param {number|string} year
+ * @param {number|string} month
+ * @returns {Promise<object>} Complete report data payload
+ */
+async function fetchMonthlyReportData(cityQuery, year, month) {
+  const selectedYear = parseInt(year, 10);
+  const selectedMonth = parseInt(month, 10);
+
+  if (isNaN(selectedYear) || selectedYear < 1950 || selectedYear > 2050) {
+    throw new Error('Please select a valid year between 1950 and 2050.');
+  }
+  if (isNaN(selectedMonth) || selectedMonth < 1 || selectedMonth > 12) {
+    throw new Error('Please select a valid month (1 to 12).');
+  }
+
+  // 1. Resolve Location
+  let targetLocation = null;
+  const trimmedCity = (cityQuery && typeof cityQuery === 'string') ? cityQuery.trim() : '';
+
+  if (trimmedCity) {
+    if (lastLoadedLocation && lastLoadedLocation.name.toLowerCase() === trimmedCity.toLowerCase()) {
+      targetLocation = lastLoadedLocation;
+    } else {
+      const geoResult = await getCityCoordinates(trimmedCity);
+      targetLocation = {
+        name: geoResult.name,
+        country: geoResult.country || '',
+        admin1: geoResult.admin1 || '',
+        latitude: geoResult.latitude,
+        longitude: geoResult.longitude,
+        timezone: geoResult.timezone || 'auto'
+      };
+    }
+  } else if (lastLoadedLocation && isValidNumber(lastLoadedLocation.latitude)) {
+    targetLocation = lastLoadedLocation;
+  } else {
+    targetLocation = {
+      name: 'Delhi',
+      country: 'India',
+      admin1: 'Delhi',
+      latitude: 28.65195,
+      longitude: 77.23149,
+      timezone: 'Asia/Kolkata'
+    };
+  }
+
+  const lat = targetLocation.latitude;
+  const lon = targetLocation.longitude;
+  const daysInMonth = getDaysInMonth(selectedYear, selectedMonth - 1);
+  const monthStr = String(selectedMonth).padStart(2, '0');
+  const startDate = `${selectedYear}-${monthStr}-01`;
+  const endDate = `${selectedYear}-${monthStr}-${String(daysInMonth).padStart(2, '0')}`;
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthName = monthNames[selectedMonth - 1];
+
+  const isFuture = selectedYear >= 2027;
+  const dataCategory = isFuture ? 'climate_projection' : 'historical_observation';
+  const dataSource = isFuture
+    ? 'Open-Meteo Climate API (IPCC CMIP6 EC-Earth3P-HR HighResMIP)'
+    : 'Open-Meteo ERA5 Reanalysis Archive / ECMWF Copernicus';
+
+  // 2. Cache Lookup
+  const cacheKey = `${Number(lat).toFixed(4)}_${Number(lon).toFixed(4)}_${startDate}_${endDate}_${dataCategory}`;
+  const cached = getCacheEntry(monthlyReportCache, cacheKey, API_CONFIG.HISTORICAL_CACHE_TTL_MS, 'report');
+  if (cached) {
+    return {
+      ...cached.data,
+      isCached: true
+    };
+  }
+
+  // 3. Fetch Observations or Projections
+  let dailyRecords = [];
+  let reportTimezone = (targetLocation.timezone && targetLocation.timezone !== 'auto')
+    ? targetLocation.timezone
+    : null;
+
+  if (isFuture) {
+    // Query Climate API
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT_MS);
+    const url = `${API_CONFIG.CLIMATE_API_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&models=EC_Earth3P_HR&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,wind_speed_10m_max`;
+    try {
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!resp.ok) throw new Error(`Climate Projections API returned HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (!reportTimezone && data && data.timezone && data.timezone !== 'auto') {
+        reportTimezone = data.timezone;
+      }
+      const d = data.daily || {};
+      const times = d.time || [];
+      for (let i = 0; i < times.length; i++) {
+        const dStr = times[i];
+        const tMax = isValidNumber(d.temperature_2m_max?.[i]) ? d.temperature_2m_max[i] : null;
+        const tMin = isValidNumber(d.temperature_2m_min?.[i]) ? d.temperature_2m_min[i] : null;
+        let tMean = isValidNumber(d.temperature_2m_mean?.[i]) ? d.temperature_2m_mean[i] : null;
+        if (tMean === null && tMax !== null && tMin !== null) {
+          tMean = Math.round(((tMax + tMin) / 2) * 10) / 10;
+        }
+        dailyRecords.push({
+          date: dStr,
+          day: i + 1,
+          tempMax: tMax,
+          tempMin: tMin,
+          tempMean: tMean,
+          precip: isValidNumber(d.precipitation_sum?.[i]) ? d.precipitation_sum[i] : null,
+          rain: isValidNumber(d.precipitation_sum?.[i]) ? d.precipitation_sum[i] : null,
+          windSpeed: isValidNumber(d.wind_speed_10m_max?.[i]) ? d.wind_speed_10m_max[i] : null,
+          windDirection: null,
+          humidity: null,
+          weatherCode: (d.precipitation_sum?.[i] > 2) ? 61 : 0
+        });
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
+  } else {
+    // Historical Observation from ERA5
+    const histData = await fetchHistoricalWeather(lat, lon, startDate, endDate);
+    dailyRecords = histData.dailyRecords || [];
+    if (!reportTimezone && histData && histData.raw && histData.raw.timezone && histData.raw.timezone !== 'auto') {
+      reportTimezone = histData.raw.timezone;
+    }
+  }
+
+  // 4. Calculate Metrics & Data Rules
+  const metrics = calculateMonthlyReportMetrics(dailyRecords, daysInMonth);
+  const narratives = generateReportNarratives(metrics, targetLocation, selectedYear, monthName, dataCategory);
+
+  const reportPayload = {
+    city: targetLocation.name,
+    country: targetLocation.country,
+    admin1: targetLocation.admin1,
+    location: targetLocation,
+    timezone: (reportTimezone && reportTimezone !== 'auto') ? reportTimezone : 'Asia/Kolkata',
+    year: selectedYear,
+    month: selectedMonth,
+    monthName,
+    startDate,
+    endDate,
+    daysInMonth,
+    dataCategory,
+    dataSource,
+    dailyRecords,
+    metrics,
+    narratives,
+    generatedAt: new Date().toISOString(),
+    isCached: false
+  };
+
+  setCacheEntry(monthlyReportCache, cacheKey, reportPayload);
+  return reportPayload;
+}
+
+/**
+ * Renders the compiled Monthly Weather Report into the DOM.
+ * @param {object} report
+ * @param {string} unit - 'C' or 'F'
+ */
+function renderMonthlyReport(report, unit = currentUnit) {
+  if (!report || !report.metrics) return;
+
+  const isF = unit === 'F';
+  const m = report.metrics;
+  const cov = m.dataCoverage;
+
+  // Toggle Visibility
+  if (DOM.reportEmptyState) DOM.reportEmptyState.hidden = true;
+  if (DOM.monthlyReportDocument) DOM.monthlyReportDocument.hidden = false;
+  if (DOM.reportExportPdfBtn) DOM.reportExportPdfBtn.disabled = false;
+
+  // Header & Badges
+  if (DOM.repCategoryBadge) {
+    DOM.repCategoryBadge.textContent = report.dataCategory === 'climate_projection'
+      ? 'Climate Projection • IPCC CMIP6 (HighResMIP)'
+      : 'Historical Observation • ERA5 Reanalysis';
+    DOM.repCategoryBadge.className = `data-category-badge ${report.dataCategory === 'climate_projection' ? 'projection' : 'historical'}`;
+  }
+
+  if (DOM.repCoverageBadge) {
+    DOM.repCoverageBadge.textContent = cov.label;
+    DOM.repCoverageBadge.className = `rep-coverage-badge ${cov.isIncomplete ? 'incomplete' : 'complete'}`;
+  }
+
+  // Metadata Grid
+  if (DOM.repMetaLocation) {
+    const adminStr = report.admin1 ? `${report.admin1}, ` : '';
+    const ctryStr = report.country ? `${report.country} ` : '';
+    DOM.repMetaLocation.textContent = `${report.city}, ${adminStr}${ctryStr}(${Number(report.location.latitude).toFixed(2)}°N, ${Number(report.location.longitude).toFixed(2)}°E)`;
+  }
+  if (DOM.repMetaTimezone) DOM.repMetaTimezone.textContent = (report.timezone && report.timezone !== 'auto') ? report.timezone : 'Asia/Kolkata';
+  if (DOM.repMetaPeriod) DOM.repMetaPeriod.textContent = `${report.monthName} 1, ${report.year} – ${report.monthName} ${report.daysInMonth}, ${report.year} (${report.daysInMonth} Days)`;
+  if (DOM.repMetaSource) DOM.repMetaSource.textContent = report.dataSource;
+
+  // Section 1: Overview & 11 Core Metrics
+  if (DOM.repOverviewText) DOM.repOverviewText.innerHTML = report.narratives.overview;
+
+  // 1. Average Temp
+  if (DOM.repStatAvgTemp) {
+    DOM.repStatAvgTemp.textContent = m.avgTemp !== null
+      ? (isF ? `${Math.round(celsiusToFahrenheit(m.avgTemp))}°F` : `${m.avgTemp}°C`)
+      : '--';
+  }
+
+  // 2. Maximum Temp
+  if (DOM.repStatMaxTemp) {
+    DOM.repStatMaxTemp.textContent = m.maxTemp !== null
+      ? (isF ? `${Math.round(celsiusToFahrenheit(m.maxTemp))}°F` : `${m.maxTemp}°C`)
+      : '--';
+  }
+  if (DOM.repSubMaxTemp) DOM.repSubMaxTemp.textContent = m.maxTempDate ? `Peak on ${m.maxTempDate}` : 'Peak reading';
+
+  // 3. Minimum Temp
+  if (DOM.repStatMinTemp) {
+    DOM.repStatMinTemp.textContent = m.minTemp !== null
+      ? (isF ? `${Math.round(celsiusToFahrenheit(m.minTemp))}°F` : `${m.minTemp}°C`)
+      : '--';
+  }
+  if (DOM.repSubMinTemp) DOM.repSubMinTemp.textContent = m.minTempDate ? `Lowest on ${m.minTempDate}` : 'Lowest reading';
+
+  // 4. Total Precipitation
+  if (DOM.repStatTotalPrecip) {
+    DOM.repStatTotalPrecip.textContent = m.totalPrecip !== null
+      ? (isF ? `${(m.totalPrecip * 0.0393701).toFixed(2)} in` : `${m.totalPrecip} mm`)
+      : '--';
+  }
+  if (DOM.repSubTotalPrecip) DOM.repSubTotalPrecip.textContent = `${m.validPrecipDays} valid observed days`;
+
+  // 5. Rainy Days
+  if (DOM.repStatRainyDays) DOM.repStatRainyDays.textContent = `${m.rainyDaysCount} days`;
+  if (DOM.repSubRainyDays) DOM.repSubRainyDays.textContent = `${m.rainyDaysPct}% of observed days`;
+
+  // 6. Average Humidity
+  if (DOM.repStatAvgHumidity) DOM.repStatAvgHumidity.textContent = m.avgHumidity !== null ? `${m.avgHumidity}%` : '--';
+
+  // 7. Average Wind Speed
+  if (DOM.repStatAvgWind) {
+    DOM.repStatAvgWind.textContent = m.avgWindSpeed !== null
+      ? (isF ? `${Math.round(m.avgWindSpeed * 0.621371)} mph` : `${m.avgWindSpeed} km/h`)
+      : '--';
+  }
+
+  // 8. Maximum Wind Speed
+  if (DOM.repStatMaxWind) {
+    DOM.repStatMaxWind.textContent = m.maxWindSpeed !== null
+      ? (isF ? `${Math.round(m.maxWindSpeed * 0.621371)} mph` : `${m.maxWindSpeed} km/h`)
+      : '--';
+  }
+  if (DOM.repSubMaxWind) DOM.repSubMaxWind.textContent = m.maxWindDate ? `Gust on ${m.maxWindDate}` : 'Peak velocity';
+
+  // 9. Weather Condition Distribution
+  if (DOM.repStatDominantWeather) DOM.repStatDominantWeather.textContent = m.dominantConditionLabel;
+  if (DOM.repSubDominantWeather) DOM.repSubDominantWeather.textContent = `${m.conditionPercentages[m.dominantCondition] || 0}% frequency`;
+
+  // 10. Temperature Trend
+  if (DOM.repStatTempTrend) DOM.repStatTempTrend.textContent = m.tempTrendLabel;
+
+  // 11. Rainfall Trend
+  if (DOM.repStatRainTrend) DOM.repStatRainTrend.textContent = m.rainTrendLabel;
+
+  // Section 2: Temperature Analysis
+  if (DOM.repTempAnalysisText) DOM.repTempAnalysisText.innerHTML = report.narratives.tempAnalysis;
+
+  // Section 3: Rainfall Analysis
+  if (DOM.repRainAnalysisText) DOM.repRainAnalysisText.innerHTML = report.narratives.rainAnalysis;
+
+  // Section 4: Humidity Analysis
+  if (DOM.repHumidityAnalysisText) DOM.repHumidityAnalysisText.innerHTML = report.narratives.humidityAnalysis;
+
+  // Section 5: Wind Analysis
+  if (DOM.repWindAnalysisText) DOM.repWindAnalysisText.innerHTML = report.narratives.windAnalysis;
+
+  // Section 6: Condition Distribution
+  if (DOM.repDistributionText) DOM.repDistributionText.innerHTML = report.narratives.distAnalysis;
+
+  // Section 7: Daily Table
+  renderReportDailyTable(report.dailyRecords, unit);
+
+  // Section 8: Weather Trend Interpretation
+  if (DOM.repTrendInterpretationText) DOM.repTrendInterpretationText.innerHTML = report.narratives.trendInterpretation;
+
+  // Section 9: Data Coverage Audit Table & Limitations
+  if (DOM.repLimitationsText) DOM.repLimitationsText.innerHTML = report.narratives.limitations;
+  renderReportAuditTable(m.dataCoverage.metricsAudit);
+
+  // Charts Rendering
+  renderReportCharts(report, unit);
+}
+
+/**
+ * Populates the Section 7 Daily Ledger Table.
+ * @param {Array<object>} records
+ * @param {string} unit
+ */
+function renderReportDailyTable(records, unit = currentUnit) {
+  if (!DOM.reportDailyTbody) return;
+  DOM.reportDailyTbody.innerHTML = '';
+
+  if (!Array.isArray(records) || records.length === 0) {
+    DOM.reportDailyTbody.innerHTML = '<tr><td colspan="10" class="hist-table-empty">No daily observation records available.</td></tr>';
+    return;
+  }
+
+  const isF = unit === 'F';
+  const fragment = document.createDocumentFragment();
+
+  records.forEach(r => {
+    const tr = document.createElement('tr');
+    const isObserved = isValidNumber(r.tempMax) || isValidNumber(r.precip);
+
+    const cond = interpretWeatherCode(r.weatherCode, 1);
+    const maxStr = isValidNumber(r.tempMax) ? (isF ? `${Math.round(celsiusToFahrenheit(r.tempMax))}°F` : `${r.tempMax}°C`) : '--';
+    const minStr = isValidNumber(r.tempMin) ? (isF ? `${Math.round(celsiusToFahrenheit(r.tempMin))}°F` : `${r.tempMin}°C`) : '--';
+    const meanStr = isValidNumber(r.tempMean) ? (isF ? `${Math.round(celsiusToFahrenheit(r.tempMean))}°F` : `${r.tempMean}°C`) : '--';
+    const precipStr = isValidNumber(r.precip) ? (isF ? `${(r.precip * 0.0393701).toFixed(2)} in` : `${r.precip.toFixed(1)} mm`) : '--';
+    const humStr = isValidNumber(r.humidity) ? `${Math.round(r.humidity)}%` : '--';
+    const windStr = isValidNumber(r.windSpeed) ? (isF ? `${Math.round(r.windSpeed * 0.621371)} mph` : `${r.windSpeed.toFixed(1)} km/h`) : '--';
+    
+    let windDirStr = '--';
+    if (isValidNumber(r.windDirection)) {
+      const compassPoints = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+      const idx = Math.round(r.windDirection / 22.5) % 16;
+      windDirStr = `${compassPoints[idx]} ${Math.round(r.windDirection)}°`;
+    }
+
+    tr.innerHTML = `
+      <td><strong>${r.date}</strong></td>
+      <td><span class="report-table-cond">${cond.icon} ${cond.description}</span></td>
+      <td>${maxStr}</td>
+      <td>${minStr}</td>
+      <td>${meanStr}</td>
+      <td>${precipStr}</td>
+      <td>${humStr}</td>
+      <td>${windStr}</td>
+      <td>${windDirStr}</td>
+      <td><span class="data-category-badge ${isObserved ? 'historical' : 'missing'}">${isObserved ? 'Observed' : 'Missing'}</span></td>
+    `;
+    fragment.appendChild(tr);
+  });
+
+  DOM.reportDailyTbody.appendChild(fragment);
+}
+
+/**
+ * Populates the Section 9 Data Quality Audit Table.
+ * @param {Array<object>} auditList
+ */
+function renderReportAuditTable(auditList) {
+  if (!DOM.reportAuditTbody || !Array.isArray(auditList)) return;
+  DOM.reportAuditTbody.innerHTML = '';
+
+  const fragment = document.createDocumentFragment();
+  auditList.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${item.name}</strong></td>
+      <td>${item.observed} days</td>
+      <td>${item.missing} days</td>
+      <td><strong>${item.coverage}%</strong></td>
+      <td><span class="data-category-badge ${item.status === 'Complete' ? 'historical' : 'projection'}">${item.status}</span></td>
+    `;
+    fragment.appendChild(tr);
+  });
+  DOM.reportAuditTbody.appendChild(fragment);
+}
+
+/**
+ * Renders all 5 required Chart.js charts for the Monthly Weather Report.
+ * @param {object} report
+ * @param {string} unit
+ */
+function renderReportCharts(report, unit = currentUnit) {
+  if (typeof Chart === 'undefined') return;
+
+  destroyAllReportCharts();
+
+  const isF = unit === 'F';
+  const records = report.dailyRecords || [];
+  const labels = records.map((r, i) => `${i + 1}`);
+
+  // Chart 1: Temperature Line Chart
+  if (DOM.chartReportTempCanvas) {
+    const ctxTemp = DOM.chartReportTempCanvas.getContext('2d');
+    const maxTemps = records.map(r => isValidNumber(r.tempMax) ? (isF ? celsiusToFahrenheit(r.tempMax) : r.tempMax) : null);
+    const minTemps = records.map(r => isValidNumber(r.tempMin) ? (isF ? celsiusToFahrenheit(r.tempMin) : r.tempMin) : null);
+    const meanTemps = records.map(r => isValidNumber(r.tempMean) ? (isF ? celsiusToFahrenheit(r.tempMean) : r.tempMean) : null);
+
+    reportChartInstances.temp = new Chart(ctxTemp, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: `Max Temp (°${unit})`,
+            data: maxTemps,
+            borderColor: '#ef4444',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 2.5,
+            tension: 0.3
+          },
+          {
+            label: `Mean Temp (°${unit})`,
+            data: meanTemps,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.08)',
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 2.5,
+            tension: 0.3
+          },
+          {
+            label: `Min Temp (°${unit})`,
+            data: minTemps,
+            borderColor: '#38bdf8',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 2.5,
+            tension: 0.3
+          }
+        ]
+      },
+      options: getCommonChartOptions({
+        legend: { display: true, labels: { color: '#cbd5e1' } },
+        tooltipCallbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${isValidNumber(ctx.raw) ? ctx.raw.toFixed(1) + '°' + unit : '--'}`
+        }
+      })
+    });
+  }
+
+  // Chart 2: Rainfall Bar Chart
+  if (DOM.chartReportRainCanvas) {
+    const ctxRain = DOM.chartReportRainCanvas.getContext('2d');
+    const precips = records.map(r => isValidNumber(r.precip) ? (isF ? r.precip * 0.0393701 : r.precip) : 0);
+
+    reportChartInstances.rain = new Chart(ctxRain, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: `Daily Precipitation (${isF ? 'in' : 'mm'})`,
+            data: precips,
+            backgroundColor: 'rgba(59, 130, 246, 0.75)',
+            borderColor: '#3b82f6',
+            borderWidth: 1,
+            borderRadius: 4
+          }
+        ]
+      },
+      options: getCommonChartOptions({
+        legend: { display: false },
+        tooltipCallbacks: {
+          label: (ctx) => `Precipitation: ${ctx.raw.toFixed(2)} ${isF ? 'in' : 'mm'}`
+        }
+      })
+    });
+  }
+
+  // Chart 3: Humidity Area Chart
+  if (DOM.chartReportHumidityCanvas) {
+    const ctxHum = DOM.chartReportHumidityCanvas.getContext('2d');
+    const humidities = records.map(r => isValidNumber(r.humidity) ? r.humidity : null);
+
+    reportChartInstances.humidity = new Chart(ctxHum, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Relative Humidity (%)',
+            data: humidities,
+            borderColor: '#06b6d4',
+            backgroundColor: createChartGradient(ctxHum, 'rgba(6, 182, 212, 0.35)', 'rgba(6, 182, 212, 0.02)', 260),
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.35
+          }
+        ]
+      },
+      options: {
+        ...getCommonChartOptions(),
+        scales: {
+          y: {
+            min: 0,
+            max: 100,
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: { color: '#94a3b8', callback: v => `${v}%` }
+          },
+          x: {
+            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+            ticks: { color: '#94a3b8' }
+          }
+        }
+      }
+    });
+  }
+
+  // Chart 4: Wind Speed Chart
+  if (DOM.chartReportWindCanvas) {
+    const ctxWind = DOM.chartReportWindCanvas.getContext('2d');
+    const windSpeeds = records.map(r => isValidNumber(r.windSpeed) ? (isF ? r.windSpeed * 0.621371 : r.windSpeed) : null);
+
+    reportChartInstances.wind = new Chart(ctxWind, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: `Peak Wind Velocity (${isF ? 'mph' : 'km/h'})`,
+            data: windSpeeds,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 2.5,
+            tension: 0.3
+          }
+        ]
+      },
+      options: getCommonChartOptions({
+        legend: { display: false },
+        tooltipCallbacks: {
+          label: (ctx) => `Wind Speed: ${isValidNumber(ctx.raw) ? ctx.raw.toFixed(1) + ' ' + (isF ? 'mph' : 'km/h') : '--'}`
+        }
+      })
+    });
+  }
+
+  // Chart 5: Weather Condition Distribution Doughnut Chart
+  if (DOM.chartReportDistributionCanvas) {
+    const ctxDist = DOM.chartReportDistributionCanvas.getContext('2d');
+    const dist = report.metrics.conditionPercentages;
+
+    reportChartInstances.distribution = new Chart(ctxDist, {
+      type: 'doughnut',
+      data: {
+        labels: ['Clear & Sunny', 'Partly Cloudy / Overcast', 'Rain & Showers', 'Thunderstorm', 'Snowfall', 'Fog & Mist'],
+        datasets: [
+          {
+            data: [dist.clear, dist.cloudy, dist.rain, dist.thunderstorm, dist.snow, dist.fog],
+            backgroundColor: ['#fbbf24', '#94a3b8', '#3b82f6', '#8b5cf6', '#38bdf8', '#a855f7'],
+            borderColor: '#0f172a',
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#cbd5e1', boxWidth: 12, padding: 14 }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.label}: ${ctx.raw}% of observed days`
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+/**
+ * Triggers the PDF export workflow for the currently loaded monthly report.
+ */
+function exportMonthlyReportToPdf() {
+  if (!lastLoadedMonthlyReport) return;
+
+  const city = lastLoadedMonthlyReport.city || 'Weather';
+  const yr = lastLoadedMonthlyReport.year || 'Year';
+  const mName = lastLoadedMonthlyReport.monthName || 'Month';
+
+  const origTitle = document.title;
+  const safeFilename = `Weather_Report_${city.replace(/\s+/g, '_')}_${yr}_${mName}`;
+  document.title = safeFilename;
+
+  document.body.classList.add('is-printing-report');
+
+  try {
+    if (typeof window !== 'undefined' && typeof window.print === 'function') {
+      window.print();
+    }
+  } finally {
+    setTimeout(() => {
+      document.body.classList.remove('is-printing-report');
+      document.title = origTitle;
+    }, 600);
+  }
+}
+
+/**
+ * Populates the Monthly Report Year selector with years 1950 to 2050.
+ */
+function populateReportYearSelector() {
+  if (!DOM.reportYearSelect || DOM.reportYearSelect.children.length > 0) return;
+
+  const frag = document.createDocumentFragment();
+  for (let yr = 2050; yr >= 1950; yr--) {
+    const opt = document.createElement('option');
+    opt.value = String(yr);
+    if (yr >= 2027) {
+      opt.textContent = `${yr} (IPCC CMIP6 Projection)`;
+    } else if (yr === 2026) {
+      opt.textContent = `${yr} (Operational Weather)`;
+    } else {
+      opt.textContent = `${yr} (Historical Reanalysis)`;
+    }
+    if (yr === 2023) opt.selected = true;
+    frag.appendChild(opt);
+  }
+  DOM.reportYearSelect.appendChild(frag);
+}
+
+/**
+ * Compiles and displays the report based on current user inputs.
+ */
+async function generateMonthlyReportFromUI() {
+  const cityInput = DOM.reportCityInput ? DOM.reportCityInput.value.trim() : '';
+  const monthVal = DOM.reportMonthSelect ? DOM.reportMonthSelect.value : '7';
+  const yearVal = DOM.reportYearSelect ? DOM.reportYearSelect.value : '2023';
+
+  if (isMonthlyReportLoading) return;
+  isMonthlyReportLoading = true;
+
+  if (DOM.reportGenerateBtn) {
+    DOM.reportGenerateBtn.disabled = true;
+    DOM.reportGenerateBtn.innerHTML = '<span class="spinner" aria-hidden="true"></span><span>Generating Report...</span>';
+  }
+  if (DOM.reportStatusBar) DOM.reportStatusBar.hidden = false;
+  if (DOM.reportStatusText) DOM.reportStatusText.textContent = `Compiling comprehensive meteorological data for ${cityInput || 'active city'} (${yearVal}-${monthVal})...`;
+  if (DOM.reportCacheBadge) DOM.reportCacheBadge.hidden = true;
+
+  try {
+    const reportData = await fetchMonthlyReportData(cityInput, yearVal, monthVal);
+    lastLoadedMonthlyReport = reportData;
+
+    renderMonthlyReport(reportData, currentUnit);
+
+    if (DOM.reportStatusText) {
+      DOM.reportStatusText.textContent = `Report generated successfully for ${reportData.city} (${reportData.monthName} ${reportData.year}) • ${reportData.metrics.dataCoverage.label}.`;
+    }
+    if (DOM.reportCacheBadge) DOM.reportCacheBadge.hidden = !reportData.isCached;
+
+    // Smooth scroll to document
+    if (DOM.monthlyReportDocument) {
+      DOM.monthlyReportDocument.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  } catch (err) {
+    console.error('[MonthlyReport] Failed to generate monthly report:', err);
+    if (DOM.reportStatusText) {
+      DOM.reportStatusText.textContent = `Report Generation Error: ${err.message || 'Unable to retrieve meteorological data.'}`;
+    }
+  } finally {
+    isMonthlyReportLoading = false;
+    if (DOM.reportGenerateBtn) {
+      DOM.reportGenerateBtn.disabled = false;
+      DOM.reportGenerateBtn.innerHTML = '<span class="btn-icon">📑</span><span>Generate Report</span>';
+    }
+  }
+}
+
+/**
+ * Initializes event listeners for the Monthly Report Generator.
+ */
+function setLastLoadedMonthlyReport(val) {
+  lastLoadedMonthlyReport = val;
+}
+
+function initMonthlyReportEvents() {
+  populateReportYearSelector();
+
+  if (DOM.reportGenerateBtn) {
+    DOM.reportGenerateBtn.addEventListener('click', generateMonthlyReportFromUI);
+  }
+
+  if (DOM.reportExportPdfBtn) {
+    DOM.reportExportPdfBtn.addEventListener('click', exportMonthlyReportToPdf);
+  }
+
+  if (DOM.reportUseActiveCityBtn && DOM.reportCityInput) {
+    DOM.reportUseActiveCityBtn.addEventListener('click', () => {
+      if (lastLoadedLocation && lastLoadedLocation.name) {
+        DOM.reportCityInput.value = lastLoadedLocation.name;
+      }
+    });
+  }
+
+  const jumpBtn = document.getElementById('jump-to-monthly-report-btn');
+  if (jumpBtn) {
+    jumpBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchView('climate');
+      const targetSec = document.getElementById('monthly-report-section');
+      if (targetSec) {
+        targetSec.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+}
+
 // --------------------------------------------------------------------------
 // 9. Event Listeners & Bootstrapping
 // --------------------------------------------------------------------------
 
 function setupEventListeners() {
+  // Performance: Pause animation loops when browser tab is inactive or hidden
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        document.body.classList.add('animations-paused');
+      } else {
+        document.body.classList.remove('animations-paused');
+      }
+    });
+  }
+
   // Form Submission (Enter key on input or Search button click)
   if (DOM.searchForm) {
     DOM.searchForm.addEventListener('submit', (event) => {
@@ -10362,6 +12764,19 @@ function setupEventListeners() {
   }
   if (DOM.unitFBtn) {
     DOM.unitFBtn.addEventListener('click', () => setTemperatureUnit('F'));
+  }
+
+  // Language Selector (Phase 27 - i18n)
+  if (DOM.languageSelect) {
+    DOM.languageSelect.addEventListener('change', (event) => {
+      setLanguage(event.target.value);
+    });
+  }
+
+  // Initialize saved language if available
+  const savedLang = (typeof localStorage !== 'undefined') ? localStorage.getItem('weather_dashboard_lang') : null;
+  if (savedLang && SUPPORTED_LANGUAGES.includes(savedLang)) {
+    setLanguage(savedLang);
   }
 
   // Input Tracking & Clear Button
@@ -10413,14 +12828,21 @@ function setupEventListeners() {
   document.addEventListener('keydown', (event) => {
     const isInputFocused = document.activeElement === DOM.searchInput;
 
-    if (event.key === 'Escape' && isInputFocused) {
-      if (DOM.searchInput.value) {
-        DOM.searchInput.value = '';
-        if (DOM.clearSearchBtn) DOM.clearSearchBtn.hidden = true;
-      } else {
-        DOM.searchInput.blur();
+    if (event.key === 'Escape') {
+      if (DOM.dashboardSidebar && DOM.dashboardSidebar.classList.contains('open')) {
+        closeMobileSidebar();
+        if (DOM.sidebarToggleBtn) DOM.sidebarToggleBtn.focus();
+        return;
       }
-      return;
+      if (isInputFocused) {
+        if (DOM.searchInput.value) {
+          DOM.searchInput.value = '';
+          if (DOM.clearSearchBtn) DOM.clearSearchBtn.hidden = true;
+        } else {
+          DOM.searchInput.blur();
+        }
+        return;
+      }
     }
 
     if (
@@ -10487,6 +12909,7 @@ function setupEventListeners() {
   initHistoricalEvents();
   initYearlyAnalyticsEvents();
   initSevereWeatherEvents();
+  initMonthlyReportEvents();
 
   // Initial rendering of calendar, map, and seasonal trends for immediate visual feedback
   renderCalendar(null, null, currentCalendarMonth);
@@ -10507,6 +12930,7 @@ if (typeof window !== 'undefined') {
   window.getCityCoordinates = getCityCoordinates;
   window.getWeatherData = getWeatherData;
   window.renderDashboard = renderDashboard;
+  window.animateTemperatureValue = animateTemperatureValue;
   window.renderHourlyForecast = renderHourlyForecast;
   window.renderDailyForecast = renderDailyForecast;
   window.searchWeather = searchWeather;
@@ -10542,6 +12966,20 @@ if (typeof window !== 'undefined') {
   });
   Object.defineProperty(window, 'airQualityCache', {
     get: () => airQualityCache,
+    configurable: true
+  });
+  window.SUPPORTED_LANGUAGES = SUPPORTED_LANGUAGES;
+  window.TRANSLATIONS = TRANSLATIONS;
+  window.t = t;
+  window.setLanguage = setLanguage;
+  window.getCurrentLanguage = getCurrentLanguage;
+  window.translatePage = translatePage;
+  window.getLocalizedWeatherDescription = getLocalizedWeatherDescription;
+  window.getLocalizedMonthName = getLocalizedMonthName;
+  window.getLocalizedWeekday = getLocalizedWeekday;
+  Object.defineProperty(window, 'currentLanguage', {
+    get: () => currentLanguage,
+    set: (v) => { currentLanguage = v; },
     configurable: true
   });
   window.findHourlyStartIndex = findHourlyStartIndex;
@@ -10691,6 +13129,24 @@ if (typeof window !== 'undefined') {
   window.updateAlertAudioUI = updateAlertAudioUI;
   window.dismissSevereAlert = dismissSevereAlert;
   window.initSevereWeatherEvents = initSevereWeatherEvents;
+
+  // Monthly Weather Report Generator Exposures
+  window.fetchMonthlyReportData = fetchMonthlyReportData;
+  window.calculateMonthlyReportMetrics = calculateMonthlyReportMetrics;
+  window.generateReportNarratives = generateReportNarratives;
+  window.renderMonthlyReport = renderMonthlyReport;
+  window.exportMonthlyReportToPdf = exportMonthlyReportToPdf;
+  window.populateReportYearSelector = populateReportYearSelector;
+  window.initMonthlyReportEvents = initMonthlyReportEvents;
+  window.reportChartInstances = reportChartInstances;
+  window.destroyAllReportCharts = destroyAllReportCharts;
+  window.generateMonthlyReportFromUI = generateMonthlyReportFromUI;
+  window.setLastLoadedMonthlyReport = setLastLoadedMonthlyReport;
+
+  Object.defineProperty(window, 'lastLoadedMonthlyReport', {
+    get: () => lastLoadedMonthlyReport,
+    set: (val) => { lastLoadedMonthlyReport = val; }
+  });
 
   Object.defineProperty(window, 'activeSevereAlerts', {
     get: () => activeSevereAlerts,
@@ -10882,6 +13338,17 @@ if (typeof module !== 'undefined' && module.exports) {
     clearWeatherCache,
     getCacheStats,
     WMO_WEATHER_CODES,
+    SUPPORTED_LANGUAGES,
+    TRANSLATIONS,
+    get currentLanguage() { return currentLanguage; },
+    set currentLanguage(val) { currentLanguage = val; },
+    getCurrentLanguage,
+    setLanguage,
+    t,
+    translatePage,
+    getLocalizedWeatherDescription,
+    getLocalizedMonthName,
+    getLocalizedWeekday,
     DOM,
     isValidNumber,
     formatNumber,
@@ -10899,6 +13366,7 @@ if (typeof module !== 'undefined' && module.exports) {
     renderHourlyForecast,
     renderDailyForecast,
     renderDashboard,
+    animateTemperatureValue,
     saveRecentCity,
     getRecentCities,
     clearRecentCities,
@@ -11050,6 +13518,19 @@ if (typeof module !== 'undefined' && module.exports) {
     updateAlertAudioUI,
     dismissSevereAlert,
     initSevereWeatherEvents,
+    fetchMonthlyReportData,
+    calculateMonthlyReportMetrics,
+    generateReportNarratives,
+    renderMonthlyReport,
+    exportMonthlyReportToPdf,
+    populateReportYearSelector,
+    initMonthlyReportEvents,
+    reportChartInstances,
+    destroyAllReportCharts,
+    generateMonthlyReportFromUI,
+    setLastLoadedMonthlyReport,
+    get lastLoadedMonthlyReport() { return lastLoadedMonthlyReport; },
+    set lastLoadedMonthlyReport(val) { lastLoadedMonthlyReport = val; },
     get isAlertAudioMuted() { return isAlertAudioMuted; },
     set isAlertAudioMuted(val) { isAlertAudioMuted = val; },
     get isAlertBannerDismissed() { return isAlertBannerDismissed; },

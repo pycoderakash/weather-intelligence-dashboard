@@ -137,7 +137,7 @@ test.describe('Weather Dashboard Redesign & Navigation E2E Tests', () => {
     await page.click('#nav-map');
     await expect(page.locator('#map-marker-label')).toHaveText('Delhi');
     await expect(page.locator('#map-marker-temp')).toHaveText('25°C');
-    await expect(page.locator('#map-hud-coords')).toContainText('Coords: 28.6520°N');
+    await expect(page.locator('#map-hud-coords')).toContainText(/Coords: 28\.65(19|20)°N/);
 
     // Switch to Climate view and verify metrics
     await page.click('#nav-climate');

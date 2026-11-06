@@ -6,7 +6,7 @@
 [![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](script.js)
 [![HTML5 Semantic](https://img.shields.io/badge/HTML5-Semantic-E34F26?style=for-the-badge&logo=html5&logoColor=white)](index.html)
 [![CSS3 Glassmorphism](https://img.shields.io/badge/CSS3-Glassmorphism-1572B6?style=for-the-badge&logo=css3&logoColor=white)](style.css)
-[![Tests Passing](https://img.shields.io/badge/Tests-415%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
+[![Tests Passing](https://img.shields.io/badge/Tests-542%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
 [![WCAG 2.1 AA](https://img.shields.io/badge/Accessibility-WCAG_2.1_AA-blueviolet?style=for-the-badge)](tests/e2e/accessibility-deep-audit.spec.js)
 
 ---
@@ -16,6 +16,8 @@
 The **Real-Time Weather Dashboard** provides live meteorological data, 24-hour hourly progressions, 7-day extended forecasts, and comprehensive atmospheric air quality monitoring for any city worldwide or via browser geolocation. The application emphasizes clean software engineering, asynchronous fault tolerance, strict accessibility, and sub-millisecond memory performance:
 
 * **Multi-View Intelligence Architecture:** 6 dedicated views accessible through an accessible sidebar navigation (`Overview`, `Weather Map`, `Forecast`, `Analytics`, `Calendar`, and `Climate Reports`) with persistent URL hash state and mobile off-canvas drawer.
+* **Professional Meteorological & Interactive Animation Suite:** Hardware-accelerated, composite-only micro-animations across 10 required domains (smooth card entrance with stagger delays, animated temperature value counting with glow pulse, weather icon ambient micro-animations for sun/cloud/rain/snow/thunder/fog, Chart.js cascading drawing animations, calendar month grid slide transitions, Leaflet map layer transitions, smooth view navigation, interactive hover elevations, shimmering loading skeleton preview, and tactile button press feedback). Engineered for zero battery drain by pausing animation loops when hidden or when tab is backgrounded, with 100% compliance with WCAG 2.1 AA / 2.3.3 Reduced Motion.
+* **Comprehensive Monthly Weather Report Generator & Publication-Grade PDF Export:** Integrated meteorological reporting system compiling 11 core metrics, 8 detailed narrative analytical sections, 5 interactive Chart.js charts (Temperature, Rainfall, Humidity, Wind, Condition Distribution), complete daily observation ledger, and data coverage audit table. Strictly follows empirical data integrity rules (never counting missing rainfall as zero, transparently labeling incomplete months, distinguishing ERA5 observations from IPCC CMIP6 climate projections, and providing full metadata attribution) with A4 publication-grade print/PDF export styling.
 * **Severe Weather Warnings & Atmospheric Hazards Alert System (WMO CAP-v1.2):** Full meteorological hazard detection engine following WMO Common Alerting Protocol (CAP-v1.2) standards evaluating real-time observations against 8 extreme atmospheric hazard rules (Excessive Heat, Hard Freeze / Sub-Zero, High Wind / Gale, Severe Thunderstorm & Hail, Flash Flood / Torrential Rain, Toxic Smog / Hazardous AQI, Dense Fog / Zero Visibility, and Extreme Solar UV Radiation) with 4-tier severity hierarchy (`Emergency`, `Warning`, `Watch`, `Advisory`), persistent dynamic warning banner (`#severe-weather-banner`), pulsating attention indicator pill in the sidebar (`#sidebar-alert-pill`), interactive safety precautions modal (`#severe-alert-modal`) with actionable checklists and WMO CAP protocol attribution, and synthesized dual-tone Web Audio API chime with persistent mute preference.
 * **Seasonal & Yearly Weather Analytics & IPCC CMIP6 Climate Projections:** Full multi-year climatological analysis framework partitioning the year into 4 defined seasons (`Winter`, `Summer`, `Monsoon`, `Post-Monsoon`) and tracking 6 core metrics (`Average Temperature`, `Maximum Temperature`, `Minimum Temperature`, `Total Precipitation`, `Average Humidity`, `Average Wind Speed`), 12-month trends, historical baseline anomalies ($\Delta T$ and $\Delta P\%$), and honest future year handling ($\ge 2027$) utilizing the Open-Meteo Climate Projections API with IPCC CMIP6 EC-Earth3P-HR HighResMIP models, prominent uncertainty advisory banners, and 3 Chart.js comparison charts.
 * **Open-Meteo Historical Weather Archive & Multi-Year Climate Comparison:** Full empirical reanalysis integration (ERA5 / ERA5-Land, dating back to 1940) tracking all 10 required meteorological metrics (daily max, min, mean temperatures, precipitation sum, rainfall sum, relative humidity, wind velocity, vector dominant wind direction, atmospheric pressure, and cloud coverage), monthly statistical aggregations, hemisphere-aware seasonal climatological benchmarks, side-by-side multi-year climate anomaly shifts ($\Delta T$ and $\Delta P$ variance), dual-axis progression charts, honest missing-data indicators, and dedicated in-memory performance caching.
@@ -31,7 +33,9 @@ The **Real-Time Weather Dashboard** provides live meteorological data, 24-hour h
 * **Air Quality Monitoring Module:** Integrates Open-Meteo Air Quality API to deliver dual European AQI and US AQI comparisons, PM2.5, PM10, Nitrogen Dioxide, and Ozone concentrations without ever blocking the primary weather dashboard.
 * **Network Resilience & Offline Experience:** Resilient request pipeline with `AbortController` timeout enforcement, bounded transient retries for HTTP 5xx responses, HTTP 429 rate limit handling, persistent offline banner notifications, and state-aware Retry actions.
 * **Dynamic Adaptive Glassmorphism:** Deep translucent navy palette that morphs dynamically based on real-time WMO weather codes (Sunny, Clear Night, Cloudy, Overcast, Rainy, Snowy, Thunderstorm, Foggy).
-* **Automated Testing Suite:** 415 verified automated tests (301 Vitest unit/integration tests + 114 Playwright E2E tests) spanning unit logic, DOM integrations, REST API error handling, WCAG 2.1 AA accessibility, 9 responsive viewport layouts, air quality monitoring, network resilience, interactive canvas analytics, PWA Service Worker lifecycle, dashboard redesign navigation, detailed weather overview, 9-chart visualization suite, Leaflet interactive weather map, interactive monthly weather calendar, Open-Meteo historical weather reanalysis archive, seasonal & yearly weather analytics with climate projections, and WMO CAP severe weather atmospheric hazard alerts.
+* **Multi-Language Support (i18n) Architecture:** Real-time localized internationalization engine providing instantaneous zero-network runtime language toggling across 6 global languages (English [default], Spanish, French, German, Japanese, and Hindi). Features comprehensive translation coverage for all 28 WMO Code Table 4677 weather conditions, view navigation titles, metric labels, section headers, European and US AQI tiers, severe weather alert severity badges, and calendar month/weekday names with automatic `localStorage` persistence (`weather_dashboard_lang`) and strict WCAG 2.1 AA accessibility attributes.
+* **Complete Responsive Design & WCAG 2.1 AA Accessibility Architecture:** Fully responsive layout engineered and verified across 6 core device categories (360px mobile, 390px mobile, 768px tablet, 1024px laptop, 1366px desktop, 1920px large desktop) across all 6 dashboard views. Implements mobile off-canvas drawer navigation, responsive metric cards, Chart.js auto-resizing, 7-column calendar grid adaptation, responsive GIS map viewport with wrapping HUD controls, fluid readable typography, visible high-contrast focus states (`:focus-visible`), WCAG AA compliant text contrast ratios ($\ge 4.5:1$), comprehensive ARIA semantics, instant reduced motion execution (`prefers-reduced-motion: reduce`), strict horizontal scroll containment (zero page overflow), and complete data integrity guarantees (zero critical meteorological information hidden on mobile).
+* **Automated Testing Suite:** 542 verified automated tests (352 Vitest unit/integration tests + 190 Playwright E2E tests) spanning unit logic, DOM integrations, REST API error handling, WCAG 2.1 AA accessibility, 9 responsive viewport layouts, air quality monitoring, network resilience, interactive canvas analytics, PWA Service Worker lifecycle, dashboard redesign navigation, detailed weather overview, 9-chart visualization suite, Leaflet interactive weather map, interactive monthly weather calendar, Open-Meteo historical weather reanalysis archive, seasonal & yearly weather analytics with climate projections, WMO CAP severe weather atmospheric hazard alerts, comprehensive monthly weather reports, professional animation suite, multi-language internationalization, complete responsive design, and Senior QA end-to-end full audit.
 * **Zero API Key Requirement:** Immediate local setup with no authentication barriers or secret tokens.
 
 ---
@@ -440,6 +444,153 @@ Engineered an automated atmospheric hazard detection engine conforming to World 
   * **Dual-Tone Web Audio API Chime (`playSevereAlertTone`):** Synthesizes an emergency chime (587.33 Hz [D5] for 120ms followed by 880.00 Hz [A5] for 220ms) directly via Web Audio API oscillators without external audio assets. Mute state persists across sessions via `localStorage` (`weather_dashboard_alert_sound`).
   * **Full Unit Conversion Synchronization:** All atmospheric triggers and threshold criteria automatically adapt between Metric (°C, km/h, mm) and Imperial (°F, mph, in) upon unit toggling.
 
+### 📊 Comprehensive Monthly Weather Report Generator (11 Metrics, 8 Sections, 5 Charts, PDF Export)
+Located in Section 5 of Climate Reports (`#monthly-report-section`), this module generates comprehensive, publication-grade monthly meteorological climate reports from empirical daily observations or high-resolution climate projections.
+
+* **User Input Controls:**
+  * **Target City (`#report-city-input`):** Clean text input supporting any global station, with a 1-click active location sync button (`#report-use-active-city-btn`).
+  * **Month Selector (`#report-month-select`):** Full Gregorian month selection (January through December).
+  * **Year Selector (`#report-year-select`):** Dynamic 100-year historical-to-future temporal selector (1950 through 2050).
+  * **Generate Report Action (`#report-generate-btn`):** Triggers asynchronous data fetching, statistical regression, narrative compilation, and multi-chart rendering with visual status feedback (`#report-status-bar`).
+
+* **11 Required Report Metrics:**
+  1. **Average Temperature (`#rep-stat-avg-temp`):** Climatological monthly mean calculated from valid daily observations ($\bar{T} = \frac{1}{N}\sum T_{\text{mean}}$).
+  2. **Maximum Temperature (`#rep-stat-max-temp`):** Extreme monthly peak temperature with date of occurrence (`#rep-sub-max-temp`).
+  3. **Minimum Temperature (`#rep-stat-min-temp`):** Lowest recorded monthly temperature with date of occurrence (`#rep-sub-min-temp`).
+  4. **Total Precipitation (`#rep-stat-total-precip`):** Cumulative liquid and solid precipitation ($\sum P$) calculated strictly from recorded observations without assuming missing days are zero.
+  5. **Rainy Days (`#rep-stat-rainy-days`):** Total count and percentage of days with precipitation $\ge 0.1\text{ mm}$ (`#rep-sub-rainy-days`).
+  6. **Average Humidity (`#rep-stat-avg-humidity`):** Mean relative humidity percentage computed from hourly 2-meter atmospheric moisture records.
+  7. **Average Wind Speed (`#rep-stat-avg-wind`):** Monthly mean surface wind velocity at 10 meters.
+  8. **Maximum Wind Speed (`#rep-stat-max-wind`):** Peak recorded wind gust with date of occurrence (`#rep-sub-max-wind`).
+  9. **Weather Condition Distribution (`#rep-stat-dominant-weather`):** Dominant atmospheric classification across the month with percentage share (`#rep-sub-dominant-weather`).
+  10. **Temperature Trend (`#rep-stat-temp-trend`):** Linear regression slope ($\beta_1 = \frac{\sum (x - \bar{x})(y - \bar{y})}{\sum (x - \bar{x})^2}$) classifying thermal progression into Warming, Cooling, or Stable trajectories.
+  11. **Rainfall Trend (`#rep-stat-rain-trend`):** Temporal partition evaluating whether precipitation was concentrated in the Early Month, Late Month, or Evenly Distributed.
+
+* **8 Required Analytical Narrative Sections:**
+  1. **Monthly Overview (`#rep-overview-text`):** High-level climatological summary synthesizing mean thermal conditions, total hydrological accumulation, dominant condition frequencies, and diurnal variance.
+  2. **Temperature Analysis (`#rep-temp-analysis-text`):** Thermal trajectory breakdown detailing diurnal spread ($\Delta T = T_{\text{max}} - T_{\text{min}}$), hot day counts ($T_{\text{max}} \ge 30^\circ\text{C}$), and frost day counts ($T_{\text{min}} \le 0^\circ\text{C}$).
+  3. **Rainfall Analysis (`#rep-rain-analysis-text`):** Precipitation accumulation analysis evaluating wet spells, dry spells, and hydrological intensity.
+  4. **Humidity Analysis (`#rep-humidity-analysis-text`):** Atmospheric moisture distribution and vapor saturation breakdown.
+  5. **Wind Analysis (`#rep-wind-analysis-text`):** Surface velocity dynamics and gale frequencies.
+  6. **Weather Condition Distribution (`#rep-distribution-text`):** Breakdown of clear, overcast, and rainy days.
+  7. **Daily Weather Summary (`#report-daily-table`):** Comprehensive 31-day observation ledger table (`#report-daily-tbody`) with daily max, min, mean temperatures, precipitation, wind speed, and WMO condition icons.
+  8. **Weather Trend Interpretation (`#rep-trend-interpretation-text`):** Meteorological synthesis of thermal slope and precipitation distribution.
+  9. **Data Coverage and Limitations (`#rep-limitations-text`, `#report-audit-table`):** Transparent audit table tracking observation counts, missing percentages, and sensor/archive caveats.
+
+* **5 Hardware-Accelerated Chart.js Visualizations:**
+  1. **Temperature Line Chart (`#chart-report-temp-canvas`):** Daily maximum, minimum, and mean temperature curves with gradient fills and smooth Bézier transitions.
+  2. **Rainfall Bar Chart (`#chart-report-rain-canvas`):** Daily precipitation accumulation volume bars with conditional rainy-day highlights.
+  3. **Humidity Area Chart (`#chart-report-humidity-canvas`):** Continuous daily mean relative humidity curve with soft gradient fill.
+  4. **Wind Speed Chart (`#chart-report-wind-canvas`):** Daily peak wind speed trajectory with atmospheric gale reference bands.
+  5. **Weather Distribution Doughnut Chart (`#chart-report-distribution-canvas`):** Categorical percentage breakdown of observed weather conditions (Clear, Cloudy, Rainy, Foggy, Thunderstorm).
+
+* **Strict Empirical Data Integrity Rules:**
+  * **Actual Daily Observations:** All statistics are aggregated exclusively from authentic reanalysis observations or climate projection models.
+  * **Missing Rainfall Integrity:** Missing precipitation records are never treated as zero; the audit table explicitly reports valid observed days and flags omitted data.
+  * **Incomplete Month Labeling:** Incomplete observation periods are prominently marked with an alert badge (`#rep-coverage-badge.incomplete`), displaying exact observation ratios (e.g. `3/31 Days (10% Coverage)`).
+  * **Historical Observations vs. Climate Projections:** Pre-2027 reports are marked as ERA5 Historical Observations; future years ($\ge 2027$) are transparently categorized as IPCC CMIP6 Climate Projections (`#rep-category-badge.projection`).
+  * **Comprehensive Metadata Attribution:** Report header embeds station name, administrative region, geographic coordinates, timezone (`#rep-meta-timezone`), reporting period (`#rep-meta-period`), and specific data source (`#rep-meta-source`).
+
+* **Publication-Grade Print & PDF Export (`#report-export-pdf-btn`):**
+  * Dedicated `@media print` CSS stylesheet optimized for standard A4 document layout.
+  * Temporarily suppresses interactive navigation, search controls, and buttons while preserving full-color badges, glassmorphic card borders, tables, and Chart.js canvases.
+  * Sets dynamic document title (`Weather_Report_[City]_[Month]_[Year]`) to ensure clean default filenames when printing or saving as PDF via `window.print()`.
+
+### 💫 Professional Meteorological & Interactive Animation Suite (10 Required Capabilities)
+Engineered for fluid, high-frame-rate interaction and zero battery drain, this suite implements responsive, composite-only GPU animations across 10 core application domains while maintaining 100% compliance with WCAG 2.1 AA / 2.3.3 Reduced Motion:
+
+1. **Smooth Dashboard Card Entrance:**
+   * Staggered entrance animation (`@keyframes dashboardCardEntrance`) with fluid cubic bezier easing (`cubic-bezier(0.16, 1, 0.3, 1)`) and progressive 40ms stagger delays across `.hero-card`, metric cards, hourly cards, daily cards, and air quality modules.
+   * Runs strictly on compositor properties (`opacity`, `transform: translateY(...) scale(...)`) without causing layout reflows or DOM paint invalidations.
+2. **Animated Temperature Value Interpolation:**
+   * Smooth number interpolation (`animateTemperatureValue`) using `requestAnimationFrame` with ease-out cubic mathematics over 350ms whenever temperatures update (city search or °C / °F toggle).
+   * Accompanied by a subtle cyan glow pulse (`@keyframes tempGlowPulse`) on the target element (`.temp-value-updated`).
+   * Non-blocking: data values are synchronously committed, and interpolation immediately resolves in test environments or under reduced motion.
+3. **Weather Icon Ambient Micro-Animations:**
+   * Atmospheric condition micro-animations applied dynamically to `#weather-icon-container`:
+     * ☀️ **Sunny / Clear (`.anim-sun`):** Solar breathing scale and atmospheric amber drop-shadow glow (`@keyframes sunBreathe`).
+     * ⛅ **Cloudy / Overcast (`.anim-cloud`):** Gentle horizontal and vertical floating drift (`@keyframes cloudFloat`).
+     * 🌧️ **Rain & Showers (`.anim-rain`):** Subtle vertical droplet rhythm bounce (`@keyframes rainDropRhythm`).
+     * ❄️ **Snowfall (`.anim-snow`):** Subtle rotational flutter and swaying (`@keyframes snowFlutter`).
+     * ⛈️ **Thunderstorm (`.anim-thunder`):** Occasional electric flash vibration and golden aura pulse (`@keyframes thunderFlash`).
+     * 🌫️ **Fog & Mist (`.anim-fog`):** Soft horizontal atmospheric drift and vapor opacity wave (`@keyframes fogDrift`).
+   * **Battery Safety Guarantee:** Animations automatically pause when the component's parent view is hidden (`[hidden] .weather-icon`, `.dashboard-view:not(.active) .weather-icon`) or when the browser tab is backgrounded (`body.animations-paused *` via `document.addEventListener('visibilitychange')`).
+4. **Progressive Chart Drawing Animations:**
+   * Hardware-accelerated Chart.js animations (`getCommonChartOptions`) configured with 450ms duration, `easeOutQuart` easing, and progressive cascading data-index delays ($\Delta t = \min(i \times 12\text{ms}, 250\text{ms})$), creating a fluid left-to-right cascade without canvas recreation.
+5. **Calendar Month Transitions:**
+   * Navigating months (`#cal-prev-btn`, `#cal-next-btn`, `#cal-today-btn`) or selectors triggers a fluid slide-and-fade transition (`.cal-grid-transition`, `@keyframes calGridSlide`) on `#cal-days-grid` in 250ms without grid jumping.
+6. **Map Layer Transitions:**
+   * Leaflet map tile panes (`.leaflet-tile-pane .leaflet-layer`) and layer control buttons have smooth CSS opacity transitions (300ms) that eliminate jarring visual flashes during overlay swaps.
+7. **Smooth Navigation & View Transitions:**
+   * Sidebar navigation links (`.nav-link`) and quick-jump pills transition with smooth background, border glow, and 4px lateral translation (`transform: translateX(4px)`).
+   * Switching dashboard views (`switchView`) applies the `.view-entrance` animation with subtle upward slide (`@keyframes fadeInView`).
+8. **Interactive Hover States:**
+   * Comprehensive elevation physics across all dashboard cards (`.metric-card`, `.hourly-card`, `.daily-card`, `.analytics-card`, `.report-metric-card`): subtle upward lift (`translateY(-2px)`), ambient cyan rim glow, and depth shadow expansion.
+   * Calendar day cells (`.cal-day-cell:not(.empty-day)`) elevate smoothly on hover with border highlighting.
+9. **Shimmering Loading Skeletons:**
+   * During asynchronous weather fetching, `#loading-indicator` displays a glassmorphic skeleton preview (`.loading-skeleton-preview`, `aria-hidden="true"`) with shimmering linear gradients (`@keyframes skeletonShimmer`) simulating hero cards and metric cells, preventing blank-layout flicker.
+10. **Tactile Button Interaction Feedback:**
+    * Instant press compression feedback (`:active { transform: scale(0.96); }`) on all interactive buttons, filter pills, and navigation chips.
+    * Asynchronous action buttons (`#search-btn`, `#geo-btn`, `#refresh-btn`) spin smoothly when marked `aria-busy="true"`.
+11. **Strict Accessibility & Reduced Motion Compliance (WCAG 2.3.3):**
+    * Under `@media (prefers-reduced-motion: reduce)`, all animation and transition durations are instantly clamped to `0.01ms !important`, infinite loop animations are completely disabled (`animation: none !important`), and values update directly without delay.
+
+### 🌍 Multi-Language Support (i18n) Architecture
+A complete client-side internationalization system engineered with zero network roundtrips, instantaneous runtime language switching, and comprehensive coverage across 6 major global languages:
+* **Supported Languages:**
+  * 🇬🇧 **English (`en`):** Default baseline language.
+  * 🇪🇸 **Spanish (`es`):** Español.
+  * 🇫🇷 **French (`fr`):** Français.
+  * 🇩🇪 **German (`de`):** Deutsch.
+  * 🇯🇵 **Japanese (`ja`):** 日本語.
+  * 🇮🇳 **Hindi (`hi`):** हिन्दी.
+
+* **Core Architectural Capabilities:**
+  1. **Zero-Latency In-Memory Dictionary (`TRANSLATIONS`):** All translation dictionaries for all 6 languages are pre-compiled and bundled directly within `script.js`. Language switches occur in under 5ms without asynchronous loading or network dependencies.
+  2. **Comprehensive WMO Weather Code Localization:** Full 28-code translation coverage for WMO Code Table 4677 weather descriptions (Clear Sky, Mainly Clear, Partly Cloudy, Overcast, Fog, Depositing Rime Fog, Drizzle, Freezing Drizzle, Rain, Freezing Rain, Snow Fall, Snow Grains, Rain Showers, Snow Showers, Thunderstorm, Thunderstorm with Hail, etc.) across all 6 languages, integrated natively into `interpretWeatherCode(code, isDay, lang)`.
+  3. **Universal Declarative DOM Translation Engine (`translatePage`):** Scans the DOM and localizes text content, form placeholders, accessible labels, and tooltips via standardized data attributes:
+     * `data-i18n="key"`: Replaces inner text with translated string.
+     * `data-i18n-placeholder="key"`: Updates input placeholders (e.g. search input).
+     * `data-i18n-aria-label="key"`: Updates accessibility screen reader labels.
+     * `data-i18n-title="key"`: Updates browser hover titles.
+  4. **Localized Meteorological & UI Domains:**
+     * Navigation tabs and active view topbar titles (`Overview`, `Weather Map`, `Forecast`, `Analytics`, `Calendar`, `Climate Reports`).
+     * Real-time metrics grid (`Feels Like`, `High / Low`, `Humidity`, `Wind Speed`, `Wind Direction`, `Pressure`, `Visibility`, `Cloud Cover`, `UV Index`, `Sunrise`, `Sunset`, `Moon Phase`).
+     * Air Quality Index (AQI) tier classifications (`Good`, `Fair`, `Moderate`, `Poor`, `Very Poor`).
+     * Severe Weather Alert severity badges (`Emergency`, `Warning`, `Watch`, `Advisory`).
+     * Calendar month names and heatmap mode toggles (`Thermal Heatmap`, `Precipitation Heatmap`).
+  5. **Accessible Glassmorphic Language Selector (`#language-select`):** Clean translucent dropdown in the topbar header with custom cyan chevron, keyboard focus rings, and explicit `aria-label="Select application language"`.
+  6. **Dynamic Root Attribute & State Synchronization:** Automatically updates `document.documentElement.lang` (`<html lang="...">`) to ensure correct assistive technology pronunciation and typography rendering.
+  7. **Persistence:** Synchronizes user selection to `localStorage` (`weather_dashboard_lang`) to immediately restore the chosen language upon browser restarts and reloads.
+
+### 📱 Complete Responsive Design & WCAG 2.1 AA Accessibility Architecture
+A comprehensive responsive design and universal accessibility engine engineered to deliver seamless usability, legible typography, keyboard navigability, and zero layout overflow across 6 verified device classes:
+
+* **Verified Viewport Dimensions:**
+  * 📱 **360px Mobile (Compact):** Ultra-narrow smartphones (360x740 / 360x640) with single-column metric flow, stacked search controls, and compact calendar day cells.
+  * 📱 **390px Mobile (Standard):** Modern smartphones (390x844 iPhone 12/13/14) with balanced 2-column metric cards and optimized topbar action layout.
+  * 📟 **768px Tablet (Portrait):** iPad/tablet devices (768x1024) featuring off-canvas mobile drawer, multi-column cards, and fluid grid layouts.
+  * 💻 **1024px Laptop / Tablet Landscape:** Small laptops and iPad landscape (1024x768) with full-width content allocation and responsive analytics grids.
+  * 🖥️ **1366px Desktop (Standard):** Standard widescreen desktop (1366x768) with docked sticky sidebar, 4-column metric grid, and side-by-side calendar inspector.
+  * 🖥️ **1920px Large Desktop (FHD):** Full high-definition displays (1920x1080) with centered layout, max-width bounds (`1600px`), and high-density multi-column charts.
+
+* **12 Core Requirements Verified:**
+  1. **Responsive Sidebar:** Automatically transforms between a docked sticky navigation column on desktop ($\ge 1025\text{px}$) and an accessible off-canvas drawer on mobile/tablet ($\le 1024\text{px}$) with hamburger toggle (`#sidebar-toggle-btn`), dimming backdrop overlay (`#sidebar-overlay`), close button (`#sidebar-close-btn`), `aria-expanded` state tracking, and Escape key dismissal.
+  2. **Responsive Metric Cards:** All 12 primary meteorological metric cards in `#metrics-grid` adapt dynamically from 4 columns on desktop, 2 columns on tablet/390px mobile, to 1 column on compact 360px mobile without clipping, text overflow, or bounding box collision.
+  3. **Responsive Charts:** All Chart.js canvases across Overview, Analytics (9-chart suite), Historical, and Monthly Report sections utilize responsive container scaling (`width: 100%; max-width: 100%; min-width: 0;`) with auto-resize listeners, preventing canvas horizontal overflow.
+  4. **Responsive Calendar:** 7-column Gregorian calendar grid (`#cal-days-grid`) dynamically scales day cells, condition icons, temperatures, and heatmap swatches on mobile devices while cleanly stacking the interactive Day Inspector (`#cal-day-detail-card`) underneath on screens $\le 1200\text{px}$.
+  5. **Responsive Map:** Leaflet.js interactive weather GIS map container (`#map-viewport`) adapts height and layout across all 6 viewports with wrapping toolbar controls, mobile-friendly horizontal layer selector, collapsible HUD telemetry, and stackable color legends.
+  6. **Mobile Navigation:** Seamless view switching across all 6 dashboard views (`Overview`, `Weather Map`, `Forecast`, `Analytics`, `Calendar`, `Climate Reports`) with automatic drawer closure upon link selection.
+  7. **Readable Typography:** Scalable typographic hierarchy utilizing relative units (`rem`), line heights $\ge 1.4$, minimum legible text sizes ($\ge 11\text{px}$ for badges, $\ge 14\text{px}$ for body text), and universal `overflow-wrap: break-word` to prevent string overflow across languages.
+  8. **Keyboard Navigation:** Comprehensive keyboard focusability with Skip to Main Content link (`.skip-link`), logical Tab sequence, Arrow key horizontal scroll navigation for 24-hour timelines and data tables, and Escape key closure for drawers and modals.
+  9. **Visible Focus States:** High-contrast cyan focus indicators (`:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25); }`) across all interactive buttons, inputs, selects, and scroll regions.
+  10. **Accessible Colour Contrast:** 100% compliance with WCAG 2.1 AA contrast requirements, achieving contrast ratios $> 5.5:1$ for muted text, $> 7.0:1$ for cyan accents, and $> 14.0:1$ for primary body copy against the dark glassmorphic canvas (`#0b1329`).
+  11. **ARIA Labels & Semantics:** Accessible labels, `role="tablist"`, `role="tab"`, `aria-selected`, `aria-expanded`, `aria-pressed`, `aria-live`, and `role="region"` attributes on icon buttons, interactive tabs, dynamic status banners, and scrollable data tables.
+  12. **Reduced Motion Support:** `@media (prefers-reduced-motion: reduce)` instantly clamps all CSS animation and transition durations to $0.01\text{ms}$ and disables continuous micro-animations.
+
+* **Horizontal Scroll Integrity Guarantee:** The root document and body enforce zero unwanted horizontal scroll (`overflow-x: hidden; scrollWidth <= clientWidth`). Horizontal scrolling is strictly intentional and isolated to designated, keyboard-accessible scroll containers (`#hourly-forecast-track`, `.hist-table-scroll-wrapper`).
+* **Zero Information Loss on Mobile:** Strict data integrity guarantee ensuring that critical weather metrics, temperatures, conditions, hourly timelines, daily forecasts, AQI indexes, calendar cells, and climate data are NEVER hidden via `display: none` or `visibility: hidden` on mobile devices.
+
 ---
 
 ## 🛠️ 3. Technologies & Architecture
@@ -736,15 +887,20 @@ Test Suites:
   ✓ tests/unit/seasonal-yearly-analytics.test.js (16 tests) .......... PASSED
   ✓ tests/unit/visualization-suite.test.js (25 tests) ................ PASSED
   ✓ tests/unit/severe-weather-alerts.test.js (20 tests) .............. PASSED
+  ✓ tests/unit/monthly-report.test.js (14 tests) ...................... PASSED
+  ✓ tests/unit/animations.test.js (14 tests) .......................... PASSED
+  ✓ tests/unit/i18n.test.js (23 tests) ................................ PASSED
   ✓ tests/integration/api.test.js (15 tests) ......................... PASSED
   ✓ tests/integration/air-quality-api.test.js (7 tests) .............. PASSED
   ✓ tests/integration/dom.test.js (9 tests) .......................... PASSED
   ✓ tests/e2e/accessibility-deep-audit.spec.js (6 tests) ............. PASSED
   ✓ tests/e2e/air-quality.spec.js (6 tests) .......................... PASSED
   ✓ tests/e2e/analytics.spec.js (5 tests) ............................ PASSED
+  ✓ tests/e2e/animations.spec.js (10 tests) ........................... PASSED
   ✓ tests/e2e/dashboard.spec.js (16 tests) ........................... PASSED
   ✓ tests/e2e/dashboard-redesign.spec.js (8 tests) ................... PASSED
   ✓ tests/e2e/hourly-timeline.spec.js (6 tests) ...................... PASSED
+  ✓ tests/e2e/i18n.spec.js (7 tests) ................................. PASSED
   ✓ tests/e2e/weather-overview.spec.js (5 tests) ..................... PASSED
   ✓ tests/e2e/weather-map.spec.js (7 tests) .......................... PASSED
   ✓ tests/e2e/weather-calendar.spec.js (7 tests) ..................... PASSED
@@ -752,11 +908,14 @@ Test Suites:
   ✓ tests/e2e/seasonal-yearly-analytics.spec.js (6 tests) ............ PASSED
   ✓ tests/e2e/visualization-suite.spec.js (8 tests) .................. PASSED
   ✓ tests/e2e/severe-weather-alerts.spec.js (7 tests) ................ PASSED
+  ✓ tests/e2e/monthly-report.spec.js (8 tests) ........................ PASSED
   ✓ tests/e2e/network-resilience.spec.js (8 tests) ................... PASSED
   ✓ tests/e2e/pwa.spec.js (7 tests) .................................. PASSED
   ✓ tests/e2e/responsive-audit.spec.js (9 viewports) ................. PASSED
+  ✓ tests/e2e/responsive-accessibility.spec.js (17 tests) ............ PASSED
+  ✓ tests/e2e/senior-qa-full-audit.spec.js (34 tests) ................ PASSED
 --------------------------------------------------------------------------------
-Total: 415 passed, 0 failed, 0 skipped (100% passing across 32 test suites)
+Total: 542 passed, 0 failed, 0 skipped (100% passing across 40 test suites)
 ```
 
 ---
@@ -815,7 +974,10 @@ Total: 415 passed, 0 failed, 0 skipped (100% passing across 32 test suites)
 * [x] **Open-Meteo Historical Weather Archive & Multi-Year Climate Comparison:** Full reanalysis integration (ERA5 / ERA5-Land, 1940–present) across 10 meteorological metrics, monthly statistical calculations, seasonal climatological benchmarks, year-over-year climate anomaly shifts ($\Delta T$ and $\Delta P$ variance), dual-axis charts, missing-data indicators, and dedicated in-memory caching.
 * [x] **Seasonal & Yearly Weather Analytics & Climate Projections:** Comprehensive multi-year climatological analysis partitioning the year into 4 defined seasons (Winter, Summer, Monsoon, Post-Monsoon) and tracking 6 core metrics (mean, max, min temperatures, precipitation, humidity, wind velocity), 12-month trends, historical baseline anomalies ($\Delta T, \Delta P\%$), honest future year handling ($\ge 2027$) utilizing the Open-Meteo Climate Projections API with IPCC CMIP6 EC-Earth3P-HR HighResMIP models and uncertainty banners, and 3 Chart.js comparison charts.
 * [x] **Severe Weather Warnings & Atmospheric Hazards Alert System (WMO CAP-v1.2):** Full meteorological hazard detection engine following WMO CAP-v1.2 specifications across 8 hazard rules (extreme heat, sub-zero cold, gale wind, severe thunderstorms/hail, flash flood, toxic smog/AQI, dense fog, extreme UV), 4-tier severity hierarchy, persistent warning banner, attention indicator pill in sidebar, safety modal with actionable precautions, and synthesized Web Audio API chime.
-* [ ] **Multi-Language Support (i18n):** Provide seamless runtime language toggles for Spanish, French, German, Japanese, and Hindi.
+* [x] **Comprehensive Monthly Weather Report Generator & PDF Export:** Full monthly report compiler evaluating 11 core metrics, 8 detailed narrative sections, 5 Chart.js charts (Temperature, Rain, Humidity, Wind, Distribution), 31-day observation ledger, audit coverage table, empirical missing-data integrity, and publication-ready A4 PDF export styling.
+* [x] **Professional Meteorological & Interactive Animation Suite:** 10 core animation domains (card entrance, animated temperature interpolation, condition icon micro-animations, progressive chart cascade drawing, calendar grid slide, map layer crossfades, smooth navigation, interactive hover physics, loading skeletons, tactile button compression feedback) with zero-battery-drain loop pause and full WCAG 2.3.3 compliance.
+* [x] **Multi-Language Support (i18n):** Provide seamless runtime language toggles for Spanish, French, German, Japanese, and Hindi.
+* [x] **Complete Responsive Design & Accessibility (WCAG 2.1 AA):** Responsive layouts across 6 viewports (360px, 390px, 768px, 1024px, 1366px, 1920px), off-canvas sidebar drawer, keyboard navigability, high-contrast focus rings, contrast ratios > 4.5:1, intentional horizontal scroll containment, and zero information hiding.
 
 ---
 
